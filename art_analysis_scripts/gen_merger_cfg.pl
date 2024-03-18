@@ -1,4 +1,8 @@
 #!/usr/bin/perl -w
+
+# Code borrowed from Rockstar by Peter Behroozi
+# https://bitbucket.org/pbehroozi/rockstar-galaxies/src/main/scripts/gen_merger_cfg.pl
+
 use Cwd 'abs_path';
 
 $ENV{PWD} = abs_path(".") unless (abs_path($ENV{PWD}) eq abs_path("."));
@@ -152,16 +156,6 @@ EOL
 close CONFIG;
 
 print "Merger tree config file generated in $outbase/outputs/merger_tree.cfg\n";
-print "\nTo generate a merger tree, change to the consistent_trees directory and run\n";
-print "    make\n";
-if ($config->{PERIODIC}==0) {
-    print "    perl do_merger_tree_np.pl $outbase/outputs/merger_tree.cfg\n";
-} else {
-    print "    perl do_merger_tree.pl $outbase/outputs/merger_tree.cfg\n";
-}
-print "\nTrees will be generated in\n";
-print "   $outbase/trees\n";
-print "\nNote that if $outbase is not accessible from the machine you intend to run the merger tree code on, you will have to change the directories in $outbase/outputs/merger_tree.cfg appropriately.\n";
 
 package ReadConfig;
 
