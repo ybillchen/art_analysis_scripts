@@ -26,7 +26,7 @@ def rockstar_halofinder(restart=0, base="", num_readers=8,
             "num_readers": num_readers,
             "particle_type": particle_type,
             "outbase": os.path.join(base, "rockstar_halos"),
-            "restart": bool(restart)
+            "restart": restart
             })
 
     hc.create()
@@ -34,8 +34,8 @@ def rockstar_halofinder(restart=0, base="", num_readers=8,
 if __name__ == "__main__":
 
     if len(sys.argv) != 2:
-        restart = 0
+        restart = False
     else:
-        restart = sys.argv[1]
+        restart = bool(int(sys.argv[1]))
 
     rockstar_halofinder(restart=restart)
