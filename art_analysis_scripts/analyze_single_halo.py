@@ -23,7 +23,7 @@ if __name__ == "__main__":
     for tree in ytree.parallel_trees(trees):
         if tree["mass"] > a.quan(4.8e12, "Msun") and \
             tree["mass"] < a.quan(5.2e12, "Msun"):
-            root = list[tree.get_root_nodes()]
+            root = list(tree.get_root_nodes())
             assert len(root) == 1
             root = root[0]
 
