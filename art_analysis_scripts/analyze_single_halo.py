@@ -21,7 +21,8 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    box = [-500.0, -500.0, 1000.0, 1000.0] # in kpc
+    radius = 1000.0  # in kpc
+    box = [-radius, -radius, 2*radius, 2*radius]
 
     for tree in ytree.parallel_trees(trees, save_every=False):
         if tree["mass"] > a.quan(1.8e12, "Msun") and \
@@ -39,7 +40,6 @@ if __name__ == "__main__":
             center = root["position"] * scale_a
             # radius = root["virial_radius"] * scale_a
 
-            radius = 0.5 * np.min(box[2:])
             sp = snap_last.sphere(center, (radius, "kpc"))
 
             fig, ax0 = plt.subplots()
