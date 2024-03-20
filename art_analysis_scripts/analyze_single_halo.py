@@ -23,7 +23,7 @@ if __name__ == "__main__":
 
     box = [-500.0, -500.0, 1000.0, 1000.0] # in kpc
 
-    for tree in ytree.parallel_trees(trees):
+    for tree in ytree.parallel_trees(trees, save_every=False):
         if tree["mass"] > a.quan(4.8e12, "Msun") and \
             tree["mass"] < a.quan(5.2e12, "Msun"):
             root = tree.find_root()
