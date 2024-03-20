@@ -40,7 +40,7 @@ if __name__ == "__main__":
             y = sp[("N-BODY", "POSITION_Y")] - center[1]
 
             pp.prj(ax0, x.to("Mpc"), y.to("Mpc"), 
-                box=box, vmin=3, vmax=5, log=True, 
+                box=box, vmin=3, vmax=7, log=True, 
                 capacity=64, max_level=10, cmap=plt.cm.magma)
 
             ax0.set_xlim(box[0], box[0]+box[2])
