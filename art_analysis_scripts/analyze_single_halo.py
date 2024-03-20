@@ -21,16 +21,21 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    box = [-500, -500, 1000, 1000] # in kpc
+    box = [-500.0, -500.0, 1000.0, 1000.0] # in kpc
 
     for tree in ytree.parallel_trees(trees):
         if tree["mass"] > a.quan(4.8e12, "Msun") and \
             tree["mass"] < a.quan(5.2e12, "Msun"):
             root = tree.find_root()
 
+            redshift = root['redshift']
+            assert redshift <= 0
+            scale_a = 1.0/(1.0+redshift)
+
             hid = root["uid"]
-            center = root["position"]
-            # radius = root["virial_radius"]
+            # note: in ytree, units are always comoving
+            center = root["position"] * scale_a
+            # radius = root["virial_radius"] * scale_a
 
             radius = np.min(box[2:])
             sp = snap_last.sphere(center, (radius, "kpc"))
@@ -42,8 +47,6 @@ if __name__ == "__main__":
             z = sp[("N-BODY", "POSITION_Z")] - center[2]
 
             r = np.sqrt(x**2 + y**2 + z**2)
-
-            assert root['redshift'] <= 0
 
             pp.prj(ax0, x[r<radius].to("kpc"), y[r<radius].to("kpc"), 
                 box=box, vmin=-3, vmax=1, log=True, capacity=64, 
