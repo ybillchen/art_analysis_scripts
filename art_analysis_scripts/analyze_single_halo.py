@@ -29,10 +29,12 @@ if __name__ == "__main__":
             tree["mass"] < a.quan(2.2e12, "Msun"):
             root = tree.find_root()
 
-            assert root['pid'] < 0 # must be the central halo
+            if root['pid'] >= 0: # must be the central halo
+                continue
 
             redshift = root['redshift']
-            assert redshift <= 0
+            if redshift > 0: # must be the last snapshot
+                continue
             scale_a = 1.0/(1.0+redshift)
 
             hid = root["uid"]
