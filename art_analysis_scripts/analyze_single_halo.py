@@ -42,7 +42,7 @@ if __name__ == "__main__":
             # in ytree, units are always comoving 
             # need to manually convert to physical
             center = root["position"] * scale_a
-            # radius = root["virial_radius"] * scale_a
+            rvir = root["virial_radius"] * scale_a
 
             sp = snap_last.sphere(center, (radius, "kpc"))
 
@@ -54,6 +54,8 @@ if __name__ == "__main__":
             pp.prj(ax0, x.to("kpc"), y.to("kpc"), 
                 box=box, vmin=-4, vmax=1, log=True, capacity=64, 
                 max_level=10, cmap=plt.cm.magma)
+
+            ax0.Circle((0.0, 0.0), rvir, ec='w', fc='none')
 
             ax0.set_xlim(box[0], box[0]+box[2])
             ax0.set_ylim(box[1], box[1]+box[3])
