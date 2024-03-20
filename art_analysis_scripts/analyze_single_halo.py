@@ -32,16 +32,20 @@ if __name__ == "__main__":
             center = root["position"]
             # radius = root["virial_radius"]
 
-            sp = snap_last.sphere(center, (np.min(box[2:]), "kpc"))
+            radius = np.min(box[2:])
+            sp = snap_last.sphere(center, (radius, "kpc"))
 
             fig, ax0 = plt.subplots()
 
             x = sp[("N-BODY", "POSITION_X")] - center[0]
             y = sp[("N-BODY", "POSITION_Y")] - center[1]
+            z = sp[("N-BODY", "POSITION_Z")] - center[2]
+
+            r = np.sqrt(x**2 + y**2 + z**2)
 
             assert root['redshift'] <= 0
 
-            pp.prj(ax0, x.to("kpc"), y.to("kpc"), 
+            pp.prj(ax0, x[r<radius].to("kpc"), y[r<radius].to("kpc"), 
                 box=box, vmin=-3, vmax=1, log=True, capacity=64, 
                 max_level=10, cmap=plt.cm.magma)
 
