@@ -21,7 +21,7 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    box = [-0.5, -0.5, 1.0, 1.0]
+    box = [-500, -500, 1000, 1000] # in kpc
 
     for tree in ytree.parallel_trees(trees):
         if tree["mass"] > a.quan(4.8e12, "Msun") and \
@@ -32,7 +32,7 @@ if __name__ == "__main__":
             center = root["position"]
             # radius = root["virial_radius"]
 
-            sp = snap_last.sphere(center, (np.min(box[2:]), "Mpc"))
+            sp = snap_last.sphere(center, (np.min(box[2:]), "kpc"))
 
             fig, ax0 = plt.subplots()
 
@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
             assert root['redshift'] <= 0
 
-            pp.prj(ax0, x.to("Mpc"), y.to("Mpc"), 
+            pp.prj(ax0, x.to("kpc"), y.to("kpc"), 
                 box=box, vmin=3, vmax=7, log=True, capacity=64, 
                 max_level=10, cmap=plt.cm.magma)
 
