@@ -33,27 +33,28 @@ if __name__ == "__main__":
             scale_a = 1.0/(1.0+redshift)
 
             hid = root["uid"]
-            # note: in ytree, units are always comoving
+
+            # in ytree, units are always comoving 
+            # need to manually convert to physical
             center = root["position"] * scale_a
             # radius = root["virial_radius"] * scale_a
 
-            radius = np.min(box[2:])
+            radius = 0.5 * np.min(box[2:])
             sp = snap_last.sphere(center, (radius, "kpc"))
 
             fig, ax0 = plt.subplots()
 
             x = sp[("N-BODY", "POSITION_X")] - center[0]
             y = sp[("N-BODY", "POSITION_Y")] - center[1]
-            z = sp[("N-BODY", "POSITION_Z")] - center[2]
 
-            r = np.sqrt(x**2 + y**2 + z**2)
-
-            pp.prj(ax0, x[r<radius].to("kpc"), y[r<radius].to("kpc"), 
+            pp.prj(ax0, x.to("kpc"), y.to("kpc"), 
                 box=box, vmin=-3, vmax=1, log=True, capacity=64, 
                 max_level=10, cmap=plt.cm.magma)
 
             ax0.set_xlim(box[0], box[0]+box[2])
             ax0.set_ylim(box[1], box[1]+box[3])
+            ax0.set_xlabel("x (kpc)")
+            ax0.set_ylabel("y (kpc)")
             ax0.set_aspect("equal")
 
             plt.savefig("analysis/prj_%d.png"%hid, 
