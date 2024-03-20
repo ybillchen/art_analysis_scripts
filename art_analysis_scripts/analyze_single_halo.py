@@ -24,8 +24,8 @@ if __name__ == "__main__":
     box = [-500.0, -500.0, 1000.0, 1000.0] # in kpc
 
     for tree in ytree.parallel_trees(trees, save_every=False):
-        if tree["mass"] > a.quan(4.8e12, "Msun") and \
-            tree["mass"] < a.quan(5.2e12, "Msun"):
+        if tree["mass"] > a.quan(1.8e12, "Msun") and \
+            tree["mass"] < a.quan(2.2e12, "Msun"):
             root = tree.find_root()
 
             redshift = root['redshift']
@@ -57,5 +57,5 @@ if __name__ == "__main__":
             ax0.set_ylabel("y (kpc)")
             ax0.set_aspect("equal")
 
-            plt.savefig("analysis/prj_%d.png"%hid, 
+            plt.savefig("analysis/2e12/prj_%d.png"%hid, 
                 bbox_inches ="tight", pad_inches=0.05)
