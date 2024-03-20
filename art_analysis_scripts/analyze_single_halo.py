@@ -43,9 +43,9 @@ if __name__ == "__main__":
                 box=box, vmin=3, vmax=7, log=True, 
                 capacity=64, max_level=10, cmap=plt.cm.magma)
 
-            ax0.set_xlim(box[0], box[0]+box[2])
-            ax0.set_ylim(box[1], box[1]+box[3])
-
+            # ax0.set_xlim(box[0], box[0]+box[2])
+            # ax0.set_ylim(box[1], box[1]+box[3])
             ax0.set_aspect("equal")
+
             plt.savefig("analysis/prj_%d.png"%hid, 
                 bbox_inches ="tight", pad_inches=0.05)
