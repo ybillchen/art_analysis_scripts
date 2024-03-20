@@ -16,6 +16,7 @@ import ytree
 import prj_plotter as pp
 
 if __name__ == "__main__":
+    # assume that this script is executed in run/
     snap_last = yt.load("out/snap_a1.0017.art")
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
@@ -23,11 +24,9 @@ if __name__ == "__main__":
     for tree in ytree.parallel_trees(trees):
         if tree["mass"] > a.quan(4.8e12, "Msun") and \
             tree["mass"] < a.quan(5.2e12, "Msun"):
-            root = list(tree.get_root_nodes())
-            assert len(root) == 1
-            root = root[0]
+            root = tree.find_root()
 
-            hid = root["id"]
+            hid = root["uid"]
             center = root["position"]
             # radius = root["virial_radius"]
 
