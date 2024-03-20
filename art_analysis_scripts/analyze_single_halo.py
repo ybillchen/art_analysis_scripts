@@ -42,7 +42,7 @@ if __name__ == "__main__":
             assert root['redshift'] <= 0
 
             pp.prj(ax0, x.to("kpc"), y.to("kpc"), 
-                box=box, vmin=3, vmax=7, log=True, capacity=64, 
+                box=box, vmin=-3, vmax=1, log=True, capacity=64, 
                 max_level=10, cmap=plt.cm.magma)
 
             ax0.set_xlim(box[0], box[0]+box[2])
