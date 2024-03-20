@@ -29,6 +29,8 @@ if __name__ == "__main__":
             tree["mass"] < a.quan(2.2e12, "Msun"):
             root = tree.find_root()
 
+            assert root['pid'] < 0 # must be the central halo
+
             redshift = root['redshift']
             assert redshift <= 0
             scale_a = 1.0/(1.0+redshift)
