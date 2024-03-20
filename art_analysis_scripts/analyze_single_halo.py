@@ -55,7 +55,8 @@ if __name__ == "__main__":
                 box=box, vmin=-4, vmax=1, log=True, capacity=64, 
                 max_level=10, cmap=plt.cm.magma)
 
-            ax0.Circle((0.0, 0.0), rvir, ec='w', fc='none')
+            vir_circ = plt.Circle((0.0, 0.0), rvir, ec='w', fc='none')
+            ax0.add_patch(vir_circ)
 
             ax0.set_xlim(box[0], box[0]+box[2])
             ax0.set_ylim(box[1], box[1]+box[3])
