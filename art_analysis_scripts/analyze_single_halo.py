@@ -22,7 +22,7 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    radius = 250.0  # in kpc
+    radius = 500.0  # in kpc
     box = [-radius, -radius, 2*radius, 2*radius]
 
     for tree in ytree.parallel_trees(trees, save_every=False):
@@ -58,11 +58,15 @@ if __name__ == "__main__":
             y = sp[("N-BODY", "POSITION_Y")].to("kpc") - center[1]
 
             pp.prj(ax0, x, y, 
-                box=box, vmin=-4, vmax=1, log=True, capacity=64, 
+                box=box, vmin=-4, vmax=1, log=True, capacity=32, 
                 max_level=10, cmap=plt.cm.magma)
 
-            vir_circ = plt.Circle((0.0, 0.0), rvir, ec='w', fc='none')
+            vir_circ = plt.Circle((0.0, 0.0), rvir, 
+                ec="w", fc="none")
+            zoom_circ = plt.Circle((0.0, 0.0), rvir/scale_a, 
+                ec="w", fc="none", ls="--")
             ax0.add_patch(vir_circ)
+            ax0.add_patch(zoom_circ)
 
             ax0.set_xlim(box[0], box[0]+box[2])
             ax0.set_ylim(box[1], box[1]+box[3])
