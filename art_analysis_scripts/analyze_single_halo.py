@@ -18,6 +18,7 @@ import prj_plotter as pp
 if __name__ == "__main__":
     # assume that this script is executed in run/
     snap_last = yt.load("out/snap_a1.0017.art")
+    snap_last = yt.load("out/snap_a0.2510.art")
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
@@ -28,13 +29,18 @@ if __name__ == "__main__":
         if tree["mass"] > a.quan(4.8e12, "Msun") and \
             tree["mass"] < a.quan(5.2e12, "Msun"):
             root = tree.find_root()
+            prog = list(tree["prog"])
+            redshift_prog = np.array(tree["prog", "redshift"])
+            idx = np.where((redshift_prog>2.95)&(redshift_prog<3.05))
+            assert len(idx[0]) == 1
+            root = prog[idx[0][0]]
 
             if root['pid'] >= 0: # must be the central halo
                 continue
 
             redshift = root['redshift']
-            if redshift > 0: # must be the last snapshot
-                continue
+            # if redshift > 0: # must be the last snapshot
+            #     continue
             scale_a = 1.0/(1.0+redshift)
 
             hid = root["uid"]
@@ -64,5 +70,5 @@ if __name__ == "__main__":
             ax0.set_ylabel("y (kpc)")
             ax0.set_aspect("equal")
 
-            plt.savefig("analysis/5e12/prj_%d.png"%hid, 
+            plt.savefig("analysis/5e12/prj_z3_%d.png"%hid, 
                 bbox_inches ="tight", pad_inches=0.05)
