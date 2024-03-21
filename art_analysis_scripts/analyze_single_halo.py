@@ -22,7 +22,7 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    radius = 500.0  # in kpc
+    radius = 1000.0  # in kpc
     box = [-radius, -radius, 2*radius, 2*radius]
 
     for tree in ytree.parallel_trees(trees, save_every=False):
