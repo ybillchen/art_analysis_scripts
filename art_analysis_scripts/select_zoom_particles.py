@@ -11,7 +11,8 @@ import ytree
 
 def zoom_particles_from_z3(hid, factor=4):
     snap = yt.load("out/snap_a0.2510.art")
-    snap_first = yt.load("out/snap_a0.0100.art").all_data()
+    snap_first = yt.load("out/snap_a0.0100.art")
+    snap_first = snap_first.all_data()
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
