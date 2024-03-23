@@ -17,7 +17,7 @@ import prj_plotter as pp
 
 def zoom_particles_from_z3(hid, factor=4):
     snap = yt.load("out/snap_a0.2510.art")
-    snap_first = yt.load("out/snap_a0.010.art").all_data()
+    snap_first = yt.load("out/snap_a0.0100.art").all_data()
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
