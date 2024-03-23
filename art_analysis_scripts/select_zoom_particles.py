@@ -5,15 +5,9 @@ All rights reserved.
 """
 
 import numpy as np
-import matplotlib
-matplotlib.use("agg")
-import matplotlib.pyplot as plt
 
 import yt
-yt.enable_parallelism()
 import ytree
-
-import prj_plotter as pp
 
 def zoom_particles_from_z3(hid, factor=4):
     snap = yt.load("out/snap_a0.2510.art")
