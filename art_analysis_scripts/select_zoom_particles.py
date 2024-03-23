@@ -21,7 +21,7 @@ def zoom_particles_from_z3(hid, factor=4):
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    idx = np.where(np.array(trees["uid"], dtype=int)==hid)
+    idx = np.where(np.array(a["uid"], dtype=int)==hid)
     assert len(idx[0]) == 1
     tree = trees[idx[0][0]]
 
