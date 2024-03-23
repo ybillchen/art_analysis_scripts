@@ -55,5 +55,5 @@ def zoom_particles_from_z3(hid, factor=4):
         fmt="%.6f %.6f %.6f")
 
 if __name__ == "__main__":
-    hid = 1139710
-    zoom_particles_from_z3(1139710)
+    hid = 1135399
+    zoom_particles_from_z3(hid)
