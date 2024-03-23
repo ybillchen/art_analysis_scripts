@@ -68,7 +68,7 @@ if __name__ == "__main__":
             ax0.add_patch(vir_circ)
             ax0.add_patch(zoom_circ)
 
-            ax0.set_title(r"\log M_{\rm h}=%.3f"%np.log10(root["mass"]))
+            ax0.set_title(r"$\log M_{\rm h}=%.2f$"%np.log10(root["mass"]))
             ax0.set_xlim(box[0], box[0]+box[2])
             ax0.set_ylim(box[1], box[1]+box[3])
             ax0.set_xlabel("x (kpc)")
