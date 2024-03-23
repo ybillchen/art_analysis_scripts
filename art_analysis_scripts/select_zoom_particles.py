@@ -40,9 +40,9 @@ def zoom_particles_from_z3(hid, factor=4):
     rvir = node["virial_radius"].to("kpc") * scale_a
 
     sp = snap.sphere(center, rvir * factor)
-    pids = sp[("N-BODY", "PID")]
+    pids = sp[("N-BODY", "PID")].astype(int)
 
-    pids_first = snap_first[("N-BODY", "PID")]
+    pids_first = snap_first[("N-BODY", "PID")].astype(int)
 
     xy, x_ind, y_ind = np.intersect1d(pids, pids_first, 
         assume_unique=True, return_indices=True)
