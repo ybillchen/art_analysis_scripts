@@ -7,12 +7,13 @@ All rights reserved.
 import numpy as np
 
 import yt
+# yt.enable_parallelism()
 import ytree
 
 def zoom_particles_from_z3(hid, factor=4):
     snap = yt.load("out/snap_a0.2510.art")
-    snap_first = yt.load("out/snap_a0.0100.art")
-    snap_first = snap_first.all_data()
+    snap_first = yt.load("out/snap_a0.0100.art").all_data()
+    pids_first = snap_first[("N-BODY", "PID")].astype(int)
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
@@ -36,8 +37,6 @@ def zoom_particles_from_z3(hid, factor=4):
 
     sp = snap.sphere(center, rvir * factor)
     pids = sp[("N-BODY", "PID")].astype(int)
-
-    pids_first = snap_first[("N-BODY", "PID")].astype(int)
 
     xy, x_ind, y_ind = np.intersect1d(pids, pids_first, 
         assume_unique=True, return_indices=True)
