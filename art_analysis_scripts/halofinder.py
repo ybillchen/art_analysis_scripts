@@ -13,7 +13,7 @@ yt.enable_parallelism()
 from yt_astro_analysis.halo_analysis import HaloCatalog
 
 def rockstar_halofinder(restart=False, base="", num_readers=8, 
-    particle_type="N-BODY"):
+    particle_type="N-BODY_0"):
 
     ts = yt.load(os.path.join(base, "out/snap_a*.art"))
 
