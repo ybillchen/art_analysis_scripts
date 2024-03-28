@@ -41,16 +41,16 @@ def verify_enclosed_from_z3(factor=1):
     mass3 = sp[("N-BODY_3", "MASS")]
     mass4 = sp[("N-BODY_4", "MASS")]
 
-    print("# of N-BODY_0: %d, total mass: 10^%.2f Msun"%(
-        len(mass0),np.log10(np.sum(mass0).to("Msun").value)))
-    print("# of N-BODY_1: %d, total mass: 10^%.2f Msun"%(
-        len(mass1),np.log10(np.sum(mass1).to("Msun").value)))
-    print("# of N-BODY_2: %d, total mass: 10^%.2f Msun"%(
-        len(mass2),np.log10(np.sum(mass2).to("Msun").value)))
-    print("# of N-BODY_3: %d, total mass: 10^%.2f Msun"%(
-        len(mass3),np.log10(np.sum(mass3).to("Msun").value)))
-    print("# of N-BODY_4: %d, total mass: 10^%.2f Msun"%(
-        len(mass4),np.log10(np.sum(mass4).to("Msun").value)))
+    print("# of N-BODY_0: %d, total mass: %.2e Msun"%(
+        len(mass0),np.sum(mass0).to("Msun")))
+    print("# of N-BODY_1: %d, total mass: %.2e Msun"%(
+        len(mass1),np.sum(mass1).to("Msun")))
+    print("# of N-BODY_2: %d, total mass: %.2e Msun"%(
+        len(mass2),np.sum(mass2).to("Msun")))
+    print("# of N-BODY_3: %d, total mass: %.2e Msun"%(
+        len(mass3),np.sum(mass3).to("Msun")))
+    print("# of N-BODY_4: %d, total mass: %.2e Msun"%(
+        len(mass4),np.sum(mass4).to("Msun")))
 
 if __name__ == "__main__":
     verify_enclosed_from_z3()
