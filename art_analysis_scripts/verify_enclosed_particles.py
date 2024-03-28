@@ -35,11 +35,22 @@ def verify_enclosed_from_z3(factor=1):
 
     sp = snap.sphere(center, rvir * factor)
 
-    print("# of N-BODY_0: %d"%len(sp[("N-BODY_0", "PID")]))
-    print("# of N-BODY_1: %d"%len(sp[("N-BODY_1", "PID")]))
-    print("# of N-BODY_2: %d"%len(sp[("N-BODY_2", "PID")]))
-    print("# of N-BODY_3: %d"%len(sp[("N-BODY_3", "PID")]))
-    print("# of N-BODY_4: %d"%len(sp[("N-BODY_4", "PID")]))
+    mass0 = sp[("N-BODY_0", "MASS")]
+    mass1 = sp[("N-BODY_1", "MASS")]
+    mass2 = sp[("N-BODY_2", "MASS")]
+    mass3 = sp[("N-BODY_3", "MASS")]
+    mass4 = sp[("N-BODY_4", "MASS")]
+
+    print("# of N-BODY_0: %d, total mass: %.2e Msun"%(
+        len(mass0),np.sum(mass0).to("Msun")))
+    print("# of N-BODY_1: %d, total mass: %.2e Msun"%(
+        len(mass1),np.sum(mass1).to("Msun")))
+    print("# of N-BODY_2: %d, total mass: %.2e Msun"%(
+        len(mass2),np.sum(mass2).to("Msun")))
+    print("# of N-BODY_3: %d, total mass: %.2e Msun"%(
+        len(mass3),np.sum(mass3).to("Msun")))
+    print("# of N-BODY_4: %d, total mass: %.2e Msun"%(
+        len(mass4),np.sum(mass4).to("Msun")))
 
 if __name__ == "__main__":
     verify_enclosed_from_z3()
