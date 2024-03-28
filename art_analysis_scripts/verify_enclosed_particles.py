@@ -42,4 +42,4 @@ def verify_enclosed_from_z3(factor=1):
     print("# of N-BODY_4: %d"%len(sp[("N-BODY_4", "PID")]))
 
 if __name__ == "__main__":
-    zoom_particles_from_z3()
+    verify_enclosed_from_z3()
