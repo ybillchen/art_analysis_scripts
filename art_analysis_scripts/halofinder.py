@@ -33,9 +33,14 @@ def rockstar_halofinder(restart=False, base="", num_readers=8,
 
 if __name__ == "__main__":
 
-    if len(sys.argv) != 2:
+    if len(sys.argv) == 1:
         restart = False
+        particle_type = "N-BODY_0"
+    elif len(sys.argv) == 2:
+        restart = bool(int(sys.argv[1]))
+        particle_type = "N-BODY_0"
     else:
         restart = bool(int(sys.argv[1]))
+        particle_type = sys.argv[2]
 
     rockstar_halofinder(restart=restart)
