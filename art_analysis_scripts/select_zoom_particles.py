@@ -45,9 +45,9 @@ def zoom_particles_from_a(hid, a_target, factor=4):
         assume_unique=True, return_indices=True)
     assert len(xy) == len(pids)
 
-    x = snap_first[("N-BODY", "POSITION_X")][y_ind].to("unitary")
-    y = snap_first[("N-BODY", "POSITION_Y")][y_ind].to("unitary")
-    z = snap_first[("N-BODY", "POSITION_Z")][y_ind].to("unitary")
+    x = snap_first[("N-BODY", "POSITION_X")][y_ind].to("unitary").value
+    y = snap_first[("N-BODY", "POSITION_Y")][y_ind].to("unitary").value
+    z = snap_first[("N-BODY", "POSITION_Z")][y_ind].to("unitary").value
 
     print("x range: %.3f - %.3f"%(np.min(x), np.max(x)))
     print("y range: %.3f - %.3f"%(np.min(y), np.max(y)))
