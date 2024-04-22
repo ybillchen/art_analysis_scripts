@@ -22,7 +22,7 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    redshift_target = 0.0
+    a_target = 1.0017
     radius = 500.0  # in kpc
     box = [-radius, -radius, 2*radius, 2*radius]
 
@@ -35,8 +35,8 @@ if __name__ == "__main__":
             prog = list(tree["prog"])
             redshift_prog = np.array(tree["prog", "redshift"])
             idx = np.where(
-                (redshift_prog>redshift_target-0.05)&
-                (redshift_prog<redshift_target+0.05))
+                (redshift_prog>(1/a_target-1)-0.001)&
+                (redshift_prog<(1/a_target-1)+0.001))
             assert len(idx[0]) == 1
             root = prog[idx[0][0]]
 
@@ -78,5 +78,5 @@ if __name__ == "__main__":
             ax0.set_ylabel("y (kpc)")
             ax0.set_aspect("equal")
 
-            plt.savefig("analysis/2e12/prj_z%g_%d.png"%(redshift_target,hid), 
+            plt.savefig("analysis/2e12/prj_a%.4f_%d.png"%(a_target,hid), 
                 bbox_inches ="tight", pad_inches=0.05)
