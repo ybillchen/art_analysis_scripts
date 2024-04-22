@@ -31,6 +31,7 @@ if __name__ == "__main__":
             tree["mass"] < a.quan(1.5e12, "Msun"):
             root = tree.find_root()
             hid = root["uid"]
+            print("galaxy id: %d"%hid)
 
             prog = list(tree["prog"])
             redshift_prog = np.array(tree["prog", "redshift"])
