@@ -43,4 +43,4 @@ if __name__ == "__main__":
         restart = bool(int(sys.argv[1]))
         particle_type = sys.argv[2]
 
-    rockstar_halofinder(restart=restart)
+    rockstar_halofinder(restart=restart, particle_type=particle_type)
