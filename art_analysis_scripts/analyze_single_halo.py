@@ -17,12 +17,12 @@ import prj_plotter as pp
 
 if __name__ == "__main__":
     # assume that this script is executed in run/
-    # snap_last = yt.load("out/snap_a1.0017.art")
-    snap_last = yt.load("out/snap_a0.2501.art")
+    a_target = 0.2501
+
+    snap_last = yt.load("out/snap_a%.4f.art"%a_target)
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    a_target = 0.2501
     radius = 500.0  # in kpc
     box = [-radius, -radius, 2*radius, 2*radius]
 
@@ -41,6 +41,7 @@ if __name__ == "__main__":
             root = prog[idx[0][0]]
 
             if root['pid'] >= 0: # must be the central halo
+                print("not the central halo. central: %d"%root['pid'])
                 continue
 
             redshift = root['redshift']
