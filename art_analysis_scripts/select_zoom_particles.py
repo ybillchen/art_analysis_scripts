@@ -5,7 +5,6 @@ All rights reserved.
 """
 
 import numpy as np
-from scipy.spatial import ConvexHull
 
 import yt
 # yt.enable_parallelism()
@@ -57,10 +56,6 @@ def zoom_particles_from_a(hid, a_target, factor=4):
     out = np.column_stack([x,y,z])
     np.savetxt("analysis/2e12/zoom_particles_from_a%.4f_%d.txt"%(a_target,hid), 
         out, fmt="%.6f %.6f %.6f")
-
-    hull = ConvexHull(out)
-    np.savetxt("analysis/2e12/zoom_particles_simplices_from_a%.4f_%d.txt"%(a_target,hid), 
-        out[hull.simplices], fmt="%.6f %.6f %.6f")
 
 if __name__ == "__main__":
     hid = 1117028
