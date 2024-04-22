@@ -17,8 +17,8 @@ import prj_plotter as pp
 
 if __name__ == "__main__":
     # assume that this script is executed in run/
-    snap_last = yt.load("out/snap_a1.0017.art")
-    # snap_last = yt.load("out/snap_a0.2501.art")
+    # snap_last = yt.load("out/snap_a1.0017.art")
+    snap_last = yt.load("out/snap_a0.2501.art")
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
