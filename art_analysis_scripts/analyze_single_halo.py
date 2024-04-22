@@ -22,7 +22,7 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    a_target = 1.0017
+    a_target = 0.2501
     radius = 500.0  # in kpc
     box = [-radius, -radius, 2*radius, 2*radius]
 
