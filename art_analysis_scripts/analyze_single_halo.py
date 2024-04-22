@@ -27,8 +27,8 @@ if __name__ == "__main__":
     box = [-radius, -radius, 2*radius, 2*radius]
 
     for tree in ytree.parallel_trees(trees, save_every=False):
-        if tree["mass"] > a.quan(4.5e12, "Msun") and \
-            tree["mass"] < a.quan(5.5e12, "Msun"):
+        if tree["mass"] > a.quan(3.5e12, "Msun") and \
+            tree["mass"] < a.quan(2.5e12, "Msun"):
             root = tree.find_root()
             hid = root["uid"]
 
@@ -78,5 +78,5 @@ if __name__ == "__main__":
             ax0.set_ylabel("y (kpc)")
             ax0.set_aspect("equal")
 
-            plt.savefig("analysis/5e12/prj_a%.4f_%d.png"%(a_target,hid), 
+            plt.savefig("analysis/3e12/prj_a%.4f_%d.png"%(a_target,hid), 
                 bbox_inches ="tight", pad_inches=0.05)

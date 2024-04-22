@@ -10,7 +10,7 @@ import yt
 # yt.enable_parallelism()
 import ytree
 
-def zoom_particles_from_z3(hid, factor=4):
+def zoom_particles_from_a(hid, a_target, factor=4):
     snap = yt.load("out/snap_a0.2510.art")
     snap_first = yt.load("out/snap_a0.0100.art").all_data()
     pids_first = snap_first[("N-BODY", "PID")].astype(int)
@@ -23,7 +23,9 @@ def zoom_particles_from_z3(hid, factor=4):
 
     prog = list(tree["prog"])
     redshift_prog = np.array(tree["prog", "redshift"])
-    idx = np.where((redshift_prog>2.95)&(redshift_prog<3.05))
+    idx = np.where(
+                (redshift_prog>(1/a_target-1)-0.001)&
+                (redshift_prog<(1/a_target-1)+0.001))
     assert len(idx[0]) == 1
     node = prog[idx[0][0]]
 
@@ -51,9 +53,10 @@ def zoom_particles_from_z3(hid, factor=4):
     print("z range: %.3f - %.3f"%(np.min(z), np.max(z)))
 
     out = np.column_stack([x,y,z])
-    np.savetxt("analysis/2e12/zoom_particles_from_z3_%d.txt"%hid, out, 
-        fmt="%.6f %.6f %.6f")
+    np.savetxt("analysis/2e12/zoom_particles_from_a%.4f_%d.txt"%(a_target,hid), 
+        out, fmt="%.6f %.6f %.6f")
 
 if __name__ == "__main__":
     hid = 1135399
-    zoom_particles_from_z3(hid)
+    a_target = 0.2501
+    zoom_particles_from_a(hid, a_target=a_target)
