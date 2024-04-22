@@ -17,23 +17,26 @@ import prj_plotter as pp
 
 if __name__ == "__main__":
     # assume that this script is executed in run/
-    # snap_last = yt.load("out/snap_a1.0017.art")
-    snap_last = yt.load("out/snap_a0.2510.art")
+    snap_last = yt.load("out/snap_a1.0017.art")
+    # snap_last = yt.load("out/snap_a0.2501.art")
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
+    redshift_target = 0.0
     radius = 500.0  # in kpc
     box = [-radius, -radius, 2*radius, 2*radius]
 
     for tree in ytree.parallel_trees(trees, save_every=False):
-        if tree["mass"] > a.quan(1.8e12, "Msun") and \
-            tree["mass"] < a.quan(2.2e12, "Msun"):
+        if tree["mass"] > a.quan(1.5e12, "Msun") and \
+            tree["mass"] < a.quan(2.5e12, "Msun"):
             root = tree.find_root()
             hid = root["uid"]
 
             prog = list(tree["prog"])
             redshift_prog = np.array(tree["prog", "redshift"])
-            idx = np.where((redshift_prog>2.95)&(redshift_prog<3.05))
+            idx = np.where(
+                (redshift_prog>redshift_target-0.05)&
+                (redshift_prog<redshift_target+0.05))
             assert len(idx[0]) == 1
             root = prog[idx[0][0]]
 
@@ -75,5 +78,5 @@ if __name__ == "__main__":
             ax0.set_ylabel("y (kpc)")
             ax0.set_aspect("equal")
 
-            plt.savefig("analysis/2e12/prj_z3_%d.png"%hid, 
+            plt.savefig("analysis/2e12/prj_z%g_%d.png"%(redshift_target,hid), 
                 bbox_inches ="tight", pad_inches=0.05)
