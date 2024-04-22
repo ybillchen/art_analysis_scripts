@@ -57,6 +57,6 @@ def zoom_particles_from_a(hid, a_target, factor=4):
         out, fmt="%.6f %.6f %.6f")
 
 if __name__ == "__main__":
-    hid = 1135399
+    hid = 1117028
     a_target = 0.2501
     zoom_particles_from_a(hid, a_target=a_target)
