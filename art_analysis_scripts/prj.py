@@ -69,16 +69,19 @@ if __name__ == "__main__":
     y0 = np.median(d["N-BODY_0", "POSITION_Y"].to("code_length").value)
     z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
 
+
+    fig, ax0, ax1 = plt.subplots(1,2)
+
     mesh, region = prj(ds, [x0, y0, z0], 4.0, level=8, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
-    print(mesh)
-
-    fig, ax0 = plt.subplots()
-
     ax0.imshow(np.log10(mesh), origin="lower", extent=[region[0],region[3],region[1],region[4]])
+    mesh, region = prj(ds, [x0, y0, z0], 4.0, level=8, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
+    ax1.imshow(np.log10(mesh), origin="lower", extent=[region[0],region[3],region[2],region[5]])
 
     ax0.set_xlabel(r"x (code_length)")
     ax0.set_ylabel(r"y (code_length)")
+    ax1.set_ylabel(r"z (code_length)")
     ax0.set_aspect("equal")
+    ax1.set_aspect("equal")
 
     plt.savefig("analysis/prj.png", bbox_inches ="tight", pad_inches=0.05)
 
