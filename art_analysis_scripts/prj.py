@@ -69,6 +69,8 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
 
 if __name__ == "__main__":
     
+    import matplotlib
+    matplotlib.use("agg")
     import matplotlib.pyplot as plt
     import yt
 
@@ -79,14 +81,14 @@ if __name__ == "__main__":
     # z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
 
     x0 = 127.25
-    y0 = 128.75
-    z0 = 128.5
+    y0 = 128.8125
+    z0 = 128.5625
 
     fig, [ax0, ax1] = plt.subplots(1,2)
 
-    mesh, region = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], 0.5, level=11, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     ax0.imshow(np.log10(mesh.T), origin="lower", extent=[region[0],region[3],region[1],region[4]])
-    mesh, region = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], 0.5, level=11, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
     ax1.imshow(np.log10(mesh.T), origin="lower", extent=[region[0],region[3],region[2],region[5]])
 
     ax0.set_xlabel(r"x (code_length)")
@@ -96,5 +98,6 @@ if __name__ == "__main__":
     ax0.set_aspect("equal")
     ax1.set_aspect("equal")
 
+    plt.tight_layout()
     plt.savefig("analysis/prj.png", bbox_inches ="tight", pad_inches=0.05, dpi=300)
 
