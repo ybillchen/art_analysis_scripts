@@ -65,12 +65,11 @@ if __name__ == "__main__":
 
     ds = yt.load("out/snap_a0.0862.art")
     d = ds.all_data()
-    idx = np.argmax(d["N-BODY_0", "POTENTIAL"])
-    x0 = d["N-BODY_0", "POSITION_X"][idx].to("code_length").value
-    y0 = d["N-BODY_0", "POSITION_Y"][idx].to("code_length").value
-    z0 = d["N-BODY_0", "POSITION_Z"][idx].to("code_length").value
+    x0 = np.median(d["N-BODY_0", "POSITION_X"][idx].to("code_length").value)
+    y0 = np.median(d["N-BODY_0", "POSITION_Y"][idx].to("code_length").value)
+    z0 = np.median(d["N-BODY_0", "POSITION_Z"][idx].to("code_length").value)
 
-    mesh = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
+    mesh = prj(ds, [x0, y0, z0], 4.0, level=8, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     print(mesh)
 
     fig, ax0 = plt.subplots()
