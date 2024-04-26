@@ -7,7 +7,7 @@ All rights reserved.
 import numpy as np
 import tqdm
 
-def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**2"):
+def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3"):
     """
     generate quadtree-like projection for gas
     effective volume weighted projection
@@ -69,7 +69,7 @@ if __name__ == "__main__":
     y0 = np.median(d["N-BODY_0", "POSITION_Y"].to("code_length").value)
     z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
 
-    mesh = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**2")
+    mesh = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
 
     fig, ax0 = plt.subplots()
 
