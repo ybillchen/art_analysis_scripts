@@ -70,6 +70,7 @@ if __name__ == "__main__":
     z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
 
     mesh = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
+    print(mesh)
 
     fig, ax0 = plt.subplots()
 
