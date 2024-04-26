@@ -65,9 +65,9 @@ if __name__ == "__main__":
 
     ds = yt.load("out/snap_a0.0862.art")
     d = ds.all_data()
-    x0 = d["N-BODY_0", "POSITION_X"].to("code_length").median().value
-    y0 = d["N-BODY_0", "POSITION_Y"].to("code_length").median().value
-    z0 = d["N-BODY_0", "POSITION_Z"].to("code_length").median().value
+    x0 = np.median(d["N-BODY_0", "POSITION_X"].to("code_length").value)
+    y0 = np.median(d["N-BODY_0", "POSITION_Y"].to("code_length").value)
+    z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
 
     mesh = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**2")
 
