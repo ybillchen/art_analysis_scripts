@@ -43,16 +43,16 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     for i in tqdm(range(len(x))):
         if dx[i] <= dx_level:
             # the cell is within a pixel
-            ix = np.floor(x[i]/dx_level).astype(int)
-            iy = np.floor(y[i]/dx_level).astype(int)
+            ix = np.floor(x[i]/dx_level-N_left).astype(int)
+            iy = np.floor(y[i]/dx_level-N_left).astype(int)
             normalize = dx[i]**3 / (N*dx_level**3) # volume weighted
             mesh[ix, iy] += z[i] * normalize
         else:
             # the cell covers many pixels
-            ix0 = np.rint((x[i]-dx[i]/2)/dx_level).astype(int)
-            iy0 = np.rint((y[i]-dx[i]/2)/dx_level).astype(int)
-            ix1 = np.rint((x[i]+dx[i]/2)/dx_level).astype(int)
-            iy1 = np.rint((y[i]+dx[i]/2)/dx_level).astype(int)
+            ix0 = np.rint((x[i]-dx[i]/2)/dx_level-N_left).astype(int)
+            iy0 = np.rint((y[i]-dx[i]/2)/dx_level-N_left).astype(int)
+            ix1 = np.rint((x[i]+dx[i]/2)/dx_level-N_left).astype(int)
+            iy1 = np.rint((y[i]+dx[i]/2)/dx_level-N_left).astype(int)
             normalize = dx[i] * dx_level**2 / (N*dx_level**3) # volume weighted
             mesh[ix0:ix1, iy0:iy1] += z[i] * normalize
 
