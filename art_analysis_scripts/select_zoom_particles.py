@@ -30,7 +30,7 @@ def zoom_particles_from_a(hid, a_target, factor=4):
     assert len(idx[0]) == 1
     node = prog[idx[0][0]]
 
-    redshift = node['redshift']
+    redshift = node["redshift"]
     scale_a = 1.0/(1.0+redshift)
 
     # in ytree, units are always comoving 
