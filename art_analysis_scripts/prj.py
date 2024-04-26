@@ -74,7 +74,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import yt
 
-    ds = yt.load("out/snap_a0.0862.art")
+    ds = yt.load("out/snap_a0.0861.art")
     # d = ds.all_data()
     # x0 = np.median(d["N-BODY_0", "POSITION_X"].to("code_length").value)
     # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to("code_length").value)
