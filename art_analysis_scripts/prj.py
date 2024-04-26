@@ -84,19 +84,26 @@ if __name__ == "__main__":
     y0 = 128.8125
     z0 = 128.5625
 
+    unit = "kpc"
+
     fig, [ax0, ax1] = plt.subplots(1,2)
 
+    # gas
     mesh, region = prj(ds, [x0, y0, z0], 0.25, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     ax0.imshow(np.log10(mesh.T), origin="lower", 
-        extent=[region[0].to("kpc"),region[3].to("kpc"),region[1].to("kpc"),region[4].to("kpc")])
+        extent=[region[0].to(unit),region[3].to(unit),region[1].to(unit),region[4].to(unit)])
     mesh, region = prj(ds, [x0, y0, z0], 0.25, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
     ax1.imshow(np.log10(mesh.T), origin="lower", 
-        extent=[region[0].to("kpc"),region[3].to("kpc"),region[2].to("kpc"),region[5].to("kpc")])
+        extent=[region[0].to(unit),region[3].to(unit),region[2].to(unit),region[5].to(unit)])
 
-    ax0.set_xlabel(r"x (kpc)")
-    ax1.set_xlabel(r"x (kpc)")
-    ax0.set_ylabel(r"y (kpc)")
-    ax1.set_ylabel(r"z (kpc)")
+    # stars
+    d = ds.box(region[:3], region[3:])
+    ax0.scatter(d["STAR", "POSITION_X"].to(unit),d["STAR", "POSITION_X"].to(unit), fc='w', ec='none', s=10)
+
+    ax0.set_xlabel(r"x (%s)"%unit)
+    ax1.set_xlabel(r"x (%s)"%unit)
+    ax0.set_ylabel(r"y (%s)"%unit)
+    ax1.set_ylabel(r"z (%s)"%unit)
     ax0.set_aspect("equal")
     ax1.set_aspect("equal")
 
