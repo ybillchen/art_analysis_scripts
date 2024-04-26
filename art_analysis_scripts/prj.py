@@ -4,7 +4,7 @@ Copyright (c) 2024 Yingtian Chen
 All rights reserved.
 """
 
-import numpy as 
+import numpy as np
 import tqdm
 
 def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**2"):
