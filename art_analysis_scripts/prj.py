@@ -17,20 +17,29 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
 
     dx_level = 2**-level # in code_length
 
-    N_left = np.floor((center[0]-size/2)/dx_level)
-    N_right = np.ceil((center[0]+size/2)/dx_level)
+    N0 = {}
+    N0["x"] = np.floor((center[0]-size/2)/dx_level)
+    N0["y"] = np.floor((center[1]-size/2)/dx_level)
+    N0["z"] = np.floor((center[2]-size/2)/dx_level)
+    N1 = {}
+    N1["x"] = np.ceil((center[0]+size/2)/dx_level)
+    N1["y"] = np.ceil((center[1]+size/2)/dx_level)
+    N1["z"] = np.ceil((center[2]+size/2)/dx_level)
 
-    N = int(N_right-N_left)
+    N = int(np.max((N1["x"]-N0["x"],N1["y"]-N0["y"],N1["z"]-N0["z"])))
     mesh = np.zeros((N, N)) # pixel mesh
+    N1["x"] = N0["x"] + N # update to the longest side
+    N1["y"] = N0["y"] + N
+    N1["z"] = N0["z"] + N
 
     # the smallest integer region that covers the box
     region = [
-        N_left*dx_level*ds.units.code_length,
-        N_left*dx_level*ds.units.code_length,
-        N_left*dx_level*ds.units.code_length,
-        N_right*dx_level*ds.units.code_length,
-        N_right*dx_level*ds.units.code_length,
-        N_right*dx_level*ds.units.code_length]
+        N0["x"]*dx_level*ds.units.code_length,
+        N0["y"]*dx_level*ds.units.code_length,
+        N0["z"]*dx_level*ds.units.code_length,
+        N1["x"]*dx_level*ds.units.code_length,
+        N1["y"]*dx_level*ds.units.code_length,
+        N1["z"]*dx_level*ds.units.code_length]
 
     d = ds.box(region[:3], region[3:])
 
@@ -43,16 +52,16 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     for i in tqdm(range(len(x))):
         if dx[i] <= dx_level:
             # the cell is within a pixel
-            ix = np.floor(x[i]/dx_level-N_left).astype(int)
-            iy = np.floor(y[i]/dx_level-N_left).astype(int)
+            ix = np.floor(x[i]/dx_level-N0[prj_x]).astype(int)
+            iy = np.floor(y[i]/dx_level-N0[prj_y]).astype(int)
             normalize = dx[i]**3 / (N*dx_level**3) # volume weighted
             mesh[ix, iy] += z[i] * normalize
         else:
             # the cell covers many pixels
-            ix0 = np.rint((x[i]-dx[i]/2)/dx_level-N_left).astype(int)
-            iy0 = np.rint((y[i]-dx[i]/2)/dx_level-N_left).astype(int)
-            ix1 = np.rint((x[i]+dx[i]/2)/dx_level-N_left).astype(int)
-            iy1 = np.rint((y[i]+dx[i]/2)/dx_level-N_left).astype(int)
+            ix0 = np.rint((x[i]-dx[i]/2)/dx_level-N0[prj_x]).astype(int)
+            iy0 = np.rint((y[i]-dx[i]/2)/dx_level-N0[prj_y]).astype(int)
+            ix1 = np.rint((x[i]+dx[i]/2)/dx_level-N0[prj_x]).astype(int)
+            iy1 = np.rint((y[i]+dx[i]/2)/dx_level-N0[prj_y]).astype(int)
             normalize = dx[i] * dx_level**2 / (N*dx_level**3) # volume weighted
             mesh[ix0:ix1, iy0:iy1] += z[i] * normalize
 
