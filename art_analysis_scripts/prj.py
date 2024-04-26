@@ -98,8 +98,10 @@ if __name__ == "__main__":
 
     # stars
     d = ds.box(region[:3], region[3:])
-    ax0.scatter(d["STAR", "POSITION_X"].to(unit),d["STAR", "POSITION_Y"].to(unit), fc='w', ec='none', s=10)
-    ax1.scatter(d["STAR", "POSITION_X"].to(unit),d["STAR", "POSITION_Z"].to(unit), fc='w', ec='none', s=10)
+    ax0.scatter(d["STAR", "POSITION_X"].to(unit),d["STAR", "POSITION_Y"].to(unit), 
+        fc='w', ec='none', s=d["STAR", "MASS"].to("Msun")/1e5)
+    ax1.scatter(d["STAR", "POSITION_X"].to(unit),d["STAR", "POSITION_Z"].to(unit), 
+        fc='w', ec='none', s=d["STAR", "MASS"].to("Msun")/1e5)
 
     ax0.set_xlabel(r"x (%s)"%unit)
     ax1.set_xlabel(r"x (%s)"%unit)
