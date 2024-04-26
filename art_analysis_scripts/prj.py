@@ -89,10 +89,10 @@ if __name__ == "__main__":
     fig, [ax0, ax1] = plt.subplots(1,2)
 
     # gas
-    mesh, region = prj(ds, [x0, y0, z0], 0.25, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     ax0.imshow(np.log10(mesh.T), origin="lower", 
         extent=[region[0].to(unit),region[3].to(unit),region[1].to(unit),region[4].to(unit)])
-    mesh, region = prj(ds, [x0, y0, z0], 0.25, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], 1.0, level=10, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
     ax1.imshow(np.log10(mesh.T), origin="lower", 
         extent=[region[0].to(unit),region[3].to(unit),region[2].to(unit),region[5].to(unit)])
 
