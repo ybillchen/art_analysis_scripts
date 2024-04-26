@@ -87,14 +87,16 @@ if __name__ == "__main__":
     fig, [ax0, ax1] = plt.subplots(1,2)
 
     mesh, region = prj(ds, [x0, y0, z0], 0.25, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
-    ax0.imshow(np.log10(mesh.T), origin="lower", extent=[region[0],region[3],region[1],region[4]])
+    ax0.imshow(np.log10(mesh.T), origin="lower", 
+        extent=[region[0].to("kpc"),region[3].to("kpc"),region[1].to("kpc"),region[4].to("kpc")])
     mesh, region = prj(ds, [x0, y0, z0], 0.25, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
-    ax1.imshow(np.log10(mesh.T), origin="lower", extent=[region[0],region[3],region[2],region[5]])
+    ax1.imshow(np.log10(mesh.T), origin="lower", 
+        extent=[region[0].to("kpc"),region[3].to("kpc"),region[2].to("kpc"),region[5].to("kpc")])
 
-    ax0.set_xlabel(r"x (code_length)")
-    ax1.set_xlabel(r"x (code_length)")
-    ax0.set_ylabel(r"y (code_length)")
-    ax1.set_ylabel(r"z (code_length)")
+    ax0.set_xlabel(r"x (kpc)")
+    ax1.set_xlabel(r"x (kpc)")
+    ax0.set_ylabel(r"y (kpc)")
+    ax1.set_ylabel(r"z (kpc)")
     ax0.set_aspect("equal")
     ax1.set_aspect("equal")
 
