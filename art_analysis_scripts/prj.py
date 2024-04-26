@@ -56,7 +56,7 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
             normalize = dx[i] * dx_level**2 / (N*dx_level**3) # volume weighted
             mesh[ix0:ix1, iy0:iy1] += z[i] * normalize
 
-    return mesh
+    return mesh, region
 
 if __name__ == "__main__":
     
@@ -65,16 +65,16 @@ if __name__ == "__main__":
 
     ds = yt.load("out/snap_a0.0862.art")
     d = ds.all_data()
-    x0 = np.median(d["N-BODY_0", "POSITION_X"][idx].to("code_length").value)
-    y0 = np.median(d["N-BODY_0", "POSITION_Y"][idx].to("code_length").value)
-    z0 = np.median(d["N-BODY_0", "POSITION_Z"][idx].to("code_length").value)
+    x0 = np.median(d["N-BODY_0", "POSITION_X"].to("code_length").value)
+    y0 = np.median(d["N-BODY_0", "POSITION_Y"].to("code_length").value)
+    z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
 
-    mesh = prj(ds, [x0, y0, z0], 4.0, level=8, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], 4.0, level=8, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     print(mesh)
 
     fig, ax0 = plt.subplots()
 
-    ax0.imshow(np.log10(mesh), origin="lower")
+    ax0.imshow(np.log10(mesh), origin="lower", extent=[region[0],region[3],region[1],region[4]])
 
     ax0.set_xlabel(r"x (code_length)")
     ax0.set_ylabel(r"y (code_length)")
