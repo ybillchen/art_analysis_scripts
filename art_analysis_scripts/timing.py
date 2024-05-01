@@ -43,7 +43,7 @@ def check_timing(path_to_log):
 
     d_run_time = total_run_time[1:] - total_run_time[:-1]
 
-    t_per_runtime = (1e6/3600) * dt / d_run_time # Myr per hr
+    t_per_runtime = (3600/1e6) * dt / d_run_time # Myr per hr
 
     print(t_per_runtime)
 
