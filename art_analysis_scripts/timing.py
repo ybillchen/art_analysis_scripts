@@ -51,4 +51,4 @@ if __name__ == '__main__':
     elif len(sys.argv) == 2:
         path_to_log = sys.argv[1]
 
-    check_timing(path)
+    check_timing(path_to_log)
