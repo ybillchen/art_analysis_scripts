@@ -31,6 +31,7 @@ def check_timing(path_to_log):
     step = []
     t = []
     dt = []
+    a = []
     for line in data:
         x = line.split(" ")
         if x[0] == "#" or x[0] == "":
@@ -39,18 +40,20 @@ def check_timing(path_to_log):
         step.append(int(x[0]))
         t.append(float(x[1]))
         dt.append(float(x[2]))
+        a.append(float(x[3]))
 
     step = np.array(step)
     t = np.array(t)
     dt = np.array(dt)
+    a = np.array(a)
 
     d_run_time = total_run_time[1:] - total_run_time[:-1]
 
     t_per_runtime = (3600/1e6) * dt / d_run_time # Myr per hr
 
     for i in range(len(step)):
-        print("step %d, t = %.1f Myr, dt/druntime = %.1f Myr/hr"%(
-            step[i], t[i]/1e6, t_per_runtime[i]))
+        print("step %d, t = %.1f Myr, a = %.4f, dt/druntime = %.1f Myr/hr"%(
+            step[i], t[i]/1e6, a[i], t_per_runtime[i]))
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
