@@ -4,7 +4,9 @@ Copyright (c) 2024 Yingtian Chen
 All rights reserved.
 """
 
+import sys
 import datetime
+
 import numpy as np
 
 def check_timing(path):
