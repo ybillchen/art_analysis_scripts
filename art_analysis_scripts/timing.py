@@ -49,6 +49,9 @@ def check_timing(path_to_log):
 
     d_run_time = total_run_time[1:] - total_run_time[:-1]
 
+    mask = d_run_time <= 0 # this happens in restarts
+    d_run_time[mask] = total_run_time[1:][mask]
+
     t_per_runtime = (3600/1e6) * dt / d_run_time # Myr per hr
 
     for i in range(len(step)):
