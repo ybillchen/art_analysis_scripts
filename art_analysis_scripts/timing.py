@@ -49,7 +49,7 @@ def check_timing(path_to_log):
     t_per_runtime = (3600/1e6) * dt / d_run_time # Myr per hr
 
     for i in range(len(step)):
-        print("step %d, time %.1f Myr, time/runtime %.1f Myr/hr"%(
+        print("step %d, t = %.1f Myr, dt/druntime = %.1f Myr/hr"%(
             step[i], t[i]/1e6, t_per_runtime[i]))
 
 if __name__ == '__main__':
