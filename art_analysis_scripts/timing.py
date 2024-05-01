@@ -11,7 +11,7 @@ import numpy as np
 
 def check_timing(path):
     f = open(path)
-    data = f.read().split("")
+    data = f.read().split("\n")
     f.close()
 
     step = []
