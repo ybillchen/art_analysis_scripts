@@ -14,7 +14,7 @@ def check_timing(path_to_log):
     data = f.read().split("\n")
     f.close()
     step = []
-    total_run_time = []
+    total_run_time = [0]
     for line in data:
         x = line.split(" ")
         if x[0] == "#" or x[0] == "":
@@ -41,7 +41,9 @@ def check_timing(path_to_log):
     step = np.array(step)
     dt = np.array(dt)
 
-    t_per_runtime = dt / total_run_time # yr per s
+    d_run_time = total_run_time[1:] - total_run_time[:-1]
+
+    t_per_runtime = dt / d_run_time # yr per s
 
     print(t_per_runtime)
 
