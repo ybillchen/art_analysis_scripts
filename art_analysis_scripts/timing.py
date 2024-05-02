@@ -60,7 +60,7 @@ def check_timing(basepath, simple=False):
         print(a)
         print(runtime_per_t)
         return
-        
+
     for i in range(len(step)):
         print("step %d, t = %.1f Myr, a = %.4f, druntime/dt = %.3f hr/Myr"%(
             step[i], t[i]/1e6, a[i], runtime_per_t[i]))
@@ -74,6 +74,6 @@ if __name__ == '__main__':
         simple = False
     elif len(sys.argv) == 3:
         basepath = sys.argv[1]
-        simple = bool(int(sys.argv[1]))
+        simple = bool(int(sys.argv[2]))
 
     check_timing(basepath, simple)
