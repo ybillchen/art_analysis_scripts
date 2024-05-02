@@ -9,8 +9,8 @@ import datetime
 
 import numpy as np
 
-def check_timing(path_to_log):
-    f = open(path_to_log+"timing.000.log")
+def check_timing(basepath):
+    f = open(basepath+"run/log/timing.000.log")
     data = f.read().split("\n")
     f.close()
     step = []
@@ -52,16 +52,16 @@ def check_timing(path_to_log):
     mask = d_run_time <= 0 # this happens in restarts
     d_run_time[mask] = total_run_time[1:][mask]
 
-    t_per_runtime = (3600/1e6) * dt / d_run_time # Myr per hr
+    runtime_per_t = (1e6/3600) * d_run_time / dt # hr per Myr
 
     for i in range(len(step)):
-        print("step %d, t = %.1f Myr, a = %.4f, dt/druntime = %.1f Myr/hr"%(
-            step[i], t[i]/1e6, a[i], t_per_runtime[i]))
+        print("step %d, t = %.1f Myr, a = %.4f, druntime/dt = %.3f hr/Myr"%(
+            step[i], t[i]/1e6, a[i], runtime_per_t[i]))
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        path_to_log = "log/"
+        basepath = ""
     elif len(sys.argv) == 2:
-        path_to_log = sys.argv[1]
+        basepath = sys.argv[1]
 
-    check_timing(path_to_log)
+    check_timing(basepath)
