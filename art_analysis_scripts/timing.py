@@ -55,10 +55,26 @@ def check_timing(basepath, simple=False):
     runtime_per_t = (1e6/3600) * d_run_time / dt # hr per Myr
 
     if simple:
-        print(step)
-        print(t/1e6)
-        print(a)
-        print(runtime_per_t)
+        s0 = "["
+        s1 = "["
+        s2 = "["
+        s3 = "["
+
+        for i in range(len(step)):
+            s0 += "%d,"%step[i]
+            s1 += "%.1f,"%(t[i]/1e6)
+            s2 += "%.4f,"%a[i]
+            s3 += "%.3f,"%runtime_per_t[i]
+
+        s0 += "]"
+        s1 += "]"
+        s2 += "]"
+        s3 += "]"
+
+        print(s0)
+        print(s1)
+        print(s2)
+        print(s3)
         return
 
     for i in range(len(step)):
