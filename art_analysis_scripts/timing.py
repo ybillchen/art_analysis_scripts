@@ -25,7 +25,7 @@ def check_timing(basepath):
     step = np.array(step)
     total_run_time = np.array(total_run_time)
 
-    f = open(path_to_log+"times.log")
+    f = open(basepath+"run/log/times.log")
     data = f.read().split("\n")
     f.close()
     step = []
