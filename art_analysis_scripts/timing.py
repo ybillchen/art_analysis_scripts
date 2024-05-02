@@ -9,7 +9,7 @@ import datetime
 
 import numpy as np
 
-def check_timing(basepath):
+def check_timing(basepath, simple=False):
     f = open(basepath+"run/log/timing.000.log")
     data = f.read().split("\n")
     f.close()
@@ -54,6 +54,13 @@ def check_timing(basepath):
 
     runtime_per_t = (1e6/3600) * d_run_time / dt # hr per Myr
 
+    if simple:
+        print(step)
+        print(t/1e6)
+        print(a)
+        print(runtime_per_t)
+        return
+        
     for i in range(len(step)):
         print("step %d, t = %.1f Myr, a = %.4f, druntime/dt = %.3f hr/Myr"%(
             step[i], t[i]/1e6, a[i], runtime_per_t[i]))
@@ -61,7 +68,12 @@ def check_timing(basepath):
 if __name__ == '__main__':
     if len(sys.argv) == 1:
         basepath = ""
+        simple = False
     elif len(sys.argv) == 2:
         basepath = sys.argv[1]
+        simple = False
+    elif len(sys.argv) == 3:
+        basepath = sys.argv[1]
+        simple = bool(int(sys.argv[1]))
 
-    check_timing(basepath)
+    check_timing(basepath, simple)
