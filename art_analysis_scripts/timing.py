@@ -66,7 +66,7 @@ def check_timing(basepath, simple=False):
             s1 += "%.1f,"%(t[i]/1e6)
             s2 += "%.4f,"%a[i]
             s3 += "%.3f,"%runtime_per_t[i]
-            s4 += "%.3f,"%total_run_time[i+1]/3600
+            s4 += "%.3f,"%(total_run_time[i+1]/3600)
 
         s0 += "]"
         s1 += "]"
