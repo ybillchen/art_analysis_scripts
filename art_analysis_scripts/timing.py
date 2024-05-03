@@ -59,27 +59,31 @@ def check_timing(basepath, simple=False):
         s1 = "t = ["
         s2 = "a = ["
         s3 = "runtime_per_t = ["
+        s4 = "runtime = ["
 
         for i in range(len(step)):
             s0 += "%d,"%step[i]
             s1 += "%.1f,"%(t[i]/1e6)
             s2 += "%.4f,"%a[i]
             s3 += "%.3f,"%runtime_per_t[i]
+            s4 += "%.3f,"%total_run_time[i+1]
 
         s0 += "]"
         s1 += "]"
         s2 += "]"
         s3 += "]"
+        s4 += "]"
 
         print(s0)
         print(s1)
         print(s2)
         print(s3)
+        print(s4)
         return
 
     for i in range(len(step)):
-        print("step %d, t = %.1f Myr, a = %.4f, druntime/dt = %.3f hr/Myr"%(
-            step[i], t[i]/1e6, a[i], runtime_per_t[i]))
+        print("step %d, t = %.1f Myr, a = %.4f, runtime = %.3f hr, druntime/dt = %.3f hr/Myr"%(
+            step[i], t[i]/1e6, a[i], total_run_time[i+1], runtime_per_t[i]))
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
