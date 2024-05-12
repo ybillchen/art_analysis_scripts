@@ -17,6 +17,7 @@ def archive_files(args):
         print(f'{tar_filename} already exists. Skipping...')
         return
     
+    print(f'Creating {tar_filename}')
     with tarfile.open(tar_filename, 'w') as tar:
         for file in files:
             tar.add(file, arcname=os.path.basename(file))
