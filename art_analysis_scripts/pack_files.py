@@ -24,10 +24,8 @@ def archive_files(args):
     print(f'Created {tar_filename}')
 
 def find_files():
-    # Dictionary to hold the grouping of files by identifier
     file_dict = {}
     
-    # Walk through the directory structure
     for root, dirs, files in os.walk(base_dir):
         for file in files:
             if 'out' in root.split(os.sep) and file.startswith('snap_a'):
@@ -42,12 +40,11 @@ def find_files():
 
 def main(args):
     file_groups = find_files()
-    print('Number of tar files to create: %d'%len(file_groups))
-    
-    # Prepare arguments for each process
     process_args = [(identifier, files, args.check_exists) for identifier, files in file_groups]
     
-    # Using a pool of workers to process the archiving in parallel
+    print('Number of tar files to create: %d'%len(file_groups))
+    print('Number of processes: %d'%args.max_processes)
+
     with Pool(processes=args.max_processes) as pool:
         pool.map(archive_files, process_args)
 
