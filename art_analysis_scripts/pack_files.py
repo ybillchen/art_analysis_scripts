@@ -10,7 +10,7 @@ base_dir = os.environ['SCRATCH']
 def archive_files(args):
     identifier, files, check_exists = args
     target_dir = os.path.dirname(files[0])
-    tar_filename = os.path.join(target_dir, f'snap_a{identifier}.tar')
+    tar_filename = os.path.join(target_dir, f'{identifier}.tar')
     
     # Check if tar file exists and skip if option is set
     if check_exists and os.path.exists(tar_filename):
@@ -23,7 +23,7 @@ def archive_files(args):
     print(f'Created {tar_filename}')
 
 def find_files():
-    # Dictionary to hold the grouping of files by identifier [A]
+    # Dictionary to hold the grouping of files by identifier
     file_dict = {}
     
     # Walk through the directory structure
@@ -41,6 +41,7 @@ def find_files():
 
 def main(args):
     file_groups = find_files()
+    print('Number of tar files to create: %d'%len(file_groups))
     
     # Prepare arguments for each process
     process_args = [(identifier, files, args.check_exists) for identifier, files in file_groups]
