@@ -14,9 +14,9 @@ def print_sfh(basepath, simple=False):
     ts = d[:,4]
     ms_star = d[:,7]
 
-    print("steps = ", repr(steps))
-    print("ts = ", repr(ts))
-    print("ts = ", repr(ms_star))
+    print("steps = np.%s"%repr(steps))
+    print("ts = np.%s"%repr(ts))
+    print("ms_star = np.%s"%repr(ms_star))
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
