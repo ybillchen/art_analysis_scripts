@@ -47,7 +47,7 @@ def main(args):
     
     print('Number of tar files to create: %d'%len(file_groups))
     print('Number of processes: %d'%args.max_processes)
-    with Pool(processes=args.max_processes) as pool:
+    with Pool(processes=args.max_processes, initializer=init, initargs=(lock,)) as pool:
         pool.map(archive_files, process_args)
 
 if __name__ == '__main__':
