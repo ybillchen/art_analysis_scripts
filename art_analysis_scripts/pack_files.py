@@ -14,13 +14,13 @@ def archive_files(args):
     
     # Check if tar file exists and skip if option is set
     if check_exists and os.path.exists(tar_filename):
-        print(f'{i}/{ntot}: {tar_filename} already exists. Skipped.\n', end='')
+        print(f'{i}/{ntot}: {tar_filename} already exists. Skipped. \n', end='')
         return
     
     with tarfile.open(tar_filename, 'w') as tar:
         for file in files:
             tar.add(file, arcname=os.path.basename(file))
-    print(f'{i}/{ntot}: {tar_filename} created.')
+    print(f'{i}/{ntot}: {tar_filename} created. \n', end='')
 
 def find_files():
     file_dict = {}
