@@ -7,6 +7,12 @@ import argparse
 # Base directory path
 base_dir = os.environ['SCRATCH']
 
+lock = None
+
+def init(l):
+    global lock
+    lock = l
+
 def archive_files(args):
     i, identifier, files, check_exists, ntot, lock = args
     target_dir = os.path.dirname(files[0])
