@@ -8,7 +8,7 @@ import sys
 
 import numpy as np
 
-def print_sfh(basepath, simple=False):
+def print_sfh(basepath):
     d = np.loadtxt(basepath+"run/log/sf.log")
     steps = d[:,0].astype(int)
     ts = d[:,4]

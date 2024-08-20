@@ -28,7 +28,7 @@ def find_files():
     
     for root, dirs, files in os.walk(base_dir):
         for file in files:
-            if 'out' in root.split(os.sep) and file.startswith('snap_a'):
+            if 'out' in root.split(os.sep) and file.startswith('snap_a') and not file.endswith('tar'):
                 filename_parts = file.split('.')
                 identifier = '.'.join(filename_parts[:-1])  # Join all parts except the extension
                 full_path = os.path.join(root, file)
