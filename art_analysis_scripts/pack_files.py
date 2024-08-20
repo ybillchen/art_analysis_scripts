@@ -1,27 +1,28 @@
 import os
 import tarfile
 import glob
-from multiprocessing import Pool
+from multiprocessing import Pool, Lock
 import argparse
 
 # Base directory path
 base_dir = os.environ['SCRATCH']
 
 def archive_files(args):
-    identifier, files, check_exists = args
+    i, identifier, files, check_exists, ntot, lock = args
     target_dir = os.path.dirname(files[0])
     tar_filename = os.path.join(target_dir, f'{identifier}.tar')
     
     # Check if tar file exists and skip if option is set
     if check_exists and os.path.exists(tar_filename):
-        print(f'{tar_filename} already exists. Skipping...')
+        with lock:
+            print(f'{i}/{ntot}: {tar_filename} already exists. Skipped.')
         return
     
-    print(f'Creating {tar_filename}')
     with tarfile.open(tar_filename, 'w') as tar:
         for file in files:
             tar.add(file, arcname=os.path.basename(file))
-    print(f'Created {tar_filename}')
+    with lock:
+        print(f'{i}/{ntot}: {tar_filename} created.')
 
 def find_files():
     file_dict = {}
@@ -39,12 +40,13 @@ def find_files():
     return file_dict.items()
 
 def main(args):
+    lock = Lock()
     file_groups = find_files()
-    process_args = [(identifier, files, args.check_exists) for identifier, files in file_groups]
+    process_args = [(i, identifier, files, args.check_exists, len(file_groups), lock) for 
+        i, (identifier, files) in enumerate(file_groups)]
     
     print('Number of tar files to create: %d'%len(file_groups))
     print('Number of processes: %d'%args.max_processes)
-
     with Pool(processes=args.max_processes) as pool:
         pool.map(archive_files, process_args)
 
