@@ -45,7 +45,12 @@ def find_files():
                     file_dict[identifier] = [full_path]
     return file_dict.items()
 
-def main(args):
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description='Archive files based on identifiers')
+    parser.add_argument('--max-processes', type=int, default=os.cpu_count(), help='Maximum number of parallel processes')
+    parser.add_argument('--check-exists', action='store_true', help='Check if tar file exists and skip if so')
+    args = parser.parse_args()
+    
     lock = Lock()
     file_groups = find_files()
     process_args = [(i, identifier, files, args.check_exists, len(file_groups), lock) for 
@@ -55,11 +60,3 @@ def main(args):
     print('Number of processes: %d'%args.max_processes)
     with Pool(processes=args.max_processes, initializer=init, initargs=(lock,)) as pool:
         pool.map(archive_files, process_args)
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description='Archive files based on identifiers')
-    parser.add_argument('--max-processes', type=int, default=os.cpu_count(), help='Maximum number of parallel processes')
-    parser.add_argument('--check-exists', action='store_true', help='Check if tar file exists and skip if so')
-    args = parser.parse_args()
-    
-    main(args)
