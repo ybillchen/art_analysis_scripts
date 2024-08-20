@@ -30,7 +30,7 @@ def find_files():
         for file in files:
             if 'out' in root.split(os.sep) and file.startswith('snap_a') and not file.endswith('tar'):
                 filename_parts = file.split('.')
-                identifier = '.'.join(filename_parts[:-1])  # Join all parts except the extension
+                identifier = os.path.join(root, '.'.join(filename_parts[:-1]))
                 full_path = os.path.join(root, file)
                 if identifier in file_dict:
                     file_dict[identifier].append(full_path)
