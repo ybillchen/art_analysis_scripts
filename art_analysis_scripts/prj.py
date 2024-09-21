@@ -102,10 +102,10 @@ def make_plot(basepath, a):
     fig, [ax0, ax1] = plt.subplots(1,2)
 
     # gas
-    mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     ax0.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-5, vmax=1e5),
         extent=[region[0].to(unit),region[3].to(unit),region[1].to(unit),region[4].to(unit)])
-    mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], size, level=10, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
     ax1.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-5, vmax=1e5),
         extent=[region[0].to(unit),region[3].to(unit),region[2].to(unit),region[5].to(unit)])
 
