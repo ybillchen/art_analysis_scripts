@@ -4,6 +4,7 @@ Copyright (c) 2024 Yingtian Chen
 All rights reserved.
 """
 
+import sys
 import numpy as np
 from tqdm import tqdm
 
@@ -68,31 +69,37 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     return mesh, region
 
 if __name__ == "__main__":
-    
+
     import matplotlib
     matplotlib.use("agg")
     import matplotlib.pyplot as plt
     import yt
 
-    ds = yt.load("out/snap_a0.0861.art")
+    assert len(sys.argv) >= 3
+
+    basepath = sys.argv[1]
+    a = float(sys.argv[2])
+
+    ds = yt.load(basepath+"run/out/snap_a%.4f.art"%a)
     # d = ds.all_data()
     # x0 = np.median(d["N-BODY_0", "POSITION_X"].to("code_length").value)
     # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to("code_length").value)
     # z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
 
-    x0 = 127.25
-    y0 = 128.8125
-    z0 = 128.5625
+    x0 = 128
+    y0 = 128
+    z0 = 128
+    size = 1
 
     unit = "kpc"
 
     fig, [ax0, ax1] = plt.subplots(1,2)
 
     # gas
-    mesh, region = prj(ds, [x0, y0, z0], 0.25, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     ax0.imshow(np.log10(mesh.T), origin="lower", 
         extent=[region[0].to(unit),region[3].to(unit),region[1].to(unit),region[4].to(unit)])
-    mesh, region = prj(ds, [x0, y0, z0], 0.25, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
     ax1.imshow(np.log10(mesh.T), origin="lower", 
         extent=[region[0].to(unit),region[3].to(unit),region[2].to(unit),region[5].to(unit)])
 
@@ -111,5 +118,5 @@ if __name__ == "__main__":
     ax1.set_aspect("equal")
 
     plt.tight_layout()
-    plt.savefig("analysis/prj.png", bbox_inches ="tight", pad_inches=0.05, dpi=300)
+    plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
 
