@@ -83,11 +83,11 @@ def make_plot(basepath, a):
     # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to_value("code_length"))
     # z0 = np.median(d["N-BODY_0", "POSITION_Z"].to_value("code_length"))
 
-    argdens = np.argmax(d["gas", "density"])
-    x0 = d["gas", "x"][argdens].to_value("code_length")
-    y0 = d["gas", "y"][argdens].to_value("code_length")
-    z0 = d["gas", "z"][argdens].to_value("code_length")
-    size = 0.125
+    # argdens = np.argmax(d["gas", "density"])
+    # x0 = d["gas", "x"][argdens].to_value("code_length")
+    # y0 = d["gas", "y"][argdens].to_value("code_length")
+    # z0 = d["gas", "z"][argdens].to_value("code_length")
+    # size = 0.125
 
     x0 = 128
     y0 = 128
