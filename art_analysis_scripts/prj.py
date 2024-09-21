@@ -92,13 +92,14 @@ if __name__ == "__main__":
     x0 = d["gas", "x"][wdens][0].to_value("code_length")
     y0 = d["gas", "y"][wdens][0].to_value("code_length")
     z0 = d["gas", "z"][wdens][0].to_value("code_length")
-
-    # x0 = 128
-    # y0 = 128
-    # z0 = 128
     size = 0.125
 
-    unit = "kpc"
+    x0 = 128
+    y0 = 128
+    z0 = 128
+    size = 2
+
+    unit = "kpccm"
     unit_convert = (1*ds.units.code_length).to_value(unit)
 
     fig, [ax0, ax1] = plt.subplots(1,2)
