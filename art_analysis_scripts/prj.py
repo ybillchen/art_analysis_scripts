@@ -99,7 +99,7 @@ if __name__ == "__main__":
     size = 0.125
 
     unit = "kpc"
-    unit_convert = ds.units.code_length.to_value(unit)
+    unit_convert = ds.units.code_length.to(unit).value
 
     fig, [ax0, ax1] = plt.subplots(1,2)
 
