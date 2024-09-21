@@ -138,10 +138,9 @@ if __name__ == "__main__":
     assert len(sys.argv) >= 3
 
     basepath = sys.argv[1]
-    a = float(sys.argv[2])
 
-    if not a == "all":
-        make_plot(basepath, a)
+    if not sys.argv[2] == "all":
+        make_plot(basepath, float(sys.argv[2]))
     else:
         para_list = []
         search_path = os.path.join(basepath, "run/out/")
