@@ -17,7 +17,7 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     """
 
     dx_level = 2**-level # in code_length
-    factor = 0.6
+    factor = 0.5
 
     N0 = {}
     N0["x"] = np.floor((center[0]-factor*size)/dx_level)
@@ -48,7 +48,7 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     x = d["gas", prj_x].to_value("code_length")
     y = d["gas", prj_y].to_value("code_length")
     dx = d["gas", "dx"].to_value("code_length")
-    z = d["gas", field].to_value(unit)
+    z = d["gas", field].to_value(unit).value
 
 
     for i in tqdm(range(len(x))):
@@ -106,10 +106,10 @@ if __name__ == "__main__":
     # gas
     mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     ax0.imshow(np.log10(mesh.T), origin="lower", 
-        extent=[(x0-0.5*size)*unit_convert,(x0+0.5*size)*unit_convert,(y0-0.5*size)*unit_convert,(y0+0.5*size)*unit_convert])
+        extent=[region[0].to(unit),region[3].to(unit),region[1].to(unit),region[4].to(unit)])
     mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
     ax1.imshow(np.log10(mesh.T), origin="lower", 
-        extent=[(x0-0.5*size)*unit_convert,(x0+0.5*size)*unit_convert,(z0-0.5*size)*unit_convert,(z0+0.5*size)*unit_convert])
+        extent=[region[0].to(unit),region[3].to(unit),region[2].to(unit),region[5].to(unit)])
 
     # stars
     d = ds.box(region[:3], region[3:])
@@ -124,6 +124,10 @@ if __name__ == "__main__":
     ax1.set_ylabel(r"z (%s)"%unit)
     ax0.set_aspect("equal")
     ax1.set_aspect("equal")
+    ax0.set_xlim((x0-0.5*size)*unit_convert, (x0+0.5*size)*unit_convert)
+    ax1.set_xlim((x0-0.5*size)*unit_convert, (x0+0.5*size)*unit_convert)
+    ax0.set_ylim((y0-0.5*size)*unit_convert, (y0+0.5*size)*unit_convert)
+    ax1.set_ylim((z0-0.5*size)*unit_convert, (z0+0.5*size)*unit_convert)
 
     plt.tight_layout()
     plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
