@@ -89,7 +89,7 @@ if __name__ == "__main__":
     x0 = 128
     y0 = 128
     z0 = 128
-    size = 1
+    size = 4
 
     unit = "kpc"
 
