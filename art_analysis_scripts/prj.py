@@ -88,9 +88,9 @@ if __name__ == "__main__":
 
     density = d["gas", "density"]
     wdens = np.where(density == np.max(density))
-    x0 = d["gas", "x"][wdens][0]
-    y0 = d["gas", "y"][wdens][0]
-    z0 = d["gas", "z"][wdens][0]
+    x0 = d["gas", "x"][wdens][0].to_value("code_length")
+    y0 = d["gas", "y"][wdens][0].to_value("code_length")
+    z0 = d["gas", "z"][wdens][0].to_value("code_length")
 
     # x0 = 128
     # y0 = 128
