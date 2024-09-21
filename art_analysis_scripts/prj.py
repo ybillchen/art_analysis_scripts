@@ -48,7 +48,7 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     x = d["gas", prj_x].to_value("code_length")
     y = d["gas", prj_y].to_value("code_length")
     dx = d["gas", "dx"].to_value("code_length")
-    z = d["gas", field].to_value(unit).value
+    z = d["gas", field].to_value(unit)
 
 
     for i in tqdm(range(len(x))):
