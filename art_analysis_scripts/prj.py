@@ -17,15 +17,16 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     """
 
     dx_level = 2**-level # in code_length
+    factor = 0.5
 
     N0 = {}
-    N0["x"] = np.floor((center[0]-size/2)/dx_level)
-    N0["y"] = np.floor((center[1]-size/2)/dx_level)
-    N0["z"] = np.floor((center[2]-size/2)/dx_level)
+    N0["x"] = np.floor((center[0]-factor*size)/dx_level)
+    N0["y"] = np.floor((center[1]-factor*size)/dx_level)
+    N0["z"] = np.floor((center[2]-factor*size)/dx_level)
     N1 = {}
-    N1["x"] = np.ceil((center[0]+size/2)/dx_level)
-    N1["y"] = np.ceil((center[1]+size/2)/dx_level)
-    N1["z"] = np.ceil((center[2]+size/2)/dx_level)
+    N1["x"] = np.ceil((center[0]+factor*size)/dx_level)
+    N1["y"] = np.ceil((center[1]+factor*size)/dx_level)
+    N1["z"] = np.ceil((center[2]+factor*size)/dx_level)
 
     N = int(np.max((N1["x"]-N0["x"],N1["y"]-N0["y"],N1["z"]-N0["z"])))
     mesh = np.zeros((N, N)) # pixel mesh
@@ -44,10 +45,10 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
 
     d = ds.box(region[:3], region[3:])
 
-    x = d["gas", prj_x].to("code_length").value
-    y = d["gas", prj_y].to("code_length").value
-    dx = d["gas", "dx"].to("code_length").value
-    z = d["gas", field].to(unit).value
+    x = d["gas", prj_x].to_value("code_length")
+    y = d["gas", prj_y].to_value("code_length")
+    dx = d["gas", "dx"].to_value("code_length")
+    z = d["gas", field].to_value(unit).value
 
 
     for i in tqdm(range(len(x))):
@@ -82,9 +83,9 @@ if __name__ == "__main__":
 
     ds = yt.load(basepath+"run/out/snap_a%.4f.art"%a)
     d = ds.all_data()
-    # x0 = np.median(d["N-BODY_0", "POSITION_X"].to("code_length").value)
-    # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to("code_length").value)
-    # z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
+    # x0 = np.median(d["N-BODY_0", "POSITION_X"].to_value("code_length"))
+    # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to_value("code_length"))
+    # z0 = np.median(d["N-BODY_0", "POSITION_Z"].to_value("code_length"))
 
     density = d["gas", "density"]
     wdens = np.where(density == np.max(density))
@@ -98,16 +99,17 @@ if __name__ == "__main__":
     size = 0.125
 
     unit = "kpc"
+    unit_convert = ds.units.code_length.to_value(unit)
 
     fig, [ax0, ax1] = plt.subplots(1,2)
 
     # gas
     mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
     ax0.imshow(np.log10(mesh.T), origin="lower", 
-        extent=[region[0].to(unit),region[3].to(unit),region[1].to(unit),region[4].to(unit)])
+        extent=[(x0-0.5*size)*unit_convert,(x0+0.5*size)*unit_convert,(y0-0.5*size)*unit_convert,(y0+0.5*size)*unit_convert])
     mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
     ax1.imshow(np.log10(mesh.T), origin="lower", 
-        extent=[region[0].to(unit),region[3].to(unit),region[2].to(unit),region[5].to(unit)])
+        extent=[(x0-0.5*size)*unit_convert,(x0+0.5*size)*unit_convert,(z0-0.5*size)*unit_convert,(z0+0.5*size)*unit_convert])
 
     # stars
     d = ds.box(region[:3], region[3:])
