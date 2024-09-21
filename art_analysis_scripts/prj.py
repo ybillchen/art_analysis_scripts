@@ -81,15 +81,21 @@ if __name__ == "__main__":
     a = float(sys.argv[2])
 
     ds = yt.load(basepath+"run/out/snap_a%.4f.art"%a)
-    # d = ds.all_data()
+    d = ds.all_data()
     # x0 = np.median(d["N-BODY_0", "POSITION_X"].to("code_length").value)
     # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to("code_length").value)
     # z0 = np.median(d["N-BODY_0", "POSITION_Z"].to("code_length").value)
 
-    x0 = 128
-    y0 = 128
-    z0 = 128
-    size = 2
+    density = d["gas", "density"]
+    wdens = np.where(density == np.max(density))
+    x0 = ad["gas", "x"][wdens][0]
+    y0 = ad["gas", "y"][wdens][0]
+    z0 = ad["gas", "z"][wdens][0]
+
+    # x0 = 128
+    # y0 = 128
+    # z0 = 128
+    size = 0.5
 
     unit = "kpc"
 
