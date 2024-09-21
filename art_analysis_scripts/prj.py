@@ -103,10 +103,10 @@ def make_plot(basepath, a):
 
     # gas
     mesh, region = prj(ds, [x0, y0, z0], size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
-    ax0.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-4),
+    ax0.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-5),
         extent=[region[0].to_value(unit),region[3].to_value(unit),region[1].to_value(unit),region[4].to_value(unit)])
     mesh, region = prj(ds, [x0, y0, z0], size, level=10, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
-    ax1.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-4),
+    ax1.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-5),
         extent=[region[0].to_value(unit),region[3].to_value(unit),region[2].to_value(unit),region[5].to_value(unit)])
 
     # stars
