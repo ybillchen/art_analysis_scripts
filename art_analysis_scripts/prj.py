@@ -5,7 +5,16 @@ All rights reserved.
 """
 
 import sys
+import os
+import re
+from multiprocessing import Pool, cpu_count
+
 import numpy as np
+import matplotlib
+matplotlib.use("agg")
+import matplotlib.pyplot as plt
+import yt
+
 from tqdm import tqdm
 
 def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3"):
@@ -69,19 +78,9 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
 
     return mesh, region
 
-if __name__ == "__main__":
+def make_plot(basepath, a):
 
-    import matplotlib
-    matplotlib.use("agg")
-    import matplotlib.pyplot as plt
-    import yt
-
-    assert len(sys.argv) >= 3
-
-    basepath = sys.argv[1]
-    a = float(sys.argv[2])
-
-    ds = yt.load(basepath+"run/out/snap_a%.4f.art"%a)
+    ds = yt.load(os.path.join(basepath, "run/out/snap_a%.4f.art"%a))
     d = ds.all_data()
     # x0 = np.median(d["N-BODY_0", "POSITION_X"].to_value("code_length"))
     # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to_value("code_length"))
@@ -132,4 +131,34 @@ if __name__ == "__main__":
 
     plt.tight_layout()
     plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
+
+if __name__ == "__main__":
+
+
+    assert len(sys.argv) >= 3
+
+    basepath = sys.argv[1]
+    a = float(sys.argv[2])
+
+    if not a == "all":
+        make_plot(basepath, a)
+    else:
+        para_list = []
+        search_path = os.path.join(basepath, "run/out/")
+        pattern = re.compile(r'snap_a(\d+\.\d+)\.art')
+
+        # Loop through all files in the directory
+        for filename in os.listdir(search_path):
+            match = pattern.match(filename)
+            
+            if match:
+                a = match.group(1)
+                file_path = os.path.join(search_path, filename)
+                print("Found file: %s"%filename)
+
+                para_list.append((basepath, a))
+
+        with Pool(cpu_count()) as p:
+            p.starmap(make_plot, para_list)
+
 
