@@ -94,7 +94,7 @@ def make_plot(basepath, a):
     x0 = 128
     y0 = 128
     z0 = 128
-    size = 4
+    size = 8
 
     unit = "kpccm"
     unit_convert = (1*ds.units.code_length).to_value(unit)
