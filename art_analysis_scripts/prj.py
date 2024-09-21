@@ -17,7 +17,7 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     """
 
     dx_level = 2**-level # in code_length
-    factor = 0.5
+    factor = 0.6
 
     N0 = {}
     N0["x"] = np.floor((center[0]-factor*size)/dx_level)
