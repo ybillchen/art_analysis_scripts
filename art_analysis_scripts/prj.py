@@ -7,7 +7,7 @@ All rights reserved.
 import sys
 import os
 import re
-from multiprocessing import Pool, cpu_count
+from multiprocessing import Pool
 
 import numpy as np
 import matplotlib
@@ -16,7 +16,7 @@ from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import yt
 
-def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3"):
+def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3", factor=0.5):
     """
     generate quadtree-like projection for gas
     effective volume weighted projection
@@ -25,7 +25,6 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     """
 
     dx_level = 2**-level # in code_length
-    factor = 0.6
 
     N0 = {}
     N0["x"] = np.floor((center[0]-factor*size)/dx_level)
@@ -96,16 +95,21 @@ def make_plot(basepath, a):
     z0 = 128
     size = 8
 
+    level = 10
+    factor = 0.6
+
     unit = "kpccm"
     unit_convert = (1*ds.units.code_length).to_value(unit)
 
     fig, [ax0, ax1] = plt.subplots(1,2)
 
     # gas
-    mesh, region = prj(ds, [x0, y0, z0], size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], size, level=level, prj_x="x", prj_y="y", 
+        field="density", unit="Msun/pc**3", factor=factor)
     ax0.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-5),
         extent=[region[0].to_value(unit),region[3].to_value(unit),region[1].to_value(unit),region[4].to_value(unit)])
-    mesh, region = prj(ds, [x0, y0, z0], size, level=10, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
+    mesh, region = prj(ds, [x0, y0, z0], size, level=level, prj_x="x", prj_y="z", 
+        field="density", unit="Msun/pc**3", factor=factor)
     ax1.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-5),
         extent=[region[0].to_value(unit),region[3].to_value(unit),region[2].to_value(unit),region[5].to_value(unit)])
 
@@ -144,6 +148,9 @@ if __name__ == "__main__":
     else:
         yt.funcs.mylog.setLevel(50)  # ignore yt's output
 
+        Np = 16
+        print("Number of cpus: %d"%Np)
+
         para_list = []
         search_path = os.path.join(basepath, "run/out/")
         pattern = re.compile(r'snap_a(\d+\.\d+)\.art')
@@ -158,7 +165,7 @@ if __name__ == "__main__":
 
                 para_list.append((basepath, float(match.group(1))))
 
-        with Pool(cpu_count()) as p:
+        with Pool(Np) as p:
             p.starmap(make_plot, para_list)
 
 
