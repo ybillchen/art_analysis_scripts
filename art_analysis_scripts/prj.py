@@ -151,11 +151,10 @@ if __name__ == "__main__":
             match = pattern.match(filename)
             
             if match:
-                a = match.group(1)
                 file_path = os.path.join(search_path, filename)
                 print("Found file: %s"%filename)
 
-                para_list.append((basepath, a))
+                para_list.append((basepath, float(match.group(1))))
 
         with Pool(cpu_count()) as p:
             p.starmap(make_plot, para_list)
