@@ -15,8 +15,6 @@ matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import yt
 
-from tqdm import tqdm
-
 def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3"):
     """
     generate quadtree-like projection for gas
@@ -59,8 +57,7 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     dx = d["gas", "dx"].to_value("code_length")
     z = d["gas", field].to_value(unit)
 
-
-    for i in tqdm(range(len(x))):
+    for i in range(len(x)):
         if dx[i] <= dx_level:
             # the cell is within a pixel
             ix = np.floor(x[i]/dx_level-N0[prj_x]).astype(int)
@@ -132,6 +129,8 @@ def make_plot(basepath, a):
     plt.tight_layout()
     plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
 
+    print("Done a = %.4f"%a)
+
 if __name__ == "__main__":
 
 
@@ -142,6 +141,8 @@ if __name__ == "__main__":
     if not sys.argv[2] == "all":
         make_plot(basepath, float(sys.argv[2]))
     else:
+        yt.funcs.mylog.setLevel(50)  # ignore yt's output
+
         para_list = []
         search_path = os.path.join(basepath, "run/out/")
         pattern = re.compile(r'snap_a(\d+\.\d+)\.art')
