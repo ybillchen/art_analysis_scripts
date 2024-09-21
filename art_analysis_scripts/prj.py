@@ -12,6 +12,7 @@ from multiprocessing import Pool, cpu_count
 import numpy as np
 import matplotlib
 matplotlib.use("agg")
+from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import yt
 
@@ -102,10 +103,10 @@ def make_plot(basepath, a):
 
     # gas
     mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3")
-    ax0.imshow(np.log10(mesh.T), origin="lower", 
+    ax0.imshow(mesh.T, origin="lower", LogNorm(vmin=1e-5, vmax=1e5),
         extent=[region[0].to(unit),region[3].to(unit),region[1].to(unit),region[4].to(unit)])
     mesh, region = prj(ds, [x0, y0, z0], size, level=12, prj_x="x", prj_y="z", field="density", unit="Msun/pc**3")
-    ax1.imshow(np.log10(mesh.T), origin="lower", 
+    ax1.imshow(mesh.T, origin="lower", LogNorm(vmin=1e-5, vmax=1e5),
         extent=[region[0].to(unit),region[3].to(unit),region[2].to(unit),region[5].to(unit)])
 
     # stars
