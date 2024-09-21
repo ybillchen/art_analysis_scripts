@@ -83,11 +83,10 @@ def make_plot(basepath, a):
     # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to_value("code_length"))
     # z0 = np.median(d["N-BODY_0", "POSITION_Z"].to_value("code_length"))
 
-    density = d["gas", "density"]
-    wdens = np.where(density == np.max(density))
-    x0 = d["gas", "x"][wdens][0].to_value("code_length")
-    y0 = d["gas", "y"][wdens][0].to_value("code_length")
-    z0 = d["gas", "z"][wdens][0].to_value("code_length")
+    argdens = np.argmax(d["gas", "density"])
+    x0 = d["gas", "x"][argdens].to_value("code_length")
+    y0 = d["gas", "y"][argdens].to_value("code_length")
+    z0 = d["gas", "z"][argdens].to_value("code_length")
     size = 0.125
 
     x0 = 128
@@ -149,7 +148,7 @@ if __name__ == "__main__":
         yt.funcs.mylog.setLevel(50)  # ignore yt's output
 
         Np = 16
-        print("Number of cpus: %d"%Np)
+        print("Number of processes: %d"%Np)
 
         para_list = []
         search_path = os.path.join(basepath, "run/out/")
