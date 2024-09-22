@@ -89,9 +89,9 @@ def make_plot(basepath, a):
     # z0 = d["gas", "z"][argdens].to_value("code_length")
     # size = 0.125
 
-    x0 = 128
-    y0 = 128
-    z0 = 128
+    x0 = 131
+    y0 = 126
+    z0 = 132
     size = 8
 
     level = 10
@@ -132,11 +132,11 @@ def make_plot(basepath, a):
 
     plt.tight_layout()
     plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
+    plt.close()
 
     print("Done a = %.4f"%a)
 
 if __name__ == "__main__":
-
 
     assert len(sys.argv) >= 3
 
@@ -147,7 +147,7 @@ if __name__ == "__main__":
     else:
         yt.funcs.mylog.setLevel(50)  # ignore yt's output
 
-        Np = 16
+        Np = 4
         print("Number of processes: %d"%Np)
 
         para_list = []
