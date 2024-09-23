@@ -135,11 +135,11 @@ def make_plot(basepath, a, two_axes=True):
             ], [
                 (centers[idx_y]-0.45*size)*unit_convert, 
                 (centers[idx_y]-0.45*size)*unit_convert
-            ], lw=1.5, c="k")
+            ], lw=1.5, c="w")
         ax0.text(
             (centers[idx_x]+0.45*size)*unit_convert-0.5*ruler_convert, 
             (centers[idx_y]-0.44*size)*unit_convert, 
-            r"%d kpc"%ruler, ha="center", va="bottom")
+            r"%d kpc"%ruler, ha="center", va="bottom", color="w")
 
         ax0.set_xlabel(r"%s (%s)"%(prjs[idx_x], unit))
         ax0.set_ylabel(r"%s (%s)"%(prjs[idx_y], unit))
@@ -155,7 +155,7 @@ def make_plot(basepath, a, two_axes=True):
     axs[0].text(
         (centers[idx_x]-0.45*size)*unit_convert, 
         (centers[idx_y]+0.45*size)*unit_convert, 
-        r"$R_{\rm GMC} = %d$ pc"%5, ha="left", va="top")
+        r"$R_{\rm GMC} = %d$ pc"%5, ha="left", va="top", color="w")
 
     plt.tight_layout()
     plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
