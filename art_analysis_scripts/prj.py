@@ -94,11 +94,14 @@ def make_plot(basepath, a):
     z0 = 132
     size = 8
 
-    level = 10
+    level = 8
     factor = 0.6
 
     unit = "kpccm"
     unit_convert = (1*ds.units.code_length).to_value(unit)
+
+    ruler = 50 # in kpc
+    ruler_convert = (ruler*ds.units.kpc).to_value(unit)
 
     fig, [ax0, ax1] = plt.subplots(1,2)
 
@@ -115,14 +118,25 @@ def make_plot(basepath, a):
     # stars
     d = ds.box(region[:3], region[3:])
     ax0.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Y"].to_value(unit), 
-        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/1e6, alpha=0.5)
+        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.5)
     ax1.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Z"].to_value(unit), 
-        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/1e6, alpha=0.5)
+        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.5)
 
-    ax0.set_xlabel(r"x (%s)"%unit)
-    ax1.set_xlabel(r"x (%s)"%unit)
-    ax0.set_ylabel(r"y (%s)"%unit)
-    ax1.set_ylabel(r"z (%s)"%unit)
+    ax0.plot([(x0+0.45*size)*unit_convert-ruler_convert, (x0+0.45*size)*unit_convert], 
+        [(y0-0.45*size)*unit_convert, (y0-0.45*size)*unit_convert], lw=2, c="k")
+    ax0.text((x0+0.45*size)*unit_convert-0.5*ruler_convert, (y0-0.44*size)*unit_convert, 
+        r"%d kpc"%ruler, ha="center", va="bottom")
+    ax1.plot([(x0+0.45*size)*unit_convert-ruler_convert, (x0+0.45*size)*unit_convert], 
+        [(z0-0.45*size)*unit_convert, (z0-0.45*size)*unit_convert], lw=2, c="k")
+    ax1.text((x0+0.45*size)*unit_convert-0.5*ruler_convert, (z0-0.44*size)*unit_convert, 
+        r"%d kpc"%ruler, ha="center", va="bottom")
+
+    # ax0.set_xlabel(r"x (%s)"%unit)
+    # ax1.set_xlabel(r"x (%s)"%unit)
+    # ax0.set_ylabel(r"y (%s)"%unit)
+    # ax1.set_ylabel(r"z (%s)"%unit)
+    ax0.set_axis_off()
+    ax1.set_axis_off()
     ax0.set_aspect("equal")
     ax1.set_aspect("equal")
     ax0.set_xlim((x0-0.5*size)*unit_convert, (x0+0.5*size)*unit_convert)
