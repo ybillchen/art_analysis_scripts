@@ -91,7 +91,7 @@ def make_plot(basepath, a, two_axes=True):
 
     x0 = 130
     y0 = 125
-    z0 = 131
+    z0 = 133
     size = 2
 
     level = 10
