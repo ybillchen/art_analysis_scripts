@@ -100,7 +100,7 @@ def make_plot(basepath, a):
     unit = "kpccm"
     unit_convert = (1*ds.units.code_length).to_value(unit)
 
-    ruler = 50 # in kpc
+    ruler = 20 # in kpc
     ruler_convert = (ruler*ds.units.kpc).to_value(unit)
 
     fig, [ax0, ax1] = plt.subplots(1,2)
@@ -118,9 +118,9 @@ def make_plot(basepath, a):
     # stars
     d = ds.box(region[:3], region[3:])
     ax0.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Y"].to_value(unit), 
-        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.5)
+        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7)
     ax1.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Z"].to_value(unit), 
-        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.5)
+        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7)
 
     ax0.plot([(x0+0.45*size)*unit_convert-ruler_convert, (x0+0.45*size)*unit_convert], 
         [(y0-0.45*size)*unit_convert, (y0-0.45*size)*unit_convert], lw=2, c="k")
