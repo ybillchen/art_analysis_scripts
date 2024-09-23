@@ -90,9 +90,9 @@ def make_plot(basepath, a, two_axes=True):
     # size = 0.125
 
     x0 = 130
-    y0 = 125
+    y0 = 125.5
     z0 = 133
-    size = 2
+    size = 1
 
     level = 10
     factor = 0.6
@@ -103,8 +103,9 @@ def make_plot(basepath, a, two_axes=True):
     ruler = 5 # in kpc
     ruler_convert = (ruler*ds.units.kpc).to_value(unit)
 
-    fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
-    axs = [ax0]
+    # fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
+    # axs = [ax0]
+    fig, axs = plt.subplots(1, 2, figsize=(6,3))
 
     prjs = ["x", "y", "z"]
     centers = [x0, y0, z0]
