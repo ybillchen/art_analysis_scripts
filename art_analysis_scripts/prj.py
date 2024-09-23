@@ -75,7 +75,7 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
 
     return mesh, region
 
-def make_plot(basepath, a):
+def make_plot(basepath, a, two_axes=True):
 
     ds = yt.load(os.path.join(basepath, "run/out/snap_a%.4f.art"%a))
     d = ds.all_data()
@@ -103,46 +103,55 @@ def make_plot(basepath, a):
     ruler = 20 # in kpc
     ruler_convert = (ruler*ds.units.kpc).to_value(unit)
 
-    fig, [ax0, ax1] = plt.subplots(1,2)
+    fig, ax0 = plt.subplots(1, 1, figsize=(4,4))
+    axs = [ax0]
 
-    # gas
-    mesh, region = prj(ds, [x0, y0, z0], size, level=level, prj_x="x", prj_y="y", 
-        field="density", unit="Msun/pc**3", factor=factor)
-    ax0.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-3),
-        extent=[region[0].to_value(unit),region[3].to_value(unit),region[1].to_value(unit),region[4].to_value(unit)])
-    mesh, region = prj(ds, [x0, y0, z0], size, level=level, prj_x="x", prj_y="z", 
-        field="density", unit="Msun/pc**3", factor=factor)
-    ax1.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-3),
-        extent=[region[0].to_value(unit),region[3].to_value(unit),region[2].to_value(unit),region[5].to_value(unit)])
+    prjs = ["x", "y", "z"]
+    centers = [x0, y0, z0]
 
-    # stars
-    d = ds.box(region[:3], region[3:])
-    ax0.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Y"].to_value(unit), 
-        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7)
-    ax1.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Z"].to_value(unit), 
-        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7)
+    for ax0, idx_x, idx_y in zip(axs, [0, 0], [1, 2]):
 
-    ax0.plot([(x0+0.45*size)*unit_convert-ruler_convert, (x0+0.45*size)*unit_convert], 
-        [(y0-0.45*size)*unit_convert, (y0-0.45*size)*unit_convert], lw=2, c="k")
-    ax0.text((x0+0.45*size)*unit_convert-0.5*ruler_convert, (y0-0.44*size)*unit_convert, 
-        r"%d kpc"%ruler, ha="center", va="bottom")
-    ax1.plot([(x0+0.45*size)*unit_convert-ruler_convert, (x0+0.45*size)*unit_convert], 
-        [(z0-0.45*size)*unit_convert, (z0-0.45*size)*unit_convert], lw=2, c="k")
-    ax1.text((x0+0.45*size)*unit_convert-0.5*ruler_convert, (z0-0.44*size)*unit_convert, 
-        r"%d kpc"%ruler, ha="center", va="bottom")
+        # gas
+        mesh, region = prj(ds, [x0, y0, z0], size, level=level, prj_x=prjs[idx_x], prj_y=prjs[idx_y], 
+            field="density", unit="Msun/pc**3", factor=factor)
+        ax0.imshow(
+            mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-3),
+            extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
+                region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)])
+        # mesh, region = prj(ds, [x0, y0, z0], size, level=level, prj_x="x", prj_y="z", 
+        #     field="density", unit="Msun/pc**3", factor=factor)
+        # ax1.imshow(mesh.T, origin="lower", norm=LogNorm(vmin=1e-7, vmax=1e-3),
+        #     extent=[region[0].to_value(unit),region[3].to_value(unit),region[2].to_value(unit),region[5].to_value(unit)])
 
-    # ax0.set_xlabel(r"x (%s)"%unit)
-    # ax1.set_xlabel(r"x (%s)"%unit)
-    # ax0.set_ylabel(r"y (%s)"%unit)
-    # ax1.set_ylabel(r"z (%s)"%unit)
-    ax0.set_axis_off()
-    ax1.set_axis_off()
-    ax0.set_aspect("equal")
-    ax1.set_aspect("equal")
-    ax0.set_xlim((x0-0.5*size)*unit_convert, (x0+0.5*size)*unit_convert)
-    ax1.set_xlim((x0-0.5*size)*unit_convert, (x0+0.5*size)*unit_convert)
-    ax0.set_ylim((y0-0.5*size)*unit_convert, (y0+0.5*size)*unit_convert)
-    ax1.set_ylim((z0-0.5*size)*unit_convert, (z0+0.5*size)*unit_convert)
+        # stars
+        d = ds.box(region[:3], region[3:])
+        ax0.scatter(d["STAR", "POSITION_%s"%prjs[idx_x].upper()].to_value(unit),
+            d["STAR", "POSITION_%s"%prjs[idx_x].upper()].to_value(unit), 
+            fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7)
+        # ax1.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Z"].to_value(unit), 
+        #     fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7)
+
+        ax0.plot([(centers[idx_x]+0.45*size)*unit_convert-ruler_convert, (centers[idx_x]+0.45*size)*unit_convert], 
+            [(centers[idx_y]-0.45*size)*unit_convert, (centers[idx_y]-0.45*size)*unit_convert], lw=1.5, c="k")
+        ax0.text((centers[idx_x]+0.45*size)*unit_convert-0.5*ruler_convert, (centers[idx_y]-0.44*size)*unit_convert, 
+            r"%d kpc"%ruler, ha="center", va="bottom")
+        # ax1.plot([(x0+0.45*size)*unit_convert-ruler_convert, (x0+0.45*size)*unit_convert], 
+        #     [(z0-0.45*size)*unit_convert, (z0-0.45*size)*unit_convert], lw=1.5, c="k")
+        # ax1.text((x0+0.45*size)*unit_convert-0.5*ruler_convert, (z0-0.44*size)*unit_convert, 
+        #     r"%d kpc"%ruler, ha="center", va="bottom")
+
+        ax0.set_xlabel(r"%s (%s)"%(prjs[idx_x], unit))
+        ax0.set_ylabel(r"%s (%s)"%(prjs[idx_y], unit))
+        ax0.set_axis_off()
+        ax0.set_aspect("equal")
+        ax0.set_xlim((centers[idx_x]-0.5*size)*unit_convert, (centers[idx_x]+0.5*size)*unit_convert)
+        ax0.set_ylim((centers[idx_y]-0.5*size)*unit_convert, (centers[idx_y]+0.5*size)*unit_convert)
+        # ax1.set_xlabel(r"x (%s)"%unit)
+        # ax1.set_ylabel(r"z (%s)"%unit)
+        # ax1.set_axis_off()
+        # ax1.set_aspect("equal")
+        # ax1.set_xlim((x0-0.5*size)*unit_convert, (x0+0.5*size)*unit_convert)
+        # ax1.set_ylim((z0-0.5*size)*unit_convert, (z0+0.5*size)*unit_convert)
 
     plt.tight_layout()
     plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
