@@ -89,18 +89,18 @@ def make_plot(basepath, a, two_axes=True):
     # z0 = d["gas", "z"][argdens].to_value("code_length")
     # size = 0.125
 
-    x0 = 131
-    y0 = 126
-    z0 = 132
-    size = 8
+    x0 = 130
+    y0 = 125
+    z0 = 131
+    size = 2
 
-    level = 8
+    level = 10
     factor = 0.6
 
     unit = "kpccm"
     unit_convert = (1*ds.units.code_length).to_value(unit)
 
-    ruler = 20 # in kpc
+    ruler = 5 # in kpc
     ruler_convert = (ruler*ds.units.kpc).to_value(unit)
 
     fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
