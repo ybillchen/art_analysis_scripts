@@ -127,6 +127,7 @@ def make_plot(basepath, a, two_axes=True):
             d["STAR", "POSITION_%s"%prjs[idx_y].upper()].to_value(unit), 
             fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7)
 
+        # ruler
         ax0.plot(
             [
                 (centers[idx_x]+0.45*size)*unit_convert-ruler_convert, 
@@ -151,7 +152,7 @@ def make_plot(basepath, a, two_axes=True):
             (centers[idx_y]-0.5*size)*unit_convert, 
             (centers[idx_y]+0.5*size)*unit_convert)
 
-    ax0.text(
+    axs[0].text(
         (centers[idx_x]-0.45*size)*unit_convert, 
         (centers[idx_y]+0.45*size)*unit_convert, 
         r"$R_{\rm GMC} = %d$ pc"%5, ha="left", va="top")
