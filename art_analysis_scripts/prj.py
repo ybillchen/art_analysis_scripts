@@ -155,7 +155,7 @@ def make_plot(basepath, a, two_axes=True):
     axs[0].text(
         (centers[idx_x]-0.45*size)*unit_convert, 
         (centers[idx_y]+0.45*size)*unit_convert, 
-        r"$R_{\rm GMC} = %d$ pc"%5, ha="left", va="top", color="w")
+        r"$R_{\rm GMC} = %d$ pc"%10, ha="left", va="top", color="w")
 
     plt.tight_layout()
     plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
