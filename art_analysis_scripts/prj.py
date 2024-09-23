@@ -117,7 +117,7 @@ def make_plot(basepath, a):
     ax0.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Y"].to_value(unit), 
         fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/1e6, alpha=0.5)
     ax1.scatter(d["STAR", "POSITION_X"].to_value(unit),d["STAR", "POSITION_Z"].to_value(unit), 
-        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/1e6. alpha=0.5)
+        fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/1e6, alpha=0.5)
 
     ax0.set_xlabel(r"x (%s)"%unit)
     ax1.set_xlabel(r"x (%s)"%unit)
