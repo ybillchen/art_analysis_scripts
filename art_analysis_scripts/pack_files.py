@@ -21,6 +21,7 @@ def archive_files(args):
         for file in files:
             tar.add(file, arcname=os.path.basename(file))
     print(f'{i}/{ntot}: {tar_filename} created. \n', end='')
+    return
 
 def find_files():
     file_dict = {}
@@ -28,19 +29,18 @@ def find_files():
     
     for root, dirs, files in os.walk(base_dir):
         for file in files:
-            if 'out' in root.split(os.sep) and file.startswith('snap_a') and not file.endswith('tar'):
+            if 'out' in root.split(os.sep) and file.startswith('snap_a'):
                 filename_parts = file.split('.')
                 identifier = os.path.join(root, '.'.join(filename_parts[:-1]))
-                full_path = os.path.join(root, file)
-                if identifier in file_dict:
-                    file_dict[identifier].append(full_path)
+                if file.endswith('tar'):
+                    assert not identifier in exist_list
+                    exist_list.append(identifier)
                 else:
-                    file_dict[identifier] = [full_path]
-            if 'out' in root.split(os.sep) and file.startswith('snap_a') and file.endswith('tar'):
-                filename_parts = file.split('.')
-                identifier = os.path.join(root, '.'.join(filename_parts[:-1]))
-                assert not identifier in exist_list
-                exist_list.append(identifier)
+                    full_path = os.path.join(root, file)
+                    if identifier in file_dict:
+                        file_dict[identifier].append(full_path)
+                    else:
+                        file_dict[identifier] = [full_path]
 
     assert all(key in file_dict for key in exist_list)
 
