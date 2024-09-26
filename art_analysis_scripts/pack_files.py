@@ -24,6 +24,7 @@ def archive_files(args):
 
 def find_files():
     file_dict = {}
+    exist_list = []
     
     for root, dirs, files in os.walk(base_dir):
         for file in files:
@@ -35,7 +36,17 @@ def find_files():
                     file_dict[identifier].append(full_path)
                 else:
                     file_dict[identifier] = [full_path]
-    return file_dict.items()
+            if 'out' in root.split(os.sep) and file.startswith('snap_a') and file.endswith('tar'):
+                filename_parts = file.split('.')
+                identifier = os.path.join(root, '.'.join(filename_parts[:-1]))
+                assert not identifier in exist_list
+                exist_list.append(identifier)
+
+    assert all(key in file_dict for key in exist_list)
+
+    file_dict_not_exist = {key: value for key, value in file_dict.items() if key not in exist_list}
+
+    return file_dict.items(), file_dict_not_exist.items()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Archive files based on identifiers')
@@ -43,7 +54,8 @@ if __name__ == '__main__':
     parser.add_argument('--check-exists', action='store_true', help='Check if tar file exists and skip if so')
     args = parser.parse_args()
     
-    file_groups = find_files()
+    file_groups_all, file_groups_not_exist = find_files()
+    file_groups = file_groups_not_exist if args.check_exists else file_groups_all
     process_args = [(i, identifier, files, args.check_exists, len(file_groups)) for 
         i, (identifier, files) in enumerate(file_groups)]
     
