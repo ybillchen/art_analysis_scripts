@@ -1,3 +1,9 @@
+"""
+BSD 3-Clause License
+Copyright (c) 2024 Yingtian Chen
+All rights reserved.
+"""
+
 import os
 import tarfile
 import glob
@@ -10,7 +16,10 @@ base_dir = os.environ['SCRATCH']
 def archive_files(args):
     i, identifier, files, check_exists, ntot = args
     target_dir = os.path.dirname(files[0])
-    tar_filename = os.path.join(target_dir, f'{identifier}.tar')
+    if 'rockstar_halos' in identifier.split(os.sep):
+        tar_filename = os.path.join(target_dir, 'rockstar_halos.tar')
+    else:
+        tar_filename = os.path.join(target_dir, f'{identifier}.tar')
     
     # Check if tar file exists and skip if option is set
     if check_exists and os.path.exists(tar_filename):
@@ -29,18 +38,24 @@ def find_files():
     
     for root, dirs, files in os.walk(base_dir):
         for file in files:
+            filename_parts = file.split('.')
             if 'out' in root.split(os.sep) and file.startswith('snap_a'):
-                filename_parts = file.split('.')
                 identifier = os.path.join(root, '.'.join(filename_parts[:-1]))
-                if file.endswith('tar'):
-                    assert not identifier in exist_list
-                    exist_list.append(identifier)
+            elif 'rockstar_halos' in root.split(os.sep):
+                identifier = root
+            else:
+                continue
+
+            if file.endswith('tar'):
+                assert not identifier in exist_list
+                exist_list.append(identifier)
+            else:
+                full_path = os.path.join(root, file)
+                if identifier in file_dict:
+                    file_dict[identifier].append(full_path)
                 else:
-                    full_path = os.path.join(root, file)
-                    if identifier in file_dict:
-                        file_dict[identifier].append(full_path)
-                    else:
-                        file_dict[identifier] = [full_path]
+                    file_dict[identifier] = [full_path]
+
 
     assert all(key in file_dict for key in exist_list)
 
