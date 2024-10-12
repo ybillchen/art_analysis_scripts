@@ -12,13 +12,16 @@ import yt
 import ytree
 
 def art2skirt(ds, region, savenamebase):
+    print("loading star positions")
     xs = region[("STAR", "POSITION_X")].to_value("pc")
     ys = region[("STAR", "POSITION_Y")].to_value("pc")
     zs = region[("STAR", "POSITION_Z")].to_value("pc")
     es = np.zeros_like(xs)
+    print("loading star velocities")
     vxs = region[("STAR", "VELOCITY_X")].to_value("km/s")
     vys = region[("STAR", "VELOCITY_Y")].to_value("km/s")
     vzs = region[("STAR", "VELOCITY_Z")].to_value("km/s")
+    print("loading star masses, metallicities, and ages")
     ms = region[("STAR", "INITIAL_MASS")].to_value("Msun")
     Zs = (region[('STAR', 'METALLICITY_SNII')]+region[('STAR', 'METALLICITY_SNIa')]+region[('STAR', 'METALLICITY_AGB')]).to_value("1")
     ts = (ds.current_time - region[("STAR", "creation_time")]).to_value("Gyr")
@@ -40,6 +43,7 @@ def art2skirt(ds, region, savenamebase):
     outs = np.column_stack([xs, ys, zs, es, vxs, vys, vzs, ms, Zs, ts])
     np.savetxt(savenames, outs, header=headers, fmt="%.6e")
 
+    print("loading gas positions")
     xg = region[("gas", "x")].to_value("pc")
     yg = region[("gas", "y")].to_value("pc")
     zg = region[("gas", "z")].to_value("pc")
@@ -50,9 +54,11 @@ def art2skirt(ds, region, savenamebase):
     x1g = xg + 0.5*dx
     y1g = yg + 0.5*dx
     z1g = zg + 0.5*dx
+    print("loading gas masses, metallicities, and temperature")
     mg = region[("gas", "mass")].to_value("Msun")
     Zg = region[("gas", "metallicity")].to_value("1")
     Tg = region[("gas", "temperature")].to_value("K")
+    print("loading star velocities")
     vxg = region[("gas", "velocity_x")].to_value("km/s")
     vyg = region[("gas", "velocity_y")].to_value("km/s")
     vzg = region[("gas", "velocity_z")].to_value("km/s")
@@ -83,7 +89,6 @@ if __name__ == "__main__":
 
     ds = yt.load("out/snap_a%.4f.art"%scale_a)
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
-    trees = list(a[:])
 
     tree = a[0] # a[0] should be the most massive 
     center = tree["position"].to("kpc") * scale_a # note: ytree cannot deal with comoving units
