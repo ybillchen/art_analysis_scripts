@@ -85,7 +85,7 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 
-    tree = a[0]["mass"] # a[0] should be the most massive 
+    tree = a[0] # a[0] should be the most massive 
     center = tree["position"].to("kpc") * scale_a # note: ytree cannot deal with comoving units
 
     radius = 100.0 * ds.units.kpc # in kpc
