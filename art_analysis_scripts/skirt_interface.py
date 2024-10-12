@@ -91,12 +91,17 @@ if __name__ == "__main__":
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
 
     tree = a[0] # a[0] should be the most massive 
-    center = tree["position"].to("kpc") * scale_a # note: ytree cannot deal with comoving units
+
+    # in ytree, units are always comoving 
+    # need to manually convert to physical
+    center = tree["position"].to("kpc") * scale_a
 
     radius = 10.0 * ds.units.kpc # in kpc
-    region = [
-        center[0]-radius, center[1]-radius, center[2]-radius, 
-        center[0]+radius, center[1]+radius, center[2]+radius]
+    
+    # region = [
+    #     center[0]-radius, center[1]-radius, center[2]-radius, 
+    #     center[0]+radius, center[1]+radius, center[2]+radius]
+    # region = ds.box(region[:3], region[3:])
 
-    region = ds.box(region[:3], region[3:])
+    region = ds.sphere(center, radius)
     art2skirt(ds, region, center, "analysis/skirt_a%.4f"%scale_a)
