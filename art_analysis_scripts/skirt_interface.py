@@ -8,7 +8,7 @@ import numpy as np
 import yt
 
 import yt
-yt.enable_parallelism()
+# yt.enable_parallelism()
 import ytree
 
 def art2skirt(ds, region, savenamebase):
