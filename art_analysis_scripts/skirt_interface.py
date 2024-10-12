@@ -93,8 +93,7 @@ if __name__ == "__main__":
     tree = a[0] # a[0] should be the most massive 
     center = tree["position"].to("kpc") * scale_a # note: ytree cannot deal with comoving units
 
-    radius = 100.0 * ds.units.kpc # in kpc
-    box = [-radius, -radius, 2*radius, 2*radius]
+    radius = 10.0 * ds.units.kpc # in kpc
     region = [
         center[0]-radius, center[1]-radius, center[2]-radius, 
         center[0]+radius, center[1]+radius, center[2]+radius]
