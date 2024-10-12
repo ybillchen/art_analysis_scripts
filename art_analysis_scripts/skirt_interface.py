@@ -25,7 +25,7 @@ def art2skirt(ds, region, savenamebase):
 
     savenames = savenamebase + "_star.txt"
     headers = (
-        "%s.txt: import file for particle source\n"%savenames
+        "%s.txt: import file for particle source\n"%savenames + 
         "Column 1: position x (pc)\n"
         "Column 2: position y (pc)\n"
         "Column 2: position z (pc)\n"
@@ -59,7 +59,7 @@ def art2skirt(ds, region, savenamebase):
 
     savenameg = savenamebase + "_gas.txt"
     headerg = (
-        "%s.txt: import file for cell media -- dust\n"%savenameg
+        "%s.txt: import file for cell media -- dust\n"%savenameg + 
         "column 1: xmin (pc)\n"
         "column 2: ymin (pc)\n"
         "column 3: zmin (pc)\n"
