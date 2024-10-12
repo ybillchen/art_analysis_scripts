@@ -11,11 +11,11 @@ import yt
 # yt.enable_parallelism()
 import ytree
 
-def art2skirt(ds, region, savenamebase):
+def art2skirt(ds, region, center, savenamebase):
     print("loading star positions")
-    xs = region[("STAR", "POSITION_X")].to_value("pc")
-    ys = region[("STAR", "POSITION_Y")].to_value("pc")
-    zs = region[("STAR", "POSITION_Z")].to_value("pc")
+    xs = region[("STAR", "POSITION_X")].to_value("pc") - center[0].to_value("pc")
+    ys = region[("STAR", "POSITION_Y")].to_value("pc") - center[1].to_value("pc")
+    zs = region[("STAR", "POSITION_Z")].to_value("pc") - center[2].to_value("pc")
     es = np.zeros_like(xs)
     print("loading star velocities")
     vxs = region[("STAR", "VELOCITY_X")].to_value("km/s")
@@ -44,9 +44,9 @@ def art2skirt(ds, region, savenamebase):
     np.savetxt(savenames, outs, header=headers, fmt="%.6e")
 
     print("loading gas positions")
-    xg = region[("gas", "x")].to_value("pc")
-    yg = region[("gas", "y")].to_value("pc")
-    zg = region[("gas", "z")].to_value("pc")
+    xg = region[("gas", "x")].to_value("pc") - center[0].to_value("pc")
+    yg = region[("gas", "y")].to_value("pc") - center[1].to_value("pc")
+    zg = region[("gas", "z")].to_value("pc") - center[2].to_value("pc")
     dx = region[("gas", "dx")].to_value("pc")
     x0g = xg - 0.5*dx
     y0g = yg - 0.5*dx
@@ -58,7 +58,7 @@ def art2skirt(ds, region, savenamebase):
     mg = region[("gas", "mass")].to_value("Msun")
     Zg = region[("gas", "metallicity")].to_value("1")
     Tg = region[("gas", "temperature")].to_value("K")
-    print("loading star velocities")
+    print("loading gas velocities")
     vxg = region[("gas", "velocity_x")].to_value("km/s")
     vyg = region[("gas", "velocity_y")].to_value("km/s")
     vzg = region[("gas", "velocity_z")].to_value("km/s")
@@ -100,4 +100,4 @@ if __name__ == "__main__":
         center[0]+radius, center[1]+radius, center[2]+radius]
 
     region = ds.box(region[:3], region[3:])
-    art2skirt(ds, region, "analysis/skirt_a%.4f"%scale_a)
+    art2skirt(ds, region, center, "analysis/skirt_a%.4f"%scale_a)
