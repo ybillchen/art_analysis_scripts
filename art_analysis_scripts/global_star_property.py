@@ -12,7 +12,7 @@ import yt
 
 from age_spreads import time_units, duration, ave_time, age_spread
 
-def load_ds(basepath, a_target)
+def load_ds(basepath, a_target):
     filename = os.path.join(basepath, "run/out/snap_a%.4f.art"%a_target)
     filename = filename if os.path.isfile(filename) else os.path.join(basepath, "out/snap_a%.4f.art"%a_target)
     return yt.load(filename)
