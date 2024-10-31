@@ -26,41 +26,49 @@ def save_logmi(basepath, a_target):
     snap = ds.all_data()
 
     logmi = logmi(snap)
-    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/logmi.txt"), logmi)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/logmi.txt"), 
+        logmi, fmt=".6f")
 
 def save_tave(basepath, a_target):
     ds, is_under_run = load_ds(basepath, a_target)
     snap = ds.all_data()
 
     tave = ave_time(snap)
-    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tave.txt"), tave)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tave.txt"), 
+        tave, fmt=".6f")
 
 def save_tdur(basepath, a_target):
     ds, is_under_run = load_ds(basepath, a_target)
     snap = ds.all_data()
 
     tdur = duration(snap)
-    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tdur.txt"), tdur)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tdur.txt"), 
+        tdur, fmt=".6f")
 
 def save_tspread(basepath, a_target):
     ds, is_under_run = load_ds(basepath, a_target)
     snap = ds.all_data()
 
     tspread = age_spread(snap)
-    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tspread.txt"), tspread)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tspread.txt"), 
+        tspread, fmt=".6f")
 
 def save_all(basepath, a_target):
     ds, is_under_run = load_ds(basepath, a_target)
     snap = ds.all_data()
 
     logmi = log_init_mass(snap)
-    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/logmi.txt"), logmi)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/logmi.txt"), 
+        logmi, fmt=".6f")
     tave = ave_time(snap)
-    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tave.txt"), tave)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tave.txt"), 
+        tave, fmt=".6f")
     tdur = duration(snap)
-    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tdur.txt"), tdur)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tdur.txt"), 
+        tdur, fmt=".6f")
     tspread = age_spread(snap)
-    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tspread.txt"), tspread)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tspread.txt"), 
+        tspread, fmt=".6f")
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
