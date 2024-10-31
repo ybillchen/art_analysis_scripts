@@ -23,7 +23,7 @@ def logmi(region):
 def save_logmi(basepath, a_target):
     ds = load_ds(basepath, a_target)
     snap = ds.all_data()
-    
+
     logmi = logmi(snap)
     np.savetxt(os.path.join(basepath, "run/analysis/logmi.txt"), logmi)
 
@@ -48,7 +48,7 @@ def save_tspread(basepath, a_target):
     tspread = age_spread(snap)
     np.savetxt(os.path.join(basepath, "run/analysis/tspread.txt"), tspread)
 
-def save_all(basepath, a_target)
+def save_all(basepath, a_target):
     ds = load_ds(basepath, a_target)
     snap = ds.all_data()
 
