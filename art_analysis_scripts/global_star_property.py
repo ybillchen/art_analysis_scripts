@@ -17,7 +17,7 @@ def load_ds(basepath, a_target):
     filename = filename if os.path.isfile(filename) else os.path.join(basepath, "out/snap_a%.4f.art"%a_target)
     return yt.load(filename)
 
-def logmi(region):
+def log_init_mass(region):
     return np.log10(region[("STAR", "INITIAL_MASS")].to_value("Msun"))
 
 def save_logmi(basepath, a_target):
@@ -52,7 +52,7 @@ def save_all(basepath, a_target):
     ds = load_ds(basepath, a_target)
     snap = ds.all_data()
 
-    logmi = logmi(snap)
+    logmi = log_init_mass(snap)
     np.savetxt(os.path.join(basepath, "run/analysis/logmi.txt"), logmi)
     tave = ave_time(snap)
     np.savetxt(os.path.join(basepath, "run/analysis/tave.txt"), tave)
