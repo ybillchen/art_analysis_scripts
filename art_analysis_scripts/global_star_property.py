@@ -39,7 +39,7 @@ def save_tdur(basepath, a_target):
     ds, is_under_run = load_ds(basepath, a_target)
     snap = ds.all_data()
 
-    tave = duration(snap)
+    tdur = duration(snap)
     np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tdur.txt"), tdur)
 
 def save_tspread(basepath, a_target):
@@ -57,7 +57,7 @@ def save_all(basepath, a_target):
     np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/logmi.txt"), logmi)
     tave = ave_time(snap)
     np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tave.txt"), tave)
-    tave = duration(snap)
+    tdur = duration(snap)
     np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tdur.txt"), tdur)
     tspread = age_spread(snap)
     np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/tspread.txt"), tspread)
