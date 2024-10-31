@@ -11,7 +11,7 @@ def time_units(ds, array):
 
 def duration(region):
     end_time = time_units(region.ds, region[("STAR", "TERMINATION_TIME")])
-    return end_time - region[("STAR", "creation_time")]
+    return (end_time - region[("STAR", "creation_time")]).to_value("Myr")
 
 
 def ave_time(region):
@@ -19,7 +19,7 @@ def ave_time(region):
     art_units_birth = region[("STAR", "BIRTH_TIME")]
 
     ave_time = time_units(region.ds, art_units_birth + art_units_ave_age)
-    return ave_time - region[("STAR", "creation_time")]
+    return (ave_time - region[("STAR", "creation_time")]).to_value("Myr")
 
 
 def age_spread(region):
@@ -38,4 +38,4 @@ def age_spread(region):
 
     time[bad_idxs] = np.nan
 
-    return time - creation_time
+    return (time - creation_time).to_value("Myr")
