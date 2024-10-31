@@ -76,10 +76,10 @@ if __name__ == '__main__':
         a_target = None
     elif len(sys.argv) == 2:
         basepath = ""
-        a_target = sys.argv[1]
+        a_target = float(sys.argv[1])
     elif len(sys.argv) == 3:
-        basepath = float(sys.argv[2])
-        a_target = sys.argv[1]
+        basepath = sys.argv[2]
+        a_target = float(sys.argv[1])
 
     assert not a_target is None
 
