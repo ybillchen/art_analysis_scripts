@@ -29,8 +29,8 @@ def find_most_massive_halo(tree, a_target):
     else:
         mask_now = np.abs(tree[:,0]-a_target)<5e-5
 
-    idx_mmax = np.argmax(newtree[mask_now,10])
-    mainleaf_id = newtree[mask_now,34][idx_mmax]
+    idx_mmax = np.argmax(tree[mask_now,10])
+    mainleaf_id = tree[mask_now,34][idx_mmax]
 
     mask_mb = tree[:,34] == mainleaf_id
     mb = tree[mask_mb]
