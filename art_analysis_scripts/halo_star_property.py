@@ -50,15 +50,17 @@ def sfh(ts, branches, agecut=50.0):
     for store, ds in ts.piter(storage=storage):
         scale = 1 / (ds.current_redshift+1)
         tnow  = ds.current_time.to_value("Myr")
-        idx = np.where(np.abs(branch[:,0]-scale)<5e-5)[0]
-        if len(idx) == 0:
-            store.result = (scale, tnow, -1)
-            continue
-        assert len(idx) == 1
 
         out = (scale, tnow)
 
         for branch in branches:
+            idx = np.where(np.abs(branch[:,0]-scale)<5e-5)[0]
+            if len(idx) == 0:
+                out += (-1,)
+                continue
+                
+            assert len(idx) == 1
+
             line = branch[idx[0]]
             hpos = line[17:20] * ds.arr(1, "Mpccm/h")
             rvir = line[11] * ds.arr(1, "kpccm/h")
