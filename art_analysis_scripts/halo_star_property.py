@@ -48,7 +48,8 @@ def sfh(ts, branch, agecut=50):
             continue
         assert len(idx) == 1
         line = branch[idx[0]]
-        hpos = halo_tree[17:20] * ds.arr(1, "Mpccm/h")
+        hpos = line[17:20] * ds.arr(1, "Mpccm/h")
+        rvir = line[11] * ds.arr(1, "kpccm/h")
         sp = ds.sphere(hpos, rvir)
 
         ms_i = sp[("STAR", "INITIAL_MASS")].to_value("Msun")
