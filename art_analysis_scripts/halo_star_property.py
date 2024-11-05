@@ -77,15 +77,16 @@ def sfh(ts, branches, agecut=50.0):
 
     return np.array(list(storage.values()))
 
-def save_sfh_most_massive_halos(basepath, a_target):
+def save_sfh_most_massive_halos(basepath, a_target, agecut=50.0):
 
     tree = np.loadtxt(os.path.join(basepath, "rockstar_halos/trees/tree_0_0_0.dat"), skiprows=48)
     ts = yt.load(os.path.join(basepath, "out/snap_a*.art"))
 
-    mbs = find_most_massive_halos(tree, a_target, num=2)
-    mass_histories_50 = sfh(ts, mbs, agecut=50.0)
+    mbs = find_most_massive_halos(tree, a_target, num=10)
+    sfr_histories = sfh(ts, mbs, agecut)
 
-    print(mass_histories_50)
+    print(sfr_histories)
+    np.savetxt(os.path.join(basepath, "analysis/sfr_histories_%g.txt"%agecut), sfr_histories)
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
@@ -98,4 +99,4 @@ if __name__ == '__main__':
         basepath = sys.argv[2]
         a_target = float(sys.argv[1])
 
-    save_sfh_most_massive_halos(basepath, a_target)
+    save_sfh_most_massive_halos(basepath, a_target, agecut=50.0)
