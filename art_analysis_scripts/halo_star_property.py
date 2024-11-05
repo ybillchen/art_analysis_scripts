@@ -58,7 +58,7 @@ def sfh(ts, branches, agecut=50.0):
             if len(idx) == 0:
                 out += (-1,)
                 continue
-                
+
             assert len(idx) == 1
 
             line = branch[idx[0]]
@@ -82,7 +82,7 @@ def save_sfh_most_massive_halos(basepath, a_target):
     tree = np.loadtxt(os.path.join(basepath, "rockstar_halos/trees/tree_0_0_0.dat"), skiprows=48)
     ts = yt.load(os.path.join(basepath, "out/snap_a*.art"))
 
-    mbs = find_most_massive_halos(tree, a_target, num=10)
+    mbs = find_most_massive_halos(tree, a_target, num=2)
     mass_histories_50 = sfh(ts, mbs, agecut=50.0)
 
     print(mass_histories_50)
