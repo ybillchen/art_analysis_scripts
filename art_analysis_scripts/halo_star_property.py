@@ -47,20 +47,20 @@ def find_most_massive_halos(tree, a_target, num=1):
 
 def sfr(region, agecut=50.0):
     tnow  = region.ds.current_time.to_value("Myr")
-    ms_i = sp[("STAR", "INITIAL_MASS")].to_value("Msun")
-    tform = sp[("STAR", "creation_time")].to_value("Myr")
+    ms_i = region[("STAR", "INITIAL_MASS")].to_value("Msun")
+    tform = region[("STAR", "creation_time")].to_value("Myr")
     tage = tnow - tform
     mask = tage < agecut
     ms_cut = np.sum(ms_i[mask])
     return 1e-6*ms_cut/agecut # in Msun/yr
 
 def stellar_mass(region):
-    return np.sum(sp[("STAR", "MASS")].to_value("Msun"))
+    return np.sum(region[("STAR", "MASS")].to_value("Msun"))
 
 def frac_above(region, masscut=1e5):
-    ms = sp[("STAR", "MASS")].to_value("Msun")
-    fbound0 = sp[("STAR", "INITIAL_BOUND_FRACTION")].to_value("1")
-    fbound = sp[("STAR", "BOUND_FRACTION")].to_value("1")
+    ms = region[("STAR", "MASS")].to_value("Msun")
+    fbound0 = region[("STAR", "INITIAL_BOUND_FRACTION")].to_value("1")
+    fbound = region[("STAR", "BOUND_FRACTION")].to_value("1")
     mc = ms * fbound * fbound0
     ms_cut = np.sum(mc[mc>masscut])
     return ms_cut/np.sum(ms)
