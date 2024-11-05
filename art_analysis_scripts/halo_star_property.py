@@ -54,7 +54,7 @@ def sfh(ts, branch, agecut=50):
 
         ms_i = sp[("STAR", "INITIAL_MASS")].to_value("Msun")
         tform = sp[("STAR", "creation_time")].to_value("Myr")
-        tnow  = ds.current_time.in_units("Myr")
+        tnow  = ds.current_time.to_value("Myr")
         tage = tnow - tform
         mask = tage < agecut
         ms_cut = np.sum(ms_i[mask])
