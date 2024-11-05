@@ -78,7 +78,7 @@ def histories(ts, branches, func, **kwargs):
         for branch in branches:
             idx = np.where(np.abs(branch[:,0]-scale)<5e-5)[0]
             if len(idx) == 0:
-                out += (-1,)
+                out += (np.nan,)
                 continue
 
             assert len(idx) == 1
@@ -95,7 +95,7 @@ def histories(ts, branches, func, **kwargs):
     result = np.array(list(storage.values()))
     return result[np.argsort(result[:,0])]
 
-def save_sfh_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1e5):
+def save_histories_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1e5):
 
     tree = np.loadtxt(os.path.join(basepath, "rockstar_halos/trees/tree_0_0_0.dat"), skiprows=48)
     ts = yt.load(os.path.join(basepath, "out/snap_a*.art"))
@@ -122,4 +122,4 @@ if __name__ == '__main__':
         basepath = sys.argv[2]
         a_target = float(sys.argv[1])
 
-    save_sfh_most_massive_halos(basepath, a_target, agecut=50.0)
+    save_histories_most_massive_halos(basepath, a_target, agecut=50.0)
