@@ -22,6 +22,7 @@ from age_spreads import time_units, duration, ave_time, age_spread
 # Last_mainleaf_depthfirst_ID(34) Tidal_Force(35) Tidal_ID(36)
 
 def find_most_massive_halos(tree, a_target, num=1):
+    # TODO: move this to a more general place
     snap = tree[:,31]
 
     if a_target is None or a_target < 0 or a_target > 1.1:
@@ -44,7 +45,28 @@ def find_most_massive_halos(tree, a_target, num=1):
 
     return mbs
 
-def sfh(ts, branches, agecut=50.0):
+def sfr(region, agecut=50.0):
+    tnow  = region.ds.current_time.to_value("Myr")
+    ms_i = sp[("STAR", "INITIAL_MASS")].to_value("Msun")
+    tform = sp[("STAR", "creation_time")].to_value("Myr")
+    tage = tnow - tform
+    mask = tage < agecut
+    ms_cut = np.sum(ms_i[mask])
+    return 1e-6*ms_cut/agecut # in Msun/yr
+
+def stellar_mass(region):
+    return np.sum(sp[("STAR", "MASS")].to_value("Msun"))
+
+def frac_above(region, masscut=1e5):
+    ms = sp[("STAR", "MASS")].to_value("Msun")
+    fbound0 = sp[("STAR", "INITIAL_BOUND_FRACTION")].to_value("1")
+    fbound = sp[("STAR", "BOUND_FRACTION")].to_value("1")
+    mc = ms * fbound * fbound0
+    ms_cut = np.sum(mc[mc>masscut])
+    return ms_cut/np.sum(ms)
+
+
+def histories(ts, branches, func, **kwargs):
     storage = {}
 
     for store, ds in ts.piter(storage=storage):
@@ -66,27 +88,27 @@ def sfh(ts, branches, agecut=50.0):
             rvir = line[11] * ds.arr(1, "kpccm/h")
             sp = ds.sphere(hpos, rvir)
 
-            ms_i = sp[("STAR", "INITIAL_MASS")].to_value("Msun")
-            tform = sp[("STAR", "creation_time")].to_value("Myr")
-            tage = tnow - tform
-            mask = tage < agecut
-            ms_cut = np.sum(ms_i[mask])
-            out += (1e-6*ms_cut/agecut,)
+            out += (func(sp, **kwargs),)
 
         store.result = out
 
     return np.array(list(storage.values()))
 
-def save_sfh_most_massive_halos(basepath, a_target, agecut=50.0):
+def save_sfh_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1e5):
 
     tree = np.loadtxt(os.path.join(basepath, "rockstar_halos/trees/tree_0_0_0.dat"), skiprows=48)
     ts = yt.load(os.path.join(basepath, "out/snap_a*.art"))
 
     mbs = find_most_massive_halos(tree, a_target, num=10)
-    sfr_histories = sfh(ts, mbs, agecut)
 
-    print(sfr_histories)
-    np.savetxt(os.path.join(basepath, "analysis/sfr_histories_%g.txt"%agecut), sfr_histories)
+    sfr_histories = histories(ts, mbs, sfr, agecut=agecut)
+    np.savetxt(os.path.join(basepath, "analysis/sfr_histories_%g.txt"%agecut), sfr_histories, fmt=".6e")
+
+    ms_histories = histories(ts, mbs, stellar_mass)
+    np.savetxt(os.path.join(basepath, "analysis/ms_histories.txt"), ms_histories, fmt=".6e")
+
+    fabove_histories = histories(ts, mbs, frac_above, masscut=masscut)
+    np.savetxt(os.path.join(basepath, "analysis/fabove_histories_%g.txt"%masscut/1e5), fabove_histories, fmt=".6e")
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
