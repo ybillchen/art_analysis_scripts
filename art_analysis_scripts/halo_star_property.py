@@ -38,7 +38,7 @@ def find_most_massive_halo(tree, a_target):
 
     return mb
 
-def sfh(ts, branch, agecut=50):
+def sfh(ts, branch, agecut=50.0):
     storage = {}
 
     for store, ds in ts.piter(storage=storage):
@@ -60,6 +60,9 @@ def sfh(ts, branch, agecut=50):
         ms_cut = np.sum(ms_i[mask])
 
         store.result = (scale, tnow, ms_cut/agecut)
+        print(store.result)
+
+    print(storage)
 
     return np.array(list(storage.values()))
 
@@ -78,5 +81,5 @@ if __name__ == '__main__':
     ts = yt.load(os.path.join(basepath, "out/snap_a*.art"))
 
     mb = find_most_massive_halo(tree, a_target)
-    mass_history_50 = sfh(ts, mb, agecut=50)
+    mass_history_50 = sfh(ts, mb, agecut=50.0)
     print(mass_history_50)
