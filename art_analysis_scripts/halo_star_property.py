@@ -45,6 +45,7 @@ def sfh(ts, branch, agecut=50.0):
         scale = 1 / (ds.current_redshift+1)
         idx = np.where(np.abs(branch[:,0]-scale)<5e-5)[0]
         if len(idx) == 0:
+            store.result = (scale, tnow, -1)
             continue
         assert len(idx) == 1
         line = branch[idx[0]]
@@ -59,10 +60,7 @@ def sfh(ts, branch, agecut=50.0):
         mask = tage < agecut
         ms_cut = np.sum(ms_i[mask])
 
-        store.result = (scale, tnow, ms_cut/agecut)
-        print(store.result)
-
-    print(storage)
+        store.result = (scale, tnow, 1e-6*ms_cut/agecut)
 
     return np.array(list(storage.values()))
 
