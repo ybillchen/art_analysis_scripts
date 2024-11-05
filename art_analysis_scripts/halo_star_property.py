@@ -8,12 +8,12 @@ import os
 import sys
 
 import numpy as np
-from scipy import special
 
 import yt
 yt.enable_parallelism()
 
 from age_spreads import time_units, duration, ave_time, age_spread
+from utils import f_bound, get_fbound0
 
 
 # scale(0) id(1) desc_scale(2) desc_id(3) num_prog(4) pid(5) upid(6) desc_pid(7) 
