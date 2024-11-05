@@ -73,8 +73,8 @@ if __name__ == '__main__':
         basepath = sys.argv[2]
         a_target = float(sys.argv[1])
 
-    tree = np.loadtxt(os.path.join(basepath, "run/" if is_under_run else "", "rockstar_halos/trees/tree_0_0_0.dat"))
-    ts = yt.load(os.path.join(basepath, "run/" if is_under_run else "", "out/snap_a*.art"))
+    tree = np.loadtxt(os.path.join(basepath, "rockstar_halos/trees/tree_0_0_0.dat"))
+    ts = yt.load(os.path.join(basepath, "out/snap_a*.art"))
 
     mb = find_most_massive_halo(tree, a_target)
     mass_history_50 = sfh(ts, mb, agecut=50)
