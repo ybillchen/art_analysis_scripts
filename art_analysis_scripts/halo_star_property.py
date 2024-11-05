@@ -92,7 +92,8 @@ def histories(ts, branches, func, **kwargs):
 
         store.result = out
 
-    return np.array(list(storage.values()))
+    result = np.array(list(storage.values()))
+    return result[np.argsort(result[:,0])]
 
 def save_sfh_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1e5):
 
