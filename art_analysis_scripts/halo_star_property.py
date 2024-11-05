@@ -108,7 +108,7 @@ def save_sfh_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1e5):
     np.savetxt(os.path.join(basepath, "analysis/ms_histories.txt"), ms_histories, fmt="%.6e")
 
     fabove_histories = histories(ts, mbs, frac_above, masscut=masscut)
-    np.savetxt(os.path.join(basepath, "analysis/fabove_histories_%g.txt"%masscut/1e5), fabove_histories, fmt="%.6e")
+    np.savetxt(os.path.join(basepath, "analysis/fabove_histories_%g.txt"%(masscut/1e5)), fabove_histories, fmt="%.6e")
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
