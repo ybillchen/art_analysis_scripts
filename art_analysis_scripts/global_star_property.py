@@ -11,7 +11,7 @@ import numpy as np
 import yt
 
 from age_spreads import time_units, duration, ave_time, age_spread
-from utils import f_bound, get_fbound0
+from utils import f_bound, get_fbound0, get_eps_int
 
 def load_ds(basepath, a_target):
     filename = os.path.join(basepath, "run/out/snap_a%.4f.art"%a_target)
@@ -29,6 +29,14 @@ def save_logmi(basepath, a_target):
     logmi = logmi(snap)
     np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/logmi.txt"), 
         logmi, fmt="%.6f")
+
+def save_eps_int(basepath, a_target):
+    ds, is_under_run = load_ds(basepath, a_target)
+    snap = ds.all_data()
+
+    fbound0 = get_eps_int(snap)
+    np.savetxt(os.path.join(basepath, "run/" if is_under_run else "", "analysis/eps_int.txt"), 
+        fbound0, fmt="%.6e")
 
 def save_fbound0(basepath, a_target):
     ds, is_under_run = load_ds(basepath, a_target)
@@ -92,4 +100,4 @@ if __name__ == '__main__':
 
     assert not a_target is None
 
-    save_fbound0(basepath, a_target)
+    save_eps_int(basepath, a_target)
