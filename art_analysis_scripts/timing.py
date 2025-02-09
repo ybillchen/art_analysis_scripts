@@ -5,12 +5,13 @@ All rights reserved.
 """
 
 import sys
+import os
 import datetime
 
 import numpy as np
 
 def check_timing(basepath, simple=False):
-    f = open(basepath+"run/log/timing.000.log")
+    f = open(os.path.join(basepath, "run/log/timing.000.log"))
     data = f.read().split("\n")
     f.close()
     step = []
@@ -25,7 +26,7 @@ def check_timing(basepath, simple=False):
     step = np.array(step)
     total_run_time = np.array(total_run_time)
 
-    f = open(basepath+"run/log/times.log")
+    f = open(os.path.join(basepath, "run/log/times.log"))
     data = f.read().split("\n")
     f.close()
     step = []
