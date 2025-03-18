@@ -104,7 +104,7 @@ def save_histories_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1
 
     mbs = find_most_massive_halos(tree, a_target, num=10)
 
-    if not os.path.exists(os.path.join(basepath, "analysis")):
+    if not os.path.exists(os.path.join(basepath, "run/analysis")):
         os.makedirs(os.path.join(basepath, "run/analysis"))
 
     # sfr_histories = histories(ts, mbs, sfr, agecut=agecut)
