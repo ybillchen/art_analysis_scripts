@@ -99,22 +99,22 @@ def histories(ts, branches, func, **kwargs):
 
 def save_histories_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1e5):
 
-    tree = np.loadtxt(os.path.join(basepath, "rockstar_halos/trees/tree_0_0_0.dat"), skiprows=48)
-    ts = yt.load(os.path.join(basepath, "out/snap_a*.art"))
+    tree = np.loadtxt(os.path.join(basepath, "run/rockstar_halos/trees/tree_0_0_0.dat"), skiprows=48)
+    ts = yt.load(os.path.join(basepath, "run/out/snap_a*.art"))
 
     mbs = find_most_massive_halos(tree, a_target, num=10)
 
     if not os.path.exists(os.path.join(basepath, "analysis")):
-        os.makedirs(os.path.join(basepath, "analysis"))
+        os.makedirs(os.path.join(basepath, "run/analysis"))
 
     # sfr_histories = histories(ts, mbs, sfr, agecut=agecut)
-    # np.savetxt(os.path.join(basepath, "analysis/sfr_histories_%g.txt"%agecut), sfr_histories, fmt="%.6e")
+    # np.savetxt(os.path.join(basepath, "run/analysis/sfr_histories_%g.txt"%agecut), sfr_histories, fmt="%.6e")
 
     ms_histories = histories(ts, mbs, stellar_mass)
-    np.savetxt(os.path.join(basepath, "analysis/ms_histories.txt"), ms_histories, fmt="%.6e")
+    np.savetxt(os.path.join(basepath, "run/analysis/ms_histories.txt"), ms_histories, fmt="%.6e")
 
     # fabove_histories = histories(ts, mbs, frac_above, masscut=masscut)
-    # np.savetxt(os.path.join(basepath, "analysis/fabove_histories_%g.txt"%(masscut/1e5)), fabove_histories, fmt="%.6e")
+    # np.savetxt(os.path.join(basepath, "run/analysis/fabove_histories_%g.txt"%(masscut/1e5)), fabove_histories, fmt="%.6e")
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
