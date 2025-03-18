@@ -118,13 +118,20 @@ def save_histories_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
-        basepath = ""
         a_target = None
-    elif len(sys.argv) == 2:
         basepath = ""
+        agecut = 50
+    elif len(sys.argv) == 2:
         a_target = float(sys.argv[1])
+        basepath = ""
+        agecut = 50
     elif len(sys.argv) == 3:
-        basepath = sys.argv[2]
         a_target = float(sys.argv[1])
+        basepath = sys.argv[2]
+        agecut = 50
+    elif len(sys.argv) == 4:
+        a_target = float(sys.argv[1])
+        basepath = sys.argv[2]
+        agecut = float(sys.argv[3])
 
     save_histories_most_massive_halos(basepath, a_target, agecut=50.0)
