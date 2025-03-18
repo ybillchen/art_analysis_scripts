@@ -134,4 +134,4 @@ if __name__ == '__main__':
         basepath = sys.argv[2]
         agecut = float(sys.argv[3])
 
-    save_histories_most_massive_halos(basepath, a_target, agecut=50.0)
+    save_histories_most_massive_halos(basepath, a_target, agecut=agecut)
