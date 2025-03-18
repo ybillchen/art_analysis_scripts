@@ -68,9 +68,8 @@ def frac_above(region, masscut=1e5):
     ms_cut = np.sum(mc[mc>masscut])
     return ms_cut/np.sum(ms)
 
-def histories(ts, branches, func, **kwargs):
+def histories(ts, branches, func, mhmin, **kwargs):
     storage = {}
-    mhmin = kwargs['mhmin']
 
     for store, ds in ts.piter(storage=storage):
         scale = 1 / (ds.current_redshift+1)
@@ -87,7 +86,7 @@ def histories(ts, branches, func, **kwargs):
             assert len(idx) == 1
 
             line = branch[idx[0]]
-            
+
             mh = line[10] * ds.arr(1, "Msun/h")
             if mh.to_value("Msun") < mhmin:
                 out += (np.nan,)
@@ -114,13 +113,13 @@ def save_histories_most_massive_halos(basepath, a_target, mhmin=1e8, agecut=50.0
     if not os.path.exists(os.path.join(basepath, "run/analysis")):
         os.makedirs(os.path.join(basepath, "run/analysis"))
 
-    sfr_histories = histories(ts, mbs, sfr, mhmin=mhmin, agecut=agecut)
+    sfr_histories = histories(ts, mbs, sfr, mhmin, agecut=agecut)
     np.savetxt(os.path.join(basepath, "run/analysis/sfr_histories_%g.txt"%agecut), sfr_histories, fmt="%.6e")
 
-    # ms_histories = histories(ts, mbs, stellar_mass, mhmin=mhmin)
+    # ms_histories = histories(ts, mbs, stellar_mass, mhmin)
     # np.savetxt(os.path.join(basepath, "run/analysis/ms_histories.txt"), ms_histories, fmt="%.6e")
 
-    # fabove_histories = histories(ts, mbs, frac_above, mhmin=mhmin, masscut=masscut)
+    # fabove_histories = histories(ts, mbs, frac_above, mhmin, masscut=masscut)
     # np.savetxt(os.path.join(basepath, "run/analysis/fabove_histories_%g.txt"%(masscut/1e5)), fabove_histories, fmt="%.6e")
 
 if __name__ == '__main__':
@@ -150,4 +149,4 @@ if __name__ == '__main__':
         mhmin = float(sys.argv[3])
         agecut = float(sys.argv[4])
 
-    save_histories_most_massive_halos(basepath, a_target, mhmin=1e8, agecut=agecut)
+    save_histories_most_massive_halos(basepath, a_target, mhmin=mhmin, agecut=agecut)
