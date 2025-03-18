@@ -107,7 +107,7 @@ def save_histories_most_massive_halos(basepath, a_target, agecut=50.0, masscut=1
     if not os.path.exists(os.path.join(basepath, "run/analysis")):
         os.makedirs(os.path.join(basepath, "run/analysis"))
 
-    sfr_histories = histories(ts, mbs, sfr, agecut=agecut)
+    sfr_histories = histories(ts, mbs, sfr, agecut=agecut, masscut=masscut)
     np.savetxt(os.path.join(basepath, "run/analysis/sfr_histories_%g.txt"%agecut), sfr_histories, fmt="%.6e")
 
     # ms_histories = histories(ts, mbs, stellar_mass)
