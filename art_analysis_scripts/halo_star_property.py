@@ -82,10 +82,9 @@ def histories(ts, branches, func, mhmin, **kwargs):
             if len(idx) == 0:
                 out += (np.nan,)
                 continue
+            idx = np.argmin(np.abs(branch[:,0]-scale))
 
-            assert len(idx) == 1
-
-            line = branch[idx[0]]
+            line = branch[idx]
 
             mh = line[10] * ds.arr(1, "Msun/h")
             if mh.to_value("Msun") < mhmin:
