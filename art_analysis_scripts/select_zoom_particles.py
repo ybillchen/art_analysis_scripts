@@ -4,6 +4,9 @@ Copyright (c) 2024 Yingtian Chen
 All rights reserved.
 """
 
+import os
+import sys
+
 import numpy as np
 
 import yt
@@ -58,6 +61,15 @@ def zoom_particles_from_a(hid, a_target, factor=4):
         out, fmt="%.6f %.6f %.6f")
 
 if __name__ == "__main__":
-    hid = 1117028
-    a_target = 0.2501
+
+    if len(sys.argv) == 1:
+        hid = 1117028
+        a_target = 0.2501
+    elif len(sys.argv) == 2:
+        hid = int(sys.argv[1])
+        a_target = 0.2501
+    elif len(sys.argv) == 3:
+        hid = int(sys.argv[1])
+        a_target = float(sys.argv[2])
+
     zoom_particles_from_a(hid=hid, a_target=a_target)
