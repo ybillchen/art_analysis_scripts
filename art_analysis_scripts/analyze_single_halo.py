@@ -59,7 +59,8 @@ if __name__ == "__main__":
 
             fig, ax0 = plt.subplots()
 
-            boxsize = (d.domain_dimensions[0].astype(float) * d.units.code_length).to('kpc')
+            boxsize = (snap_last.domain_dimensions[0].astype(float) \
+                * snap_last.units.code_length).to('kpc')
 
             x = sp[("N-BODY", "POSITION_X")].to("kpc") - center[0]
             y = sp[("N-BODY", "POSITION_Y")].to("kpc") - center[1]
