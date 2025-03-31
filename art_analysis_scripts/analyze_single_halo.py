@@ -67,8 +67,8 @@ if __name__ == "__main__":
 
             x[x > boxsize/2] -= boxsize
             x[x < -boxsize/2] += boxsize
-            y[x > boxsize/2] -= boxsize
-            y[x < -boxsize/2] += boxsize
+            y[y > boxsize/2] -= boxsize
+            y[y < -boxsize/2] += boxsize
 
             pp.prj(ax0, x, y, 
                 box=box, vmin=-4, vmax=1, log=True, capacity=32, 
