@@ -59,8 +59,15 @@ if __name__ == "__main__":
 
             fig, ax0 = plt.subplots()
 
+            boxsize = (d.domain_dimensions[0].astype(float) * d.units.code_length).to('kpc')
+
             x = sp[("N-BODY", "POSITION_X")].to("kpc") - center[0]
             y = sp[("N-BODY", "POSITION_Y")].to("kpc") - center[1]
+
+            x[x > boxsize/2] -= boxsize
+            x[x < -boxsize/2] += boxsize
+            y[x > boxsize/2] -= boxsize
+            y[x < -boxsize/2] += boxsize
 
             pp.prj(ax0, x, y, 
                 box=box, vmin=-4, vmax=1, log=True, capacity=32, 
@@ -73,7 +80,7 @@ if __name__ == "__main__":
             ax0.add_patch(vir_circ)
             ax0.add_patch(zoom_circ)
 
-            ax0.set_title(r"$\log M_{\rm h}=%.2f$"%np.log10(root["mass"]))
+            ax0.set_title(r"$\log M_{\rm h}=%.4f$"%np.log10(root["mass"]))
             ax0.set_xlim(box[0], box[0]+box[2])
             ax0.set_ylim(box[1], box[1]+box[3])
             ax0.set_xlabel("x (kpc)")
