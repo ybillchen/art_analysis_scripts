@@ -57,7 +57,7 @@ def zoom_particles_from_a(hid, a_target, factor=4):
     print("z range: %.3f - %.3f"%(np.min(z), np.max(z)))
 
     out = np.column_stack([x,y,z])
-    np.savetxt("analysis/2e12/zoom_particles_from_a%.4f_%d.txt"%(a_target,hid), 
+    np.savetxt("analysis/3e12/zoom_particles_from_a%.4f_%d.txt"%(a_target,hid), 
         out, fmt="%.6f %.6f %.6f")
 
 if __name__ == "__main__":
