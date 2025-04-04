@@ -83,8 +83,8 @@ def check_timing(basepath, simple=False):
         return
 
     for i in range(len(step)):
-        print("step %d, t = %.1f Myr, a = %.4f, runtime = %.3f hr, druntime/dt = %.3f hr/Myr"%(
-            step[i], t[i]/1e6, a[i], total_run_time[i+1]/3600, runtime_per_t[i]))
+        print("step %d, t = %.1f Myr, a = %.4f, z = %.1f, runtime = %.3f hr, druntime/dt = %.3f hr/Myr"%(
+            step[i], t[i]/1e6, a[i], -1+1/a[i], total_run_time[i+1]/3600, runtime_per_t[i]))
 
 if __name__ == '__main__':
     if len(sys.argv) == 1:
