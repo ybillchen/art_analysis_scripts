@@ -8,13 +8,6 @@ import os
 import time
 import re
 
-def count_lines(file_path):
-    with open(file_path, 'r') as f:
-        return sum(1 for line in f)
-
-def get_file_size(file_path):
-    return os.path.getsize(file_path)
-
 def find_matching_file(folder_path):
     pattern = re.compile(r"^stdout_.+_(\d+)$")
     best_file = None
@@ -41,7 +34,7 @@ def scan_subfolders(root_folder):
             matched_file = find_matching_file(os.path.join(subfolder_path, "run"))
             if matched_file:
                 try:
-                    filesize = get_file_size(matched_file)
+                    filesize = os.path.getsize(matched_file)
                     results[entry] = filesize
                 except Exception as e:
                     print(f"Error reading file {matched_file}: {e}")
@@ -63,7 +56,7 @@ def check_stuck(root_folders):
     for root_folder in root_folders:
         second_counts[root_folder] = scan_subfolders(root_folder)
 
-        for folder, initial_count in initial_counts.items():
+        for folder, initial_count in initial_counts[root_folder].items():
             if folder in second_counts[root_folder]:
                 delta = second_counts[folder] - initial_count
                 print(f"Subfolder '{folder}': Change = {delta} bytes")
