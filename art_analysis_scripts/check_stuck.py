@@ -25,7 +25,7 @@ def find_matching_file(folder_path):
     pattern = re.compile(r"^stdout_.+_(\d+)$")
     best_file = None
     max_num = -1
-    for fname in sorted(os.listdir(folder_path)):
+    for fname in os.listdir(folder_path):
         full_path = os.path.join(folder_path, fname)
         if os.path.isfile(full_path):
             match = pattern.match(fname)
@@ -41,7 +41,7 @@ def find_matching_file(folder_path):
 
 def scan_subfolders(root_folder):
     results = {}
-    for entry in os.listdir(root_folder):
+    for entry in sorted(os.listdir(root_folder)):
         subfolder_path = os.path.join(root_folder, entry)
         if os.path.isdir(subfolder_path):
             matched_file = find_matching_file(os.path.join(subfolder_path, "run"))
