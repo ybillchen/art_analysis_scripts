@@ -25,7 +25,7 @@ def find_matching_file(folder_path):
     pattern = re.compile(r"^stdout_.+_(\d+)$")
     best_file = None
     max_num = -1
-    for fname in os.listdir(folder_path):
+    for fname in sorted(os.listdir(folder_path)):
         full_path = os.path.join(folder_path, fname)
         if os.path.isfile(full_path):
             match = pattern.match(fname)
@@ -55,7 +55,6 @@ def scan_subfolders(root_folder):
     return results
 
 def check_stuck(root_path, root_folders):
-    initial_counts = {}
     for root_folder in root_folders:
         for folder, mod_time in scan_subfolders(os.path.join(root_path, root_folder)).items():
             time_since_edit = time.time() - mod_time
