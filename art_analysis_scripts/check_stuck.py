@@ -7,6 +7,22 @@ All rights reserved.
 import os
 import time
 import re
+import datetime
+
+def format_time_delta(seconds):
+    seconds = int(seconds)
+    minutes, s = divmod(seconds, 60)
+    hours, minutes = divmod(minutes, 60)
+    days, hours = divmod(hours, 24)
+    parts = []
+    if days:
+        parts.append(f"{days} day{'s' if days != 1 else ''}")
+    if hours:
+        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+    if minutes:
+        parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
+    parts.append(f"{s} second{'s' if s != 1 else ''}")
+    return ", ".join(parts)
 
 def find_matching_file(folder_path):
     pattern = re.compile(r"^stdout_.+_(\d+)$")
@@ -34,8 +50,7 @@ def scan_subfolders(root_folder):
             matched_file = find_matching_file(os.path.join(subfolder_path, "run"))
             if matched_file:
                 try:
-                    filesize = os.path.getsize(matched_file)
-                    results[entry] = filesize
+                    results[entry] = os.path.getmtime(matched_file)
                 except Exception as e:
                     print(f"Error reading file {matched_file}: {e}")
             else:
@@ -47,21 +62,10 @@ def check_stuck(root_folders):
     print("Initial scan of subfolders...")
     initial_counts = {}
     for root_folder in root_folders:
-        initial_counts[root_folder] = scan_subfolders(root_folder)
-    
-    time.sleep(5)
-    
-    print("Second scan of subfolders after 5 seconds...")
-    second_counts = {}
-    for root_folder in root_folders:
-        second_counts[root_folder] = scan_subfolders(root_folder)
-
-        for folder, initial_count in initial_counts[root_folder].items():
-            if folder in second_counts[root_folder]:
-                delta = second_counts[root_folder][folder] - initial_count
-                print(f"Subfolder {root_folder}/{folder}: Change = {delta} bytes")
-            else:
-                print(f"Subfolder {root_folder}/{folder} was not found in the second scan.")
+        for folder, mod_time in scan_subfolders(root_folder).items():
+            time_since_edit = time.time() - mod_time
+            formatted_delta = format_time_delta(time_since_edit)
+            print(f"Subfolder {root_folder}/{folder}: Last edited {formatted_delta} ago")
 
 if __name__ == "__main__":
     root_folders = ["mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
