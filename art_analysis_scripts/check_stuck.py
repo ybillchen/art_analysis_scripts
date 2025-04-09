@@ -58,7 +58,7 @@ def scan_subfolders(root_folder):
 def check_stuck(root_path, root_folders):
     initial_counts = {}
     for root_folder in root_folders:
-        for folder, mod_time in scan_subfolders(os.join(root_path, root_folder)).items():
+        for folder, mod_time in scan_subfolders(os.path.join(root_path, root_folder)).items():
             time_since_edit = time.time() - mod_time
             warning = "" if time_since_edit < 600 else ", MAY STUCK"
             formatted_delta = format_time_delta(time_since_edit)
