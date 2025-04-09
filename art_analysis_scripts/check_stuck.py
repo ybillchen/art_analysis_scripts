@@ -14,15 +14,13 @@ def format_time_delta(seconds):
     minutes, s = divmod(seconds, 60)
     hours, minutes = divmod(minutes, 60)
     days, hours = divmod(hours, 24)
-    parts = []
     if days:
-        parts.append(f"{days} day{'s' if days != 1 else ''}")
+        return f"{days} d"
     if hours:
-        parts.append(f"{hours} hour{'s' if hours != 1 else ''}")
+        return f"{hours} h"
     if minutes:
-        parts.append(f"{minutes} minute{'s' if minutes != 1 else ''}")
-    parts.append(f"{s} second{'s' if s != 1 else ''}")
-    return ", ".join(parts)
+        return f"{minutes} m"
+    return f"{s} s"
 
 def find_matching_file(folder_path):
     pattern = re.compile(r"^stdout_.+_(\d+)$")
