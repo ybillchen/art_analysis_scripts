@@ -60,7 +60,7 @@ def check_stuck(root_folders):
     for root_folder in root_folders:
         for folder, mod_time in scan_subfolders(root_folder).items():
             time_since_edit = time.time() - mod_time
-            warning = "" if time_since_edit < 60 else ", MAY STUCK"
+            warning = "" if time_since_edit < 600 else ", MAY STUCK"
             formatted_delta = format_time_delta(time_since_edit)
             print(f"{root_folder}/{folder}: Last edited {formatted_delta} ago{warning}")
 
