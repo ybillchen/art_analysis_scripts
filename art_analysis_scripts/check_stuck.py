@@ -7,7 +7,6 @@ All rights reserved.
 import os
 import time
 import re
-import datetime
 
 def format_time_delta(seconds):
     seconds = int(seconds)
