@@ -12,13 +12,26 @@ def count_lines(file_path):
     with open(file_path, 'r') as f:
         return sum(1 for line in f)
 
+def get_file_size(file_path):
+    return os.path.getsize(file_path)
+
 def find_matching_file(folder_path):
-    pattern = re.compile(r"^stdout_.+_\d+$")
+    pattern = re.compile(r"^stdout_.+_(\d+)$")
+    best_file = None
+    max_num = -1
     for fname in os.listdir(folder_path):
         full_path = os.path.join(folder_path, fname)
-        if os.path.isfile(full_path) and pattern.match(fname):
-            return full_path
-    return None
+        if os.path.isfile(full_path):
+            match = pattern.match(fname)
+            if match:
+                try:
+                    num = int(match.group(1))
+                    if num > max_num:
+                        max_num = num
+                        best_file = full_path
+                except ValueError:
+                    continue
+    return best_file
 
 def scan_subfolders(root_folder):
     results = {}
@@ -28,8 +41,8 @@ def scan_subfolders(root_folder):
             matched_file = find_matching_file(os.path.join(subfolder_path, "run"))
             if matched_file:
                 try:
-                    line_count = count_lines(matched_file)
-                    results[entry] = line_count
+                    filesize = get_file_size(matched_file)
+                    results[entry] = filesize
                 except Exception as e:
                     print(f"Error reading file {matched_file}: {e}")
             else:
@@ -38,22 +51,22 @@ def scan_subfolders(root_folder):
 
 def check_stuck(root_folders):
 
+    print("Initial scan of subfolders...")
     initial_counts = {}
     for root_folder in root_folders:
-        print("Initial scan of subfolders...")
         initial_counts[root_folder] = scan_subfolders(root_folder)
     
     time.sleep(5)
     
+    print("Second scan of subfolders after 5 seconds...")
     second_counts = {}
     for root_folder in root_folders:
-        print("Second scan of subfolders after 5 seconds...")
         second_counts[root_folder] = scan_subfolders(root_folder)
 
         for folder, initial_count in initial_counts.items():
             if folder in second_counts[root_folder]:
                 delta = second_counts[folder] - initial_count
-                print(f"Subfolder '{folder}': Change = {delta} lines")
+                print(f"Subfolder '{folder}': Change = {delta} bytes")
             else:
                 print(f"Subfolder '{folder}' was not found in the second scan.")
 
