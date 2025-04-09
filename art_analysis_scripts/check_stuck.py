@@ -62,7 +62,7 @@ def check_stuck(root_folders):
             time_since_edit = time.time() - mod_time
             warning = "" if time_since_edit < 600 else ", MAY STUCK"
             formatted_delta = format_time_delta(time_since_edit)
-            print(f"{root_folder}/{folder}: Last edited {formatted_delta} ago{warning}")
+            print(f"{root_folder}/{folder}: last updated {formatted_delta} ago{warning}")
 
 if __name__ == "__main__":
     root_folders = ["mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
