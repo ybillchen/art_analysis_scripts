@@ -58,7 +58,7 @@ def check_stuck(root_folders):
 
         for folder, initial_count in initial_counts[root_folder].items():
             if folder in second_counts[root_folder]:
-                delta = second_counts[folder] - initial_count
+                delta = second_counts[root_folder][folder] - initial_count
                 print(f"Subfolder '{folder}': Change = {delta} bytes")
             else:
                 print(f"Subfolder '{folder}' was not found in the second scan.")
