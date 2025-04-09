@@ -55,15 +55,16 @@ def scan_subfolders(root_folder):
                 print(f"No matching file found in subfolder: {subfolder_path}")
     return results
 
-def check_stuck(root_folders):
+def check_stuck(root_path, root_folders):
     initial_counts = {}
     for root_folder in root_folders:
-        for folder, mod_time in scan_subfolders(root_folder).items():
+        for folder, mod_time in scan_subfolders(os.join(root_path, root_folder)).items():
             time_since_edit = time.time() - mod_time
             warning = "" if time_since_edit < 600 else ", MAY STUCK"
             formatted_delta = format_time_delta(time_since_edit)
             print(f"{root_folder}/{folder}: last updated {formatted_delta} ago{warning}")
 
 if __name__ == "__main__":
+    root_path = "/work2/08199/tg874988/stampede3/art_simulations/hydro"
     root_folders = ["mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
-    check_stuck(root_folders)
+    check_stuck(root_path, root_folders)
