@@ -56,14 +56,13 @@ def scan_subfolders(root_folder):
     return results
 
 def check_stuck(root_folders):
-
-    print("Initial scan of subfolders...")
     initial_counts = {}
     for root_folder in root_folders:
         for folder, mod_time in scan_subfolders(root_folder).items():
             time_since_edit = time.time() - mod_time
+            warning = "" if time_since_edit < 60 else ", MAY STUCK"
             formatted_delta = format_time_delta(time_since_edit)
-            print(f"Subfolder {root_folder}/{folder}: Last edited {formatted_delta} ago")
+            print(f"{root_folder}/{folder}: Last edited {formatted_delta} ago{warning}")
 
 if __name__ == "__main__":
     root_folders = ["mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
