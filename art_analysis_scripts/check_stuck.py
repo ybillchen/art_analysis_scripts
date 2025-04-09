@@ -59,9 +59,9 @@ def check_stuck(root_folders):
         for folder, initial_count in initial_counts[root_folder].items():
             if folder in second_counts[root_folder]:
                 delta = second_counts[root_folder][folder] - initial_count
-                print(f"Subfolder '{folder}': Change = {delta} bytes")
+                print(f"Subfolder '{root_folder}'/'{folder}': Change = {delta} bytes")
             else:
-                print(f"Subfolder '{folder}' was not found in the second scan.")
+                print(f"Subfolder '{root_folder}'/'{folder}' was not found in the second scan.")
 
 if __name__ == "__main__":
     root_folders = ["mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
