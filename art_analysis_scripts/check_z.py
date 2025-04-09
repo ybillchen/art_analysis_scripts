@@ -44,10 +44,8 @@ def scan_subfolders(root_folder):
 
             step.append(int(x[0]))
             total_run_time.append(float(x[3]))
-        step = np.array(step)
-        total_run_time = np.array(total_run_time)
 
-        f = open(os.path.join(basepath, "run/log/times.log"))
+        f = open(os.path.join(subfolder_path, "run/log/times.log"))
         data = f.read().split("\n")
         f.close()
         step = []
