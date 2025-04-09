@@ -64,11 +64,6 @@ def scan_subfolders(root_folder):
             dt.append(float(x[2]))
             a.append(float(x[3]))
 
-        step = np.array(step)
-        t = np.array(t)
-        dt = np.array(dt)
-        a = np.array(a)
-
         results[entry] = ("step %d, t = %.1f Myr, a = %.4f, z = %.1f, runtime = %.3f hr, druntime/dt = %.3f hr/Myr"%(
             step[-1], t[-1]/1e6, a[-1], -1+1/a[-1], total_run_time[-1]/3600, runtime_per_t[-1]))
 
