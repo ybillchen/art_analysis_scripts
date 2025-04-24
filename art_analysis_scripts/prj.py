@@ -94,7 +94,7 @@ def make_plot(basepath, a, two_axes=True):
     z0 = 128
     size = 16
 
-    level = 10
+    level = 9
     factor = 0.6
 
     unit = "kpccm"
@@ -153,10 +153,10 @@ def make_plot(basepath, a, two_axes=True):
             (centers[idx_y]-0.5*size)*unit_convert, 
             (centers[idx_y]+0.5*size)*unit_convert)
 
-    axs[0].text(
-        (centers[idx_x]-0.45*size)*unit_convert, 
-        (centers[idx_y]+0.45*size)*unit_convert, 
-        r"$R_{\rm GMC} = %d$ pc"%10, ha="left", va="top", color="w")
+    # axs[0].text(
+    #     (centers[idx_x]-0.45*size)*unit_convert, 
+    #     (centers[idx_y]+0.45*size)*unit_convert, 
+    #     r"$R_{\rm GMC} = %d$ pc"%10, ha="left", va="top", color="w")
 
     plt.tight_layout()
     plt.savefig(os.path.join(basepath, "run/analysis/prj/prj_a%.4f.png"%a), bbox_inches ="tight", pad_inches=0.05, dpi=300)
