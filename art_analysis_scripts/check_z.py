@@ -67,6 +67,8 @@ def scan_subfolders(root_folder):
         dt = np.array(dt)
 
         d_run_time = total_run_time[1:] - total_run_time[:-1]
+        mask = d_run_time <= 0 # this happens in restarts
+        d_run_time[mask] = total_run_time[1:][mask]
         runtime_per_t = (1e6/3600) * d_run_time / dt # hr per Myr
 
         results[entry] = ("step %d, t = %.1f Myr, a = %.4f, z = %.1f, runtime = %.3f hr, druntime/dt = %.3f hr/Myr"%(
