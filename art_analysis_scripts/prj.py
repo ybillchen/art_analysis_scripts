@@ -92,7 +92,7 @@ def make_plot(basepath, a, two_axes=True):
     x0 = 128
     y0 = 128
     z0 = 128
-    size = 8
+    size = 16
 
     level = 10
     factor = 0.6
@@ -100,7 +100,7 @@ def make_plot(basepath, a, two_axes=True):
     unit = "kpccm"
     unit_convert = (1*ds.units.code_length).to_value(unit)
 
-    ruler = 5 # in kpc
+    ruler = 100 # in kpc
     ruler_convert = (ruler*ds.units.kpc).to_value(unit)
 
     fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
