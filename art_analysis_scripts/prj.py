@@ -89,10 +89,10 @@ def make_plot(basepath, a, two_axes=True):
     # z0 = d["gas", "z"][argdens].to_value("code_length")
     # size = 0.125
 
-    x0 = 130
-    y0 = 125.5
-    z0 = 132.75
-    size = 2
+    x0 = 128
+    y0 = 128
+    z0 = 128
+    size = 8
 
     level = 10
     factor = 0.6
@@ -159,7 +159,7 @@ def make_plot(basepath, a, two_axes=True):
         r"$R_{\rm GMC} = %d$ pc"%10, ha="left", va="top", color="w")
 
     plt.tight_layout()
-    plt.savefig("outputs/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
+    plt.savefig("analysis/prj/prj_a%.4f.png"%a, bbox_inches ="tight", pad_inches=0.05, dpi=300)
     plt.close()
 
     print("Done a = %.4f"%a)
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     else:
         yt.funcs.mylog.setLevel(50)  # ignore yt's output
 
-        Np = 4
+        Np = 112
         print("Number of processes: %d"%Np)
 
         para_list = []
