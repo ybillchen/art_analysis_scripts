@@ -8,6 +8,7 @@ import os
 import time
 import re
 
+import numpy as np
 
 def find_matching_file(folder_path):
     pattern = re.compile(r"^stdout_.+_(\d+)$")
