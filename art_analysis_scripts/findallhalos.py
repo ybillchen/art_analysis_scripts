@@ -35,9 +35,11 @@ if __name__ == '__main__':
 
     procs = []
 
+    scriptpath = "/home1/08199/tg874988/art_analysis_scripts/art_analysis_scripts/"
+
     for subpath in subpath_list:
         cmd = [
-            "mpirun", "-n", "3", "python", "halofinder.py", 
+            "mpirun", "-n", "3", "python", os.path.join(scriptpath, "halofinder.py"), 
             "0", "N-BODY_0", "1", "1", os.path.join(basepath, subpath, "run")
         ]
         p = subprocess.Popen(cmd)
