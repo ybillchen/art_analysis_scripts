@@ -1,3 +1,10 @@
+"""
+BSD 3-Clause License
+Copyright (c) 2024-2025 Yingtian Chen
+All rights reserved.
+"""
+
+import os
 import subprocess
 
 if __name__ == '__main__':
