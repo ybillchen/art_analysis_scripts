@@ -1,6 +1,6 @@
 import subprocess
 
-if if __name__ == '__main__':
+if __name__ == '__main__':
 
     basepath = "/scratch/08199/tg874988/art_simulations/hydro/"
     subpath_list = [
