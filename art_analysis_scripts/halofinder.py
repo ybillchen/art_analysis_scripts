@@ -34,27 +34,27 @@ def rockstar_halofinder(base="", restart=False,
     hc.create()
 
 
-def findall(basepath, subpath_list, restart=False, 
-    particle_type="N-BODY_0", num_readers=1, num_writers=1):
+# def findall(basepath, subpath_list, restart=False, 
+#     particle_type="N-BODY_0", num_readers=1, num_writers=1):
 
-    num_groups = len(subpath_list)
-    group_size = num_readers + num_writers + 1
-    total_cores = group_size * num_groups
+#     num_groups = len(subpath_list)
+#     group_size = num_readers + num_writers + 1
+#     total_cores = group_size * num_groups
 
-    processes = []
+#     processes = []
 
-    for i, subpath in enumerate(subpath_list):
-        base = os.path.join(basepath, subpath, "run")
-        cores = list(range(i * group_size, (i + 1) * group_size))
-        p = Process(
-            target=rockstar_halofinder, 
-            args=(base, restart, particle_type, num_readers, num_writers)
-        )
-        p.start()
-        processes.append(p)
+#     for i, subpath in enumerate(subpath_list):
+#         base = os.path.join(basepath, subpath, "run")
+#         cores = list(range(i * group_size, (i + 1) * group_size))
+#         p = Process(
+#             target=rockstar_halofinder, 
+#             args=(base, restart, particle_type, num_readers, num_writers)
+#         )
+#         p.start()
+#         processes.append(p)
 
-    for p in processes:
-        p.join()
+#     for p in processes:
+#         p.join()
 
 if __name__ == "__main__":
 
@@ -86,42 +86,42 @@ if __name__ == "__main__":
     else:
         raise Exception("Invalid number of arguments")
 
-    # rockstar_halofinder(
-    #     restart=restart, 
-    #     particle_type=particle_type, 
-    #     num_readers=num_readers, 
-    #     num_writers=num_writers
-    # )
-
-    basepath = "/scratch/08199/tg874988/art_simulations/hydro/"
-    subpath_list = [
-        "mh2e12_km/1113433",
-        "mh2e12_km/1113673",
-        "mh2e12_km/1113831",
-        "mh2e12_km/1117028",
-        "mh2e12_km/1117038",
-        "mh3e12_km/1116392",
-        "mh3e12_km/1117206",
-        "mh3e12_km/1118550",
-        "mh5e12_km/1112809",
-        "mh5e12_km/1116287",
-        "mh2e12_p12/1113433",
-        "mh2e12_p12/1113673",
-        "mh2e12_p12/1113831",
-        "mh2e12_p12/1117028",
-        "mh2e12_p12/1117038",
-        "mh3e12_p12/1116392",
-        "mh3e12_p12/1117206",
-        "mh3e12_p12/1118550",
-        "mh5e12_p12/1112809",
-        "mh5e12_p12/1116287",
-    ]
-
-    findall(
-        basepath=basepath, 
-        subpath_list=subpath_list, 
+    rockstar_halofinder(
         restart=restart, 
         particle_type=particle_type, 
         num_readers=num_readers, 
         num_writers=num_writers
     )
+
+    # basepath = "/scratch/08199/tg874988/art_simulations/hydro/"
+    # subpath_list = [
+    #     "mh2e12_km/1113433",
+    #     "mh2e12_km/1113673",
+    #     "mh2e12_km/1113831",
+    #     "mh2e12_km/1117028",
+    #     "mh2e12_km/1117038",
+    #     "mh3e12_km/1116392",
+    #     "mh3e12_km/1117206",
+    #     "mh3e12_km/1118550",
+    #     "mh5e12_km/1112809",
+    #     "mh5e12_km/1116287",
+    #     "mh2e12_p12/1113433",
+    #     "mh2e12_p12/1113673",
+    #     "mh2e12_p12/1113831",
+    #     "mh2e12_p12/1117028",
+    #     "mh2e12_p12/1117038",
+    #     "mh3e12_p12/1116392",
+    #     "mh3e12_p12/1117206",
+    #     "mh3e12_p12/1118550",
+    #     "mh5e12_p12/1112809",
+    #     "mh5e12_p12/1116287",
+    # ]
+
+    # findall(
+    #     basepath=basepath, 
+    #     subpath_list=subpath_list, 
+    #     restart=restart, 
+    #     particle_type=particle_type, 
+    #     num_readers=num_readers, 
+    #     num_writers=num_writers
+    # )
