@@ -6,6 +6,7 @@ All rights reserved.
 
 import os
 import sys
+from multiprocessing import Process
 
 import yt
 
@@ -45,7 +46,7 @@ def findall(basepath, subpath_list, restart=False,
     for i, subpath in enumerate(subpath_list):
         base = os.path.join(basepath, subpath)
         cores = list(range(i * group_size, (i + 1) * group_size))
-        p = mp.Process(
+        p = Process(
             target=rockstar_halofinder, 
             args=(base, restart, particle_type, num_readers, num_writers)
         )
