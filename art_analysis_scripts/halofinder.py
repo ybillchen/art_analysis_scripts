@@ -46,7 +46,7 @@ def findall(basepath, subpath_list, restart=False,
         base = os.path.join(basepath, subpath)
         cores = list(range(i * group_size, (i + 1) * group_size))
         p = mp.Process(
-            target=worker, 
+            target=rockstar_halofinder, 
             args=(base, restart, particle_type, num_readers, num_writers)
         )
         p.start()
