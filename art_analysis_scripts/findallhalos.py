@@ -9,6 +9,25 @@ import subprocess
 
 if __name__ == '__main__':
 
+    restart = False
+    particle_type = "N-BODY_0"
+    num_readers = 1
+    num_writers = 2
+
+    args = sys.argv[1:]
+
+    if len(args) > 5:
+        raise ValueError("Too many arguments")
+
+    if len(args) > 0:
+        restart = bool(int(args[0]))
+    if len(args) > 1:
+        particle_type = args[1]
+    if len(args) > 2:
+        num_readers = int(args[2])
+    if len(args) > 3:
+        num_writers = int(args[3])
+
     basepath = "/scratch/08199/tg874988/art_simulations/hydro/"
     subpath_list = [
         "mh2e12_km/1113433",
@@ -39,8 +58,10 @@ if __name__ == '__main__':
 
     for subpath in subpath_list:
         cmd = [
-            "mpirun", "-n", "4", "python", os.path.join(scriptpath, "halofinder.py"), 
-            "0", "N-BODY_0", "1", "2", os.path.join(basepath, subpath, "run")
+            "mpirun", "-n", "%d"%(num_readers+num_writers+1), 
+            "python", os.path.join(scriptpath, "halofinder.py"), 
+            "%d"%int(restart), "N-BODY_0", "%d"%num_readers, "%d"%num_writers, 
+            os.path.join(basepath, subpath, "run")
         ]
         p = subprocess.Popen(cmd)
         procs.append(p)
