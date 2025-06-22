@@ -86,12 +86,12 @@ if __name__ == "__main__":
     else:
         raise Exception("Invalid number of arguments")
 
-    # rockstar_halofinder(
-    #     restart=restart, 
-    #     particle_type=particle_type, 
-    #     num_readers=num_readers, 
-    #     num_writers=num_writers
-    # )
+    rockstar_halofinder(
+        restart=restart, 
+        particle_type=particle_type, 
+        num_readers=num_readers, 
+        num_writers=num_writers
+    )
 
     basepath = "/scratch/08199/tg874988/art_simulations/hydro/"
     subpath_list = [
@@ -117,11 +117,11 @@ if __name__ == "__main__":
         "m5e12_p12/1116287",
     ]
 
-    findall(
-        basepath=basepath, 
-        subpath_list=subpath_list, 
-        restart=restart, 
-        particle_type=particle_type, 
-        num_readers=num_readers, 
-        num_writers=num_writers
-    )
+    # findall(
+    #     basepath=basepath, 
+    #     subpath_list=subpath_list, 
+    #     restart=restart, 
+    #     particle_type=particle_type, 
+    #     num_readers=num_readers, 
+    #     num_writers=num_writers
+    # )
