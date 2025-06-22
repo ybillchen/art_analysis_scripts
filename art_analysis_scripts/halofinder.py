@@ -63,30 +63,42 @@ if __name__ == "__main__":
         particle_type = "N-BODY_0"
         num_readers = 1
         num_writers = 1
+        base = ""
     elif len(sys.argv) == 2:
         restart = bool(int(sys.argv[1]))
         particle_type = "N-BODY_0"
         num_readers = 1
         num_writers = 1
+        base = ""
     elif len(sys.argv) == 3:
         restart = bool(int(sys.argv[1]))
         particle_type = sys.argv[2]
         num_readers = 1
         num_writers = 1
+        base = ""
     elif len(sys.argv) == 4:
         restart = bool(int(sys.argv[1]))
         particle_type = sys.argv[2]
         num_readers = int(sys.argv[3])
         num_writers = 1
+        base = ""
     elif len(sys.argv) == 5:
         restart = bool(int(sys.argv[1]))
         particle_type = sys.argv[2]
         num_readers = int(sys.argv[3])
         num_writers = int(sys.argv[4])
+        base = ""
+    elif len(sys.argv) == 6:
+        restart = bool(int(sys.argv[1]))
+        particle_type = sys.argv[2]
+        num_readers = int(sys.argv[3])
+        num_writers = int(sys.argv[4])
+        base = sys.argv[5]
     else:
         raise Exception("Invalid number of arguments")
 
     rockstar_halofinder(
+        base=base,
         restart=restart, 
         particle_type=particle_type, 
         num_readers=num_readers, 
