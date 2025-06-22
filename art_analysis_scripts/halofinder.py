@@ -44,7 +44,7 @@ def findall(basepath, subpath_list, restart=False,
     processes = []
 
     for i, subpath in enumerate(subpath_list):
-        base = os.path.join(basepath, subpath)
+        base = os.path.join(basepath, subpath, "run")
         cores = list(range(i * group_size, (i + 1) * group_size))
         p = Process(
             target=rockstar_halofinder, 
