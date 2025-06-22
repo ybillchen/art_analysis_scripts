@@ -39,7 +39,7 @@ if __name__ == '__main__':
 
     for subpath in subpath_list:
         cmd = [
-            "mpirun", "-n", "3", "python", os.path.join(scriptpath, "halofinder.py"), 
+            "mpirun", "-n", "4", "python", os.path.join(scriptpath, "halofinder.py"), 
             "0", "N-BODY_0", "1", "2", os.path.join(basepath, subpath, "run")
         ]
         p = subprocess.Popen(cmd)
