@@ -5,6 +5,7 @@ All rights reserved.
 """
 
 import os
+import sys
 import subprocess
 
 if __name__ == '__main__':
