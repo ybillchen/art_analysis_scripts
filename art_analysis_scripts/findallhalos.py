@@ -14,22 +14,6 @@ if __name__ == '__main__':
     particle_type = "N-BODY_0"
     num_readers = 1
     num_writers = 2
-
-    args = sys.argv[1:]
-
-    if len(args) > 5:
-        raise ValueError("Too many arguments")
-
-    if len(args) > 0:
-        restart = bool(int(args[0]))
-    if len(args) > 1:
-        particle_type = args[1]
-    if len(args) > 2:
-        num_readers = int(args[2])
-    if len(args) > 3:
-        num_writers = int(args[3])
-
-    basepath = "/scratch/08199/tg874988/art_simulations/hydro/"
     subpath_list = [
         "mh2e12_km/1113433",
         "mh2e12_km/1113673",
@@ -53,16 +37,33 @@ if __name__ == '__main__':
         "mh5e12_p12/1116287",
     ]
 
-    procs = []
+    args = sys.argv[1:]
+
+    if len(args) > 5:
+        raise ValueError("Too many arguments")
+
+    if len(args) > 0:
+        restart = bool(int(args[0]))
+    if len(args) > 1:
+        particle_type = args[1]
+    if len(args) > 2:
+        num_readers = int(args[2])
+    if len(args) > 3:
+        num_writers = int(args[3])
+    if len(args) > 4:
+        z = float(args[4])
 
     scriptpath = "/home1/08199/tg874988/art_analysis_scripts/art_analysis_scripts/"
+    basepath = "/scratch/08199/tg874988/art_simulations/hydro/"
+
+    procs = []
 
     for subpath in subpath_list:
         cmd = [
             "mpirun", "-n", "%d"%(num_readers+num_writers+1), 
             "python", os.path.join(scriptpath, "halofinder.py"), 
             "%d"%int(restart), "N-BODY_0", "%d"%num_readers, "%d"%num_writers, 
-            os.path.join(basepath, subpath, "run")
+            os.path.join(basepath, subpath, "run"), "%f"%z
         ]
         p = subprocess.Popen(cmd)
         procs.append(p)

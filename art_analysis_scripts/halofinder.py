@@ -8,13 +8,14 @@ import os
 import sys
 # from multiprocessing import Process
 
+import numpy as np
 import yt
 
 yt.enable_parallelism()
 from yt_astro_analysis.halo_analysis import HaloCatalog
 
 def rockstar_halofinder(base="", restart=False, 
-    particle_type="N-BODY_0", num_readers=16, num_writers=16):
+    particle_type="N-BODY_0", num_readers=3, num_writers=4):
 
     ts = yt.load(os.path.join(base, "out/snap_a*.art"))
 
@@ -33,28 +34,32 @@ def rockstar_halofinder(base="", restart=False,
 
     hc.create()
 
+def rockstar_halofinder_at_z(z, base="", restart=False, 
+    particle_type="N-BODY_0", num_readers=3, num_writers=4):
 
-# def findall(basepath, subpath_list, restart=False, 
-#     particle_type="N-BODY_0", num_readers=1, num_writers=1):
+    ts = yt.load(os.path.join(base, "out/snap_a*.art"))
 
-#     num_groups = len(subpath_list)
-#     group_size = num_readers + num_writers + 1
-#     total_cores = group_size * num_groups
+    z_list = []
 
-#     processes = []
+    for ds in ts:
+        # https://yt-astro-analysis.readthedocs.io/en/latest/Installation.html
+        ds.parameters["format_revision"] = 2
+        z_list.append(ds.current_redshift)
 
-#     for i, subpath in enumerate(subpath_list):
-#         base = os.path.join(basepath, subpath, "run")
-#         cores = list(range(i * group_size, (i + 1) * group_size))
-#         p = Process(
-#             target=rockstar_halofinder, 
-#             args=(base, restart, particle_type, num_readers, num_writers)
-#         )
-#         p.start()
-#         processes.append(p)
+    z_list = np.array(z_list)
 
-#     for p in processes:
-#         p.join()
+    idx = np.argmin(np.abs(z-z_list))
+
+    hc = HaloCatalog(data_ds=ds[idx], finder_method="rockstar", 
+        finder_kwargs={
+            "num_readers": num_readers,
+            "num_writers": num_writers,
+            "particle_type": particle_type,
+            "outbase": os.path.join(base, "rockstar_halos_at_z"),
+            "restart": restart
+            })
+
+    hc.create()
 
 if __name__ == "__main__":
 
@@ -63,10 +68,11 @@ if __name__ == "__main__":
     num_readers = 1
     num_writers = 1
     base = ""
+    z = -1.0
 
     args = sys.argv[1:]
 
-    if len(args) > 5:
+    if len(args) > 6:
         raise ValueError("Too many arguments")
 
     if len(args) > 0:
@@ -79,14 +85,26 @@ if __name__ == "__main__":
         num_writers = int(args[3])
     if len(args) > 4:
         base = args[4]
+    if len(args) > 5:
+        z = float(args[5])
 
-    rockstar_halofinder(
-        base=base,
-        restart=restart, 
-        particle_type=particle_type, 
-        num_readers=num_readers, 
-        num_writers=num_writers
-    )
+    if z > -0.5:
+        rockstar_halofinder_at_z(
+            z=z,
+            base=base,
+            restart=restart, 
+            particle_type=particle_type, 
+            num_readers=num_readers, 
+            num_writers=num_writers
+        )
+    else:
+        rockstar_halofinder(
+            base=base,
+            restart=restart, 
+            particle_type=particle_type, 
+            num_readers=num_readers, 
+            num_writers=num_writers
+        )
 
     # basepath = "/scratch/08199/tg874988/art_simulations/hydro/"
     # subpath_list = [
