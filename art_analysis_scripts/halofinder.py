@@ -50,7 +50,7 @@ def rockstar_halofinder_at_z(z, base="", restart=False,
 
     idx = np.argmin(np.abs(z-z_list))
 
-    hc = HaloCatalog(data_ds=ds[idx], finder_method="rockstar", 
+    hc = HaloCatalog(data_ds=ts[idx], finder_method="rockstar", 
         finder_kwargs={
             "num_readers": num_readers,
             "num_writers": num_writers,
