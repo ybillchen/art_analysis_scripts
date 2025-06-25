@@ -28,7 +28,7 @@ def get_cutouts(ds, halocat, mhmin=1e10):
     for i in range(len(halos)):
         center = centers[i]
         rvir = rvirs[i]
-        cutouts.append(snap_last.sphere(center, rvir))
+        cutouts.append(ds.sphere(center, rvir))
     return cutouts
 
 def analyse(simpath, halocatpath):
