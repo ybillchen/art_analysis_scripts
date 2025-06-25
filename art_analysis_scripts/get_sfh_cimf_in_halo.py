@@ -45,12 +45,12 @@ def analyse(simpath, halocatpath):
         t_form = d[("STAR", "creation_time")].to_value("Myr")
         out = np.column_stack([initial_mass, f_bound0, t_form])
 
-        np.savetxt('/home1/08199/tg874988/sfh_cimf/1112809_z6_halo%d.txt'%i, out)
+        np.savetxt('/home1/08199/tg874988/sfh_cimf/1112809_p12_z6.9_halo%d.txt'%i, out)
 
 if __name__ == '__main__':
     
-    simpath = '/scratch/08199/tg874988/art_simulations/hydro/mh5e12_km/1112809/run/out/snap_a0.1427.art'
-    halocatpath = '/scratch/08199/tg874988/art_simulations/hydro/mh5e12_km/1112809/run/rockstar_halos_at_z/out_0.list'
+    simpath = '/scratch/08199/tg874988/art_simulations/hydro/mh5e12_p12/1112809/run/out/snap_a0.1271.art'
+    halocatpath = '/scratch/08199/tg874988/art_simulations/hydro/mh5e12_p12/1112809/run/rockstar_halos_at_z/out_0.list'
 
     args = sys.argv[1:]
 
