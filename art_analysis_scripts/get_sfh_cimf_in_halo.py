@@ -48,7 +48,7 @@ def analyse(simpath, halocatpath, savebase, all_data=False):
         t_form = d[("STAR", "creation_time")].to_value("Myr")
         out = np.column_stack([initial_mass, f_bound0, t_form])
 
-        savename = '/home1/08199/tg874988/sfh_cimf/%s_z6_halo%d.txt'%(savebase,i)
+        savename = '/home1/08199/tg874988/sfh_cimf/%s_z6.5_halo%d.txt'%(savebase,i)
         if all_data:
             savename = savename.replace('halo%d'%i, 'all_data')
         np.savetxt(savename, out)
@@ -60,7 +60,7 @@ if __name__ == '__main__':
     simeff = simgroup.split('_')[-1]
     savebase = simname + '_' + simeff
     
-    simpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/out/snap_a0.1428.art'%(simgroup,simname)
+    simpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/out/snap_a0.1333.art'%(simgroup,simname)
     halocatpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/rockstar_halos_at_z/out_0.list'%(simgroup,simname)
 
     args = sys.argv[1:]
