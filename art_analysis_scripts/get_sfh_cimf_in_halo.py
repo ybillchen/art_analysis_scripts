@@ -31,7 +31,7 @@ def get_cutouts(ds, halocat, mhmin=1e10):
         cutouts.append(ds.sphere(center, rvir))
     return cutouts
 
-def analyse(simpath, halocatpath, all_data=False):
+def analyse(simpath, halocatpath, savebase, all_data=False):
 
     ds = yt.load(simpath)
     halocat = np.loadtxt(halocatpath)
@@ -48,15 +48,20 @@ def analyse(simpath, halocatpath, all_data=False):
         t_form = d[("STAR", "creation_time")].to_value("Myr")
         out = np.column_stack([initial_mass, f_bound0, t_form])
 
-        savename = '/home1/08199/tg874988/sfh_cimf/1112809_km_z6_halo%d.txt'%i
+        savename = '/home1/08199/tg874988/sfh_cimf/%s_z6_halo%d.txt'%(savebase,i)
         if all_data:
             savename = savename.replace('halo%d'%i, 'all_data')
         np.savetxt(savename, out)
 
 if __name__ == '__main__':
+
+    simgroup = 'mh2e12_km'
+    simname = '1117028'
+    simeff = simgroup.split('_')[-1]
+    savebase = simname + '_' + simeff
     
-    simpath = '/scratch/08199/tg874988/art_simulations/hydro/mh5e12_km/1112809/run/out/snap_a0.1427.art'
-    halocatpath = '/scratch/08199/tg874988/art_simulations/hydro/mh5e12_km/1112809/run/rockstar_halos_at_z/out_0.list'
+    simpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/out/snap_a0.1428.art'%(simgroup,simname)
+    halocatpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/rockstar_halos_at_z/out_0.list'%(simgroup,simname)
 
     args = sys.argv[1:]
 
@@ -68,4 +73,4 @@ if __name__ == '__main__':
     if len(args) > 1:
         halocatpath = args[1]
 
-    analyse(simpath, halocatpath, True)
+    analyse(simpath, halocatpath, savebase, True)
