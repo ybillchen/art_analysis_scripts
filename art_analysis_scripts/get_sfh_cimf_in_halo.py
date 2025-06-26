@@ -68,7 +68,7 @@ if __name__ == '__main__':
     # simeff = 'km'
     # savebase = '1117028_km_old'
     
-    simpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/out/snap_a0.1335.art'%(simgroup,simname)
+    simpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/out/snap_a0.1333.art'%(simgroup,simname)
 
     args = sys.argv[1:]
 
