@@ -59,9 +59,15 @@ if __name__ == '__main__':
     simname = '1117028'
     simeff = simgroup.split('_')[-1]
     savebase = simname + '_' + simeff
-    
-    simpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/out/snap_a0.1333.art'%(simgroup,simname)
+
     halocatpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/rockstar_halos_at_z/out_0.list'%(simgroup,simname)
+
+    simgroup = 'test_epsff'
+    simname = 'R20_dx1.5_KM'
+    simeff = 'km'
+    savebase = '1117028_km_old'
+    
+    simpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/out/snap_a0.1335.art'%(simgroup,simname)
 
     args = sys.argv[1:]
 
