@@ -46,7 +46,8 @@ def analyse(simpath, halocatpath, savebase, all_data=False):
         initial_mass = d[('STAR', 'initial_mass')].to_value('Msun')
         f_bound0 = get_fbound0(d)
         t_form = d[("STAR", "creation_time")].to_value("Myr")
-        out = np.column_stack([initial_mass, f_bound0, t_form])
+        t_ave = ave_time(d)
+        out = np.column_stack([initial_mass, f_bound0, t_form, t_ave])
 
         savename = '/home1/08199/tg874988/sfh_cimf/%s_z6.5_halo%d.txt'%(savebase,i)
         if all_data:
