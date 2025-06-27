@@ -49,7 +49,7 @@ def analyse(simpath, halocatpath, savebase, all_data=False):
         t_ave = ave_time(d)
         out = np.column_stack([initial_mass, f_bound0, t_form, t_ave])
 
-        savename = '/home1/08199/tg874988/sfh_cimf/%s_z6.5_halo%d.txt'%(savebase,i)
+        savename = '/home1/08199/tg874988/sfh_cimf/%s_z6_halo%d.txt'%(savebase,i)
         if all_data:
             savename = savename.replace('halo%d'%i, 'all_data')
         np.savetxt(savename, out)
@@ -80,4 +80,39 @@ if __name__ == '__main__':
     if len(args) > 1:
         halocatpath = args[1]
 
-    analyse(simpath, halocatpath, savebase, True)
+    subpath_list = [
+        "mh2e12_km/1113433",
+        "mh2e12_km/1113673",
+        "mh2e12_km/1113831",
+        "mh2e12_km/1117028",
+        "mh2e12_km/1117038",
+        "mh3e12_km/1116392",
+        "mh3e12_km/1117206",
+        "mh3e12_km/1118550",
+        "mh5e12_km/1112809",
+        "mh5e12_km/1116287",
+        "mh2e12_p12/1113433",
+        "mh2e12_p12/1113673",
+        "mh2e12_p12/1113831",
+        "mh2e12_p12/1117028",
+        "mh2e12_p12/1117038",
+        "mh3e12_p12/1116392",
+        "mh3e12_p12/1117206",
+        "mh3e12_p12/1118550",
+        "mh5e12_p12/1112809",
+        "mh5e12_p12/1116287",
+    ]
+
+    for subpath in subpath_list:
+
+        simgroup, simname = subpath.split('/')[:2]
+
+        simeff = simgroup.split('_')[-1]
+        savebase = simname + '_' + simeff
+
+        halocatpath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/rockstar_halos_at_z/out_0.list'%(simgroup,simname)
+
+        dataset_path = halocatpath.replace('out_0.list', 'datasets.txt')
+        simpath = np.loadtxt(dataset_path, dtype=str)[0].split('..')[-1]
+
+        analyse(simpath, halocatpath, savebase, True)
