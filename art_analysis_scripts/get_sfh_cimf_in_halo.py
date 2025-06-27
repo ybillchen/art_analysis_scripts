@@ -19,6 +19,7 @@ from utils import *
 def get_cutouts(ds, halocat, mhmin=1e10):
     mh = ds.arr(halocat[:,2], 'Msun/h')
     halos = halocat[mh.to_value('Msun')>mhmin]
+    mh = mh[mh.to_value('Msun')>mhmin]
     if len(halos) == 0:
         return []
     centers = ds.arr(halos[:,8:11], 'Mpccm/h')
@@ -29,7 +30,7 @@ def get_cutouts(ds, halocat, mhmin=1e10):
         center = centers[i]
         rvir = rvirs[i]
         cutouts.append(ds.sphere(center, rvir))
-    return cutouts
+    return cutouts, mh
 
 def analyse(simpath, halocatpath, savebase, all_data=False):
 
@@ -37,9 +38,12 @@ def analyse(simpath, halocatpath, savebase, all_data=False):
     halocat = np.loadtxt(halocatpath)
 
     if all_data:
-        cutouts = [ds.all_data()]
+        cutouts, mh = [ds.all_data()], [-1]
     else:
-        cutouts = get_cutouts(ds, halocat)
+        cutouts, mh = get_cutouts(ds, halocat)
+
+    np.savetxt('/home1/08199/tg874988/sfh_cimf/haloinfo_%s_z6.txt'%savebase, 
+        np.c_[np.arange(len(mh)), mh.to_value('Msun')], fmt='%d %.6e')
 
     for i, d in enumerate(cutouts):
 
