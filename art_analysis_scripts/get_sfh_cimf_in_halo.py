@@ -115,4 +115,4 @@ if __name__ == '__main__':
         dataset_path = halocatpath.replace('out_0.list', 'datasets.txt')
         simpath = np.loadtxt(dataset_path, dtype=str)[0].split('..')[-1]
 
-        analyse(simpath, halocatpath, savebase, True)
+        analyse(simpath, halocatpath, savebase)
