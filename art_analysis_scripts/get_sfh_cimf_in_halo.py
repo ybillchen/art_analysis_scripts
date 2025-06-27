@@ -104,6 +104,7 @@ if __name__ == '__main__':
     ]
 
     for subpath in subpath_list:
+        print(subpath)
 
         simgroup, simname = subpath.split('/')[:2]
 
