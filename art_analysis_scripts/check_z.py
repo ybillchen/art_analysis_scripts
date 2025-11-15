@@ -84,5 +84,5 @@ def check_stuck(root_path, root_folders):
 if __name__ == "__main__":
     root_path = "/scratch/08199/tg874988/art_simulations/hydro"
     root_folders = ["mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
-    root_folders = ["mh5e12_km", "mh5e12_p12"]
+    # root_folders = ["mh5e12_km", "mh5e12_p12"]
     check_stuck(root_path, root_folders)
