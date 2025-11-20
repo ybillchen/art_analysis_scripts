@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
     print(basepath)
     treepath = os.path.join(basepath, '/rockstar_halos/trees/tree_0_0_0.dat')
-    simpath = os.path.join(basepath, '/out/snap_a0.1333.art'
+    simpath = os.path.join(basepath, '/out/snap_a0.1333.art')
 
     tree = np.loadtxt(treepath, skiprows=49)
 
