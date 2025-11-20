@@ -16,7 +16,7 @@ def art2skirt(ds, region, center, savenamebase):
     xs = region[("STAR", "POSITION_X")].to_value("pc") - center[0].to_value("pc")
     ys = region[("STAR", "POSITION_Y")].to_value("pc") - center[1].to_value("pc")
     zs = region[("STAR", "POSITION_Z")].to_value("pc") - center[2].to_value("pc")
-    es = np.zeros_like(xs)
+    es = np.full_like(xs, fill_value=10.0)
     # print("loading star velocities")
     # vxs = region[("STAR", "VELOCITY_X")].to_value("km/s")
     # vys = region[("STAR", "VELOCITY_Y")].to_value("km/s")
