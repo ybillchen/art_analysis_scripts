@@ -70,8 +70,8 @@ def find_main_mpb(tree):
     mvir_lastsnap = tree_lastsnap[:,10]
 
     arg_main = np.argmax(mvir_lastsnap) # main halo is the most massive
-    mainrootid = int(tree_lastsnap[arg_main,29])
-    mpb_main = tree[tree[:,29].astype(int)==mainrootid]
+    mainleafid = int(tree_lastsnap[arg_main,34])
+    mpb_main = tree[tree[:,34].astype(int)==mainleafid]
 
     return mpb_main[mpb_main[:,31].argsort()] # sort by snap number
 
