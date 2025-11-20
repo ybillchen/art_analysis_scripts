@@ -92,8 +92,8 @@ if __name__ == '__main__':
         raise ValueError('Too many arguments')
 
     print(basepath)
-    treepath = os.path.join(basepath, '/rockstar_halos/trees/tree_0_0_0.dat')
-    simpath = os.path.join(basepath, '/out/snap_a0.1333.art')
+    treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
+    simpath = os.path.join(basepath, 'out/snap_a0.1333.art')
     print(treepath)
 
     tree = np.loadtxt(treepath, skiprows=49)
