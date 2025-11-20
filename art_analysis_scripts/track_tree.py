@@ -101,7 +101,7 @@ if __name__ == '__main__':
     treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
     snap_list = np.loadtxt(
         os.path.join(basepath, 'rockstar_halos/datasets.txt'),
-        dtype={'names': ('filename', 'snap_original'), 'formats': (str, int)}
+        dtype={'names': ('filename', 'snap_original'), 'formats': ('U20', int)}
     )
 
     tree = np.loadtxt(treepath, skiprows=49)
@@ -113,6 +113,5 @@ if __name__ == '__main__':
     dsnap = int(lastsnap_original-lastsnap_tree)
 
     filename_list_for_tree = snap_list['filename'][dsnap:]
-    print(dsnap, filename_list_for_tree)
 
     make_prj_along_mpb(mpb_main, filename_list_for_tree)
