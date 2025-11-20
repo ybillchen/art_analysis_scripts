@@ -70,8 +70,8 @@ def find_main_mpb(tree):
     mvir_lastsnap = tree_lastsnap[:,10]
 
     arg_main = np.argmax(mvir_lastsnap) # main halo is the most massive
-    mainrootid = tree_lastsnap[arg_main,29]
-    mpb_main = tree[tree[:,29]==mainrootid]
+    mainrootid = int(tree_lastsnap[arg_main,29])
+    mpb_main = tree[tree[:,29].astype(int)==mainrootid]
 
     return mpb_main[mpb_main[:,31].argsort()] # sort by snap number
 
@@ -80,7 +80,7 @@ def make_prj_along_mpb(mpb, filename_list_for_tree):
         snapshot = mpb[idx]
         currentsnap = int(snapshot[31])
         filename = filename_list_for_tree[currentsnap]
-        print(currentsnap, snapshot[0], snapshot[17:20], filename)
+        print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
 
 if __name__ == '__main__':
 
