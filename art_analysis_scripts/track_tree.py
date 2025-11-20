@@ -60,7 +60,7 @@ def analyse(simpath, halocatpath, savebase, all_data=False):
             savename = savename.replace('halo%d'%i, 'all_data')
         np.savetxt(savename, out)
 
-def find_main(tree):
+def find_main_mpb(tree):
     '''
     find the main halo
     '''
@@ -71,9 +71,12 @@ def find_main(tree):
 
     arg_main = np.argmax(mvir_lastsnap) # main halo is the most massive
     mainrootid = tree_lastsnap[arg_main,29]
-    tree_main = tree[tree[:,29]==mainrootid]
+    mpb_main = tree[tree[:,29]==mainrootid]
 
-    return tree_main[tree_main[:,31].argsort()] # sort by snap number
+    return mpb_main[mpb_main[:,31].argsort()] # sort by snap number
+
+def make_prj_along_mpb(mpb):
+    pass
 
 if __name__ == '__main__':
 
@@ -98,11 +101,11 @@ if __name__ == '__main__':
     )
 
     tree = np.loadtxt(treepath, skiprows=49)
-    tree_main = find_main(tree)
+    mpb_main = find_main_mpb(tree)
 
     # merger tree snap number can differ
     lastsnap_original = snap_list['snap_original'][-1]
-    lastsnap_tree = tree_main[-1,31]
-    snap_list['snap_tree'] = snap_list['snap_original'] - (lastsnap_original-lastsnap_tree)
+    lastsnap_tree = mpb_main[-1,31]
+    snap_tree_list = snap_list['snap_original'] - (lastsnap_original-lastsnap_tree)
 
-    print(snap_list['snap_tree'])
+    print(snap_tree_list)
