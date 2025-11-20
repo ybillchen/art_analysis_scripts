@@ -61,19 +61,19 @@ def analyse(simpath, halocatpath, savebase, all_data=False):
         np.savetxt(savename, out)
 
 def find_main(tree):
-	'''
-	find the main halo
-	'''
-	snap = tree[:,31].astype(int)
-	lastsnap = np.max(snap)
-	tree_lastsnap = tree[snap==lastsnap]
-	mvir_lastsnap = tree_lastsnap[:,10]
+    '''
+    find the main halo
+    '''
+    snap = tree[:,31].astype(int)
+    lastsnap = np.max(snap)
+    tree_lastsnap = tree[snap==lastsnap]
+    mvir_lastsnap = tree_lastsnap[:,10]
 
-	arg_main = np.argmax(mvir_lastsnap) # main halo is the most massive
-	mainrootid = tree_lastsnap[arg_main,29]
-	tree_main = tree[tree[:,29]==mainrootid]
+    arg_main = np.argmax(mvir_lastsnap) # main halo is the most massive
+    mainrootid = tree_lastsnap[arg_main,29]
+    tree_main = tree[tree[:,29]==mainrootid]
 
-	return tree_main[tree_main[:,31].argsort()] # sort by snap number
+    return tree_main[tree_main[:,31].argsort()] # sort by snap number
 
 if __name__ == '__main__':
 
@@ -86,13 +86,14 @@ if __name__ == '__main__':
 
     args = sys.argv[1:]
 
-    if len(args) > 1:
-        raise ValueError('Too many arguments')
     if len(args) > 0:
         basepath = os.path(args[0])
+    if len(args) > 1:
+        raise ValueError('Too many arguments')
 
+    print(basepath)
     treepath = os.path.join(basepath, '/rockstar_halos/trees/tree_0_0_0.dat')
-    simpath = basepath + '/out/snap_a0.1333.art'
+    simpath = os.path.join(basepath, '/out/snap_a0.1333.art'
 
     tree = np.loadtxt(treepath, skiprows=49)
 
