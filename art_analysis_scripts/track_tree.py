@@ -113,6 +113,6 @@ if __name__ == '__main__':
     dsnap = int(lastsnap_original-lastsnap_tree)
 
     filename_list_for_tree = snap_list['filename'][dsnap:]
-    print(filename_list_for_tree)
+    print(dsnap, filename_list_for_tree)
 
     make_prj_along_mpb(mpb_main, filename_list_for_tree)
