@@ -76,7 +76,8 @@ def find_main_mpb(tree):
     return mpb_main[mpb_main[:,31].argsort()] # sort by snap number
 
 def make_prj_along_mpb(mpb, filename_list_for_tree):
-    for snapshot, filename in zip(mpb, filename_list_for_tree):
+    for idx in range(len(mpb)):
+        snapshot, filename = mpb[idx], filename_list_for_tree[idx]
         print(snapshot[31], snapshot[0], snapshot[17:20], filename)
 
 if __name__ == '__main__':
