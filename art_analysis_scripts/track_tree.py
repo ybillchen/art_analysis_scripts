@@ -78,7 +78,7 @@ def find_main_mpb(tree):
 def make_prj_along_mpb(mpb, filename_list_for_tree):
     for idx in range(len(mpb)):
         snapshot = mpb[idx]
-        currentsnap = snapshot[31]
+        currentsnap = int(snapshot[31])
         filename = filename_list_for_tree[currentsnap]
         print(currentsnap, snapshot[0], snapshot[17:20], filename)
 
