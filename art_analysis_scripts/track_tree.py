@@ -91,11 +91,18 @@ if __name__ == '__main__':
     if len(args) > 1:
         raise ValueError('Too many arguments')
 
-    print(basepath)
     treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
-    simpath = os.path.join(basepath, 'out/snap_a0.1333.art')
-    print(treepath)
+    snap_list = np.loadtxt(
+        os.path.join(basepath, 'rockstar_halos/datasets.txt'),
+        dtype={'names': ('filename', 'snap_original'), 'formats': (str, int)}
+    )
 
     tree = np.loadtxt(treepath, skiprows=49)
+    tree_main = find_main(tree)
 
-    print(find_main(tree))
+    # merger tree snap number can differ
+    lastsnap_original = snap_list['snap_original'][-1]
+    lastsnap_tree = tree_main[-1,31]
+    snap_list['snap_tree'] = snap_list['snap_original'] - (lastsnap_original-lastsnap_tree)
+
+    print(snap_list['snap_tree'])
