@@ -82,7 +82,7 @@ if __name__ == '__main__':
     simeff = simgroup.split('_')[-1]
     savebase = simname + '_' + simeff
 
-    basepath = os.path('/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/'%(simgroup,simname))
+    basepath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/'%(simgroup,simname)
 
     args = sys.argv[1:]
 
