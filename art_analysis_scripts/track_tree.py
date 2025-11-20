@@ -114,4 +114,5 @@ if __name__ == '__main__':
 
     filename_list_for_tree = snap_list['filename'][dsnap:]
 
+    print(mpb_main)
     make_prj_along_mpb(mpb_main, filename_list_for_tree)
