@@ -210,9 +210,10 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
     x_mpb = mpb[:,17]
     y_mpb = mpb[:,18]
     z_mpb = mpb[:,19]
-    x_smooth = smooth_time_series(a_mpb, x_mpb, 0.01)
-    y_smooth = smooth_time_series(a_mpb, y_mpb, 0.01)
-    z_smooth = smooth_time_series(a_mpb, z_mpb, 0.01)
+    da = 0.005
+    x_smooth = smooth_time_series(a_mpb, x_mpb, da)
+    y_smooth = smooth_time_series(a_mpb, y_mpb, da)
+    z_smooth = smooth_time_series(a_mpb, z_mpb, da)
     for idx in range(len(mpb)):
         snapshot = copy(mpb[idx])
         currentsnap = int(snapshot[31])
