@@ -163,8 +163,6 @@ def make_prj_single(snapshot, filename, basepath):
     )
     plt.close()
 
-    print('Done a = %.4f'%a)
-
 def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
     for idx in range(len(mpb)):
         snapshot = mpb[idx]
