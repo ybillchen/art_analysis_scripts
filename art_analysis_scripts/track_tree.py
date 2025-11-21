@@ -169,7 +169,7 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         currentsnap = int(snapshot[31])
         filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
         print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
-        if idx % 10 == 0:
+        if idx % 10 != 0:
             make_prj_single(snapshot, filename, basepath)
 
 if __name__ == '__main__':
