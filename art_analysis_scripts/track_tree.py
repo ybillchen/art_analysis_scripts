@@ -123,7 +123,7 @@ def make_prj_single(snapshot, filename, basepath):
     z0 = center[2]
     size = (10.0*ds.units.kpc).to_value('code_length')
 
-    level = 9
+    level = 10
     factor = 0.6
 
     unit = 'kpc'
@@ -144,18 +144,22 @@ def make_prj_single(snapshot, filename, basepath):
         # gas
         mesh, region = prj(ds, [x0, y0, z0], 
             size, level=level, prj_x=prjs[idx_x], prj_y=prjs[idx_y], 
-            field="density", unit="Msun/pc**3", factor=factor)
+            field="density", unit="Msun/pc**3", factor=factor
+        )
         ax0.imshow(
-            mesh.T, origin="lower", norm=LogNorm(vmin=1e-6, vmax=1e-2),
+            mesh.T, origin="lower", norm=LogNorm(vmin=1e-5, vmax=1e-1),
+            cmap='magma',
             extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
-                region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)])
+                region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)]
+        )
 
         # stars
         d = ds.box(region[:3], region[3:])
         ax0.scatter(
             d["STAR", "POSITION_%s"%prjs[idx_x].upper()].to_value(unit),
             d["STAR", "POSITION_%s"%prjs[idx_y].upper()].to_value(unit), 
-            fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7)
+            fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7
+        )
 
         # ruler
         ax0.plot(
@@ -165,11 +169,18 @@ def make_prj_single(snapshot, filename, basepath):
             ], [
                 (centers[idx_y]-0.45*size)*unit_convert, 
                 (centers[idx_y]-0.45*size)*unit_convert
-            ], lw=1.5, c="w")
+            ], lw=1.5, c="w"
+        )
         ax0.text(
             (centers[idx_x]+0.45*size)*unit_convert-0.5*ruler_convert, 
             (centers[idx_y]-0.44*size)*unit_convert, 
-            r"%d kpc"%ruler, ha="center", va="bottom", color="w")
+            r"%d kpc"%ruler, ha="center", va="bottom", color="w"
+        )
+        ax0.text(
+            (centers[idx_x]-0.48*size)*unit_convert, 
+            (centers[idx_y]+0.48*size)*unit_convert, 
+            r"z = %.1f"%((1/ds.scale_factor)-1), ha="left", va="top", color="w"
+        )
 
         ax0.set_xlabel(r"%s (%s)"%(prjs[idx_x], unit))
         ax0.set_ylabel(r"%s (%s)"%(prjs[idx_y], unit))
