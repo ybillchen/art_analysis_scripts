@@ -8,6 +8,7 @@ All rights reserved.
 import os
 import sys
 sys.path.append('.')
+from copy import copy
 
 import numpy as np
 import matplotlib
@@ -64,6 +65,36 @@ def analyse(simpath, halocatpath, savebase, all_data=False):
         if all_data:
             savename = savename.replace('halo%d'%i, 'all_data')
         np.savetxt(savename, out)
+
+def smooth_time_series(t, x, tau, kernel='gaussian'):
+    t = np.asarray(t, dtype=float)
+    x = np.asarray(x, dtype=float)
+
+    if t.shape != x.shape:
+        raise ValueError("t and x must have the same shape")
+
+    n = t.size
+    x_smooth = np.empty_like(x, dtype=float)
+
+    for i in range(n):
+        dt = t - t[i]
+
+        if kernel == 'gaussian':
+            w = np.exp(-0.5 * (dt / tau)**2)
+        elif kernel == 'boxcar':
+            w = (np.abs(dt) <= tau).astype(float)
+        else:
+            raise ValueError("Unknown kernel: choose 'gaussian' or 'boxcar'")
+
+        # Avoid division by zero if tau is too small
+        w_sum = w.sum()
+        if w_sum == 0:
+            x_smooth[i] = x[i]
+        else:
+            w /= w_sum
+            x_smooth[i] = np.sum(w * x)
+
+    return x_smooth
 
 def find_main_mpb(tree):
     '''
@@ -164,10 +195,20 @@ def make_prj_single(snapshot, filename, basepath):
     plt.close()
 
 def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
+    a_mpb = snapshot[:,0]
+    x_mpb = snapshot[:,17]
+    y_mpb = snapshot[:,18]
+    z_mpb = snapshot[:,19]
+    x_smooth = smooth_time_series(a_mpb, x_mpb, 0.01)
+    y_smooth = smooth_time_series(a_mpb, y_mpb, 0.01)
+    z_smooth = smooth_time_series(a_mpb, z_mpb, 0.01)
     for idx in range(len(mpb)):
-        snapshot = mpb[idx]
+        snapshot = copy(mpb[idx])
         currentsnap = int(snapshot[31])
         filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
+        snapshot[17] = x_smooth[idx]
+        snapshot[18] = y_smooth[idx]
+        snapshot[19] = z_smooth[idx]
         print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
         if idx % 10 != 0:
             make_prj_single(snapshot, filename, basepath)
