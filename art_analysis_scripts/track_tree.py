@@ -195,10 +195,10 @@ def make_prj_single(snapshot, filename, basepath):
     plt.close()
 
 def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
-    a_mpb = snapshot[:,0]
-    x_mpb = snapshot[:,17]
-    y_mpb = snapshot[:,18]
-    z_mpb = snapshot[:,19]
+    a_mpb = mpb[:,0]
+    x_mpb = mpb[:,17]
+    y_mpb = mpb[:,18]
+    z_mpb = mpb[:,19]
     x_smooth = smooth_time_series(a_mpb, x_mpb, 0.01)
     y_smooth = smooth_time_series(a_mpb, y_mpb, 0.01)
     z_smooth = smooth_time_series(a_mpb, z_mpb, 0.01)
@@ -210,8 +210,8 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         snapshot[18] = y_smooth[idx]
         snapshot[19] = z_smooth[idx]
         print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
-        if idx % 10 != 0:
-            make_prj_single(snapshot, filename, basepath)
+        # if idx % 10 != 0:
+        make_prj_single(snapshot, filename, basepath)
 
 if __name__ == '__main__':
 
