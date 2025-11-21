@@ -9,8 +9,12 @@ import os
 import sys
 sys.path.append('.')
 
-import yt
 import numpy as np
+import matplotlib
+matplotlib.use("agg")
+from matplotlib.colors import LogNorm
+import matplotlib.pyplot as plt
+import yt
 
 from prj import prj
 from age_spreads import *
