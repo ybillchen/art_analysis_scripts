@@ -121,16 +121,15 @@ def make_prj_single(snapshot, filename, basepath):
     x0 = center[0]
     y0 = center[1]
     z0 = center[2]
-    size = (10.0*ds.units.kpc).to_value('code_length')
+    size = (1.0*ds.units.kpc).to_value('code_length')
 
     level = 10
     factor = 0.6
 
-    unit = 'kpc'
+    unit = 'pc'
     unit_convert = (1.0*ds.units.code_length).to_value(unit)
 
-    ruler = 1.0 # in kpc
-    ruler_convert = (ruler*ds.units.kpc).to_value(unit)
+    ruler = 100.0 # in unit
 
     fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
     axs = [ax0]
@@ -164,7 +163,7 @@ def make_prj_single(snapshot, filename, basepath):
         # ruler
         ax0.plot(
             [
-                (centers[idx_x]+0.45*size)*unit_convert-ruler_convert, 
+                (centers[idx_x]+0.45*size)*unit_convert-ruler, 
                 (centers[idx_x]+0.45*size)*unit_convert
             ], [
                 (centers[idx_y]-0.45*size)*unit_convert, 
@@ -172,9 +171,9 @@ def make_prj_single(snapshot, filename, basepath):
             ], lw=1.5, c="w"
         )
         ax0.text(
-            (centers[idx_x]+0.45*size)*unit_convert-0.5*ruler_convert, 
+            (centers[idx_x]+0.45*size)*unit_convert-0.5*ruler, 
             (centers[idx_y]-0.44*size)*unit_convert, 
-            r"%d kpc"%ruler, ha="center", va="bottom", color="w"
+            r"%d %s"%(ruler,unit), ha="center", va="bottom", color="w"
         )
         ax0.text(
             (centers[idx_x]-0.48*size)*unit_convert, 
@@ -200,7 +199,7 @@ def make_prj_single(snapshot, filename, basepath):
 
     plt.tight_layout()
     plt.savefig(
-        filename.replace('out/snap_', 'analysis/prj_').replace('.art', '.png'), 
+        filename.replace('out/snap_', 'analysis/prj_zoom_').replace('.art', '.png'), 
         bbox_inches ="tight", pad_inches=0.05, dpi=300
     )
     plt.close()
@@ -222,8 +221,8 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         snapshot[18] = y_smooth[idx]
         snapshot[19] = z_smooth[idx]
         print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
-        # if idx % 10 != 0:
-        make_prj_single(snapshot, filename, basepath)
+        if idx == len(mpb) - 1:
+            make_prj_single(snapshot, filename, basepath)
 
 if __name__ == '__main__':
 
