@@ -223,7 +223,7 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         # snapshot[18] = y_smooth[idx]
         # snapshot[19] = z_smooth[idx]
         print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
-        if idx == len(mpb) - 1:
+        if idx == 300:
             make_prj_single(snapshot, filename, basepath)
 
 if __name__ == '__main__':
