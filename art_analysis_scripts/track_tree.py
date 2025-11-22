@@ -159,7 +159,7 @@ def make_prj_single(snapshot, filename, basepath):
         ax0.scatter(
             d["STAR", "POSITION_%s"%prjs[idx_x].upper()][mask].to_value(unit),
             d["STAR", "POSITION_%s"%prjs[idx_y].upper()][mask].to_value(unit), 
-            fc='w', ec='none', s=d["STAR", "MASS"].to_value("Msun")/5e5, alpha=0.7
+            fc='w', ec='none', s=d["STAR", "MASS"][mask].to_value("Msun")/5e5, alpha=0.7
         )
 
         # ruler
