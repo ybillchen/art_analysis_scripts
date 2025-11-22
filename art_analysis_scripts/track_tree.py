@@ -123,7 +123,7 @@ def make_prj_single(snapshot, filename, basepath):
     z0 = center[2]
     size = (1.0*ds.units.kpc).to_value('code_length')
 
-    level = 16
+    level = 12
     factor = 0.6
 
     unit = 'pc'
