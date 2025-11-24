@@ -155,7 +155,8 @@ def make_prj_single(snapshot, filename, basepath):
         # stars
         d = ds.box(region[:3], region[3:])
         age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
-        mask = age < 100
+        # mask = age < 100
+        mask = age < 100000
         ax0.scatter(
             d["STAR", "POSITION_%s"%prjs[idx_x].upper()][mask].to_value(unit),
             d["STAR", "POSITION_%s"%prjs[idx_y].upper()][mask].to_value(unit), 
@@ -223,7 +224,8 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         # snapshot[18] = y_smooth[idx]
         # snapshot[19] = z_smooth[idx]
         print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
-        if idx % 100 == 0:
+        # if idx % 100 == 0:
+        if idx == len(mpb) - 1:
             make_prj_single(snapshot, filename, basepath)
 
 if __name__ == '__main__':

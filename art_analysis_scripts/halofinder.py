@@ -10,6 +10,7 @@ import sys
 
 import numpy as np
 import yt
+from yt.data_objects.static_output import Dataset
 
 yt.enable_parallelism()
 from yt_astro_analysis.halo_analysis import HaloCatalog
@@ -18,6 +19,20 @@ def rockstar_halofinder(base="", restart=False,
     particle_type="N-BODY_0", num_readers=3, num_writers=4):
 
     ts = yt.load(os.path.join(base, "out/snap_a*.art"))
+
+    if restart:
+        # in this case, yt doesn't automatically update datasets.txt
+        fp = open(os.path.join(base, "rockstar_halos/datasets.txt"), "w")
+        fp.write("# dsname\tindex\n")
+        for i, ds in enumerate(ts.outputs):
+            if isinstance(ds, Dataset):
+                fn = ds.parameter_filename
+            else:
+                fn = ds
+            dsloc = os.path.join(os.path.relpath(fn))
+            line = f"{dsloc}\t{i}\n"
+            fp.write(line)
+        fp.close()
 
     for ds in ts:
         # https://yt-astro-analysis.readthedocs.io/en/latest/Installation.html
