@@ -121,17 +121,17 @@ def make_prj_single(snapshot, filename, basepath):
     x0 = center[0]
     y0 = center[1]
     z0 = center[2]
-    size = (10.0*ds.units.kpc).to_value('code_length')
+    size = (1.0*ds.units.kpc).to_value('code_length')
 
     level = 12
     factor = 0.6
 
-    unit = 'kpc'
+    unit = 'pc'
     unit_convert = (1.0*ds.units.code_length).to_value(unit)
 
-    ruler = 1.0 # in unit
+    ruler = 100.0 # in unit
 
-    fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
+    # fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
     # axs = [ax0]
     fig, axs = plt.subplots(1, 2, figsize=(6,3))
 
@@ -202,7 +202,7 @@ def make_prj_single(snapshot, filename, basepath):
 
     plt.tight_layout()
     plt.savefig(
-        filename.replace('out/snap_', 'analysis/prj_young_').replace('.art', '.png'), 
+        filename.replace('out/snap_', 'analysis/prj_zoom_young_').replace('.art', '.png'), 
         bbox_inches ="tight", pad_inches=0.05, dpi=300
     )
     plt.close()
