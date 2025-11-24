@@ -131,14 +131,14 @@ def make_prj_single(snapshot, filename, basepath):
 
     ruler = 100.0 # in unit
 
-    # fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
-    # axs = [ax0]
-    fig, axs = plt.subplots(1, 2, figsize=(6,3))
+    fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
+    axs = [ax0]
+    # fig, axs = plt.subplots(1, 2, figsize=(6,3))
 
     prjs = ["x", "y", "z"]
     centers = [x0, y0, z0]
 
-    for ax0, idx_x, idx_y in zip(axs, [0, 2], [1, 1]):
+    for ax0, idx_x, idx_y in zip(axs, [2, 0], [1, 1]):
 
         # gas
         mesh, region = prj(ds, [x0, y0, z0], 
@@ -146,7 +146,8 @@ def make_prj_single(snapshot, filename, basepath):
             field="density", unit="Msun/pc**3", factor=factor
         )
         ax0.imshow(
-            mesh.T, origin="lower", norm=LogNorm(vmin=1e-4, vmax=1e1), # default: 1e-5 1e-1
+            mesh.T, origin="lower", norm=LogNorm(vmin=1e-5, vmax=1e-1), # default
+            # mesh.T, origin="lower", norm=LogNorm(vmin=1e-4, vmax=1e1),
             cmap='magma',
             extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
                 region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)]
@@ -202,7 +203,7 @@ def make_prj_single(snapshot, filename, basepath):
 
     plt.tight_layout()
     plt.savefig(
-        filename.replace('out/snap_', 'analysis/prj_zoom_young_').replace('.art', '.png'), 
+        filename.replace('out/snap_', 'analysis/prj_zy_young_').replace('.art', '.png'), 
         bbox_inches ="tight", pad_inches=0.05, dpi=300
     )
     plt.close()
@@ -225,8 +226,8 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         # snapshot[19] = z_smooth[idx]
         print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
         # if idx % 100 == 0:
-        if idx == len(mpb) - 1:
-            make_prj_single(snapshot, filename, basepath)
+        # if idx == len(mpb) - 1:
+        make_prj_single(snapshot, filename, basepath)
 
 if __name__ == '__main__':
 
