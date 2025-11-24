@@ -132,13 +132,13 @@ def make_prj_single(snapshot, filename, basepath):
     ruler = 1.0 # in unit
 
     fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
-    axs = [ax0]
-    # fig, axs = plt.subplots(1, 2, figsize=(6,3))
+    # axs = [ax0]
+    fig, axs = plt.subplots(1, 2, figsize=(6,3))
 
     prjs = ["x", "y", "z"]
     centers = [x0, y0, z0]
 
-    for ax0, idx_x, idx_y in zip(axs, [0, 0], [1, 2]):
+    for ax0, idx_x, idx_y in zip(axs, [0, 2], [1, 1]):
 
         # gas
         mesh, region = prj(ds, [x0, y0, z0], 
