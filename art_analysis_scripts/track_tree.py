@@ -121,15 +121,15 @@ def make_prj_single(snapshot, filename, basepath):
     x0 = center[0]
     y0 = center[1]
     z0 = center[2]
-    size = (1.0*ds.units.kpc).to_value('code_length')
+    size = (10.0*ds.units.kpc).to_value('code_length')
 
     level = 12
     factor = 0.6
 
-    unit = 'pc'
+    unit = 'kpc'
     unit_convert = (1.0*ds.units.code_length).to_value(unit)
 
-    ruler = 100.0 # in unit
+    ruler = 1.0 # in unit
 
     fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
     axs = [ax0]
