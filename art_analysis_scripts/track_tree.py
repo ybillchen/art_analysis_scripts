@@ -112,8 +112,8 @@ def find_main_mpb(tree):
 
     return mpb_main[mpb_main['Snap_idx'].argsort()] # sort by snap number
 
-# def save_mpb(mpb):
-#     np.savetxt(mpb)
+def save_mpb(mpb):
+    np.savetxt(mpb, fmt=fmt_tree)
 
 def make_prj_single(snapshot, filename, basepath):
 
@@ -221,7 +221,7 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
     z_smooth = smooth_time_series(a_mpb, mpb['z'], da)
     for idx in range(len(mpb)):
         snapshot = copy(mpb[idx])
-        currentsnap = int(snapshot['Snap_idx'])
+        currentsnap = snapshot['Snap_idx']
         filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
         snapshot['x'] = x_smooth[idx]
         snapshot['y'] = y_smooth[idx]
@@ -230,6 +230,29 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         # if idx % 100 == 0:
         # if idx == len(mpb) - 1:
         make_prj_single(snapshot, filename, basepath)
+
+def star_at_last_snapshot(mpb, filename_list_for_tree, basepath):
+    lastsnapshot = copy(mpb[-1])
+    lastsnap = lastsnapshot['Snap_idx']
+    filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
+
+    ds = yt.load(filename)
+
+    center = ds.arr([lastsnapshot['x'],lastsnapshot['y'],lastsnapshot['z']], 'Mpccm/h')
+    rvir = ds.arr(lastsnapshot['Rvir'], 'kpccm/h')
+
+    d = ds.sphere(center, rvir)
+
+    initial_mass = d[('STAR', 'initial_mass')].to_value('Msun')
+    f_bound0 = get_fbound0(d)
+    t_form = d[("STAR", "creation_time")].to_value("Myr")
+    t_ave = ave_time(d)
+    t_dur = duration(d)
+    t_spread = age_spread(d)
+    out = np.column_stack([initial_mass, f_bound0, t_form, t_ave, t_dur, t_spread])
+
+    savename = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.txt')
+    np.savetxt(savename, out)
 
 if __name__ == '__main__':
 
@@ -263,4 +286,6 @@ if __name__ == '__main__':
 
     filename_list_for_tree = snap_list['filename'][dsnap:]
 
-    make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
+    star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
+
+    # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
