@@ -255,7 +255,7 @@ if __name__ == '__main__':
 
     # merger tree snap number can differ
     lastsnap_original = snap_list['snap_original'][-1]
-    lastsnap_tree = mpb_main[-1,31]
+    lastsnap_tree = mpb_main['Snap_idx'][-1]
     dsnap = int(lastsnap_original-lastsnap_tree)
 
     filename_list_for_tree = snap_list['filename'][dsnap:]
