@@ -133,6 +133,7 @@ def make_prj_single(snapshot, filename, basepath):
     ruler = 1.0 # in unit
 
     fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
+    ax0.set_position([0.0, 0.0, 1.0, 1.0])
     axs = [ax0]
     # fig, axs = plt.subplots(1, 2, figsize=(6,3))
 
@@ -171,22 +172,22 @@ def make_prj_single(snapshot, filename, basepath):
         # ruler
         ax0.plot(
             [
-                (centers[idx_x]+0.45*size)*unit_convert-ruler, 
-                (centers[idx_x]+0.45*size)*unit_convert
+                (centers[idx_x]+0.43*size)*unit_convert-ruler, 
+                (centers[idx_x]+0.43*size)*unit_convert
             ], [
-                (centers[idx_y]-0.45*size)*unit_convert, 
-                (centers[idx_y]-0.45*size)*unit_convert
+                (centers[idx_y]-0.43*size)*unit_convert, 
+                (centers[idx_y]-0.43*size)*unit_convert
             ], lw=1.5, c="w"
         )
         ax0.text(
-            (centers[idx_x]+0.45*size)*unit_convert-0.5*ruler, 
-            (centers[idx_y]-0.44*size)*unit_convert, 
-            r"%d %s"%(ruler,unit), ha="center", va="bottom", color="w"
+            (centers[idx_x]+0.43*size)*unit_convert-0.5*ruler, 
+            (centers[idx_y]-0.42*size)*unit_convert, 
+            r"%d %s"%(ruler,unit), ha="center", va="bottom", color="w", fontsize=12
         )
         ax0.text(
-            (centers[idx_x]-0.48*size)*unit_convert, 
-            (centers[idx_y]+0.48*size)*unit_convert, 
-            r"z = %.1f"%((1/ds.scale_factor)-1), ha="left", va="top", color="w"
+            (centers[idx_x]-0.47*size)*unit_convert, 
+            (centers[idx_y]+0.47*size)*unit_convert, 
+            r"z = %.1f"%((1/ds.scale_factor)-1), ha="left", va="top", color="w", fontsize=12
         )
 
         ax0.set_xlabel(r"%s (%s)"%(prjs[idx_x], unit))
@@ -208,7 +209,7 @@ def make_prj_single(snapshot, filename, basepath):
     plt.tight_layout()
     plt.savefig(
         filename.replace('out/snap_', 'analysis/prj_zy_').replace('.art', '.png'), 
-        bbox_inches ="tight", pad_inches=0.05, dpi=300
+        pad_inches=0.05, dpi=300
     )
     plt.close()
 
