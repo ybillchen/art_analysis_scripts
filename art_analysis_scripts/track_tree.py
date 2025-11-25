@@ -147,8 +147,8 @@ def make_prj_single(snapshot, filename, basepath):
             field="density", unit="Msun/pc**3", factor=factor
         )
         ax0.imshow(
-            mesh.T, origin="lower", norm=LogNorm(vmin=1e-5, vmax=1e-1), # default
-            # mesh.T, origin="lower", norm=LogNorm(vmin=1e-4, vmax=1e1),
+            # mesh.T, origin="lower", norm=LogNorm(vmin=1e-5, vmax=1e-1), # default
+            mesh.T, origin="lower", norm=LogNorm(vmin=1e-4, vmax=1e0),
             cmap='magma',
             extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
                 region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)]
@@ -157,10 +157,10 @@ def make_prj_single(snapshot, filename, basepath):
         # stars
         d = ds.box(region[:3], region[3:])
         age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
-        mask = age < 500
+        mask = age < 750
         # mask = age < 100000
         rgba_colors = np.ones((len(age[mask]),4))
-        rgba_colors[:, 3] = np.exp(-age[mask]/100.0)
+        rgba_colors[:, 3] = np.exp(-age[mask]/150.0)
         ax0.scatter(
             d["STAR", "POSITION_%s"%prjs[idx_x].upper()][mask].to_value(unit),
             d["STAR", "POSITION_%s"%prjs[idx_y].upper()][mask].to_value(unit), 
