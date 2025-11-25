@@ -193,7 +193,7 @@ def make_prj_single(snapshot, filename, basepath):
         ax0.set_xlabel(r"%s (%s)"%(prjs[idx_x], unit))
         ax0.set_ylabel(r"%s (%s)"%(prjs[idx_y], unit))
         ax0.set_axis_off()
-        ax0.set_aspect("equal")
+        # ax0.set_aspect("equal")
         ax0.set_xlim(
             (centers[idx_x]-0.5*size)*unit_convert, 
             (centers[idx_x]+0.5*size)*unit_convert)
@@ -209,7 +209,7 @@ def make_prj_single(snapshot, filename, basepath):
     plt.tight_layout()
     plt.savefig(
         filename.replace('out/snap_', 'analysis/prj_zy_').replace('.art', '.png'), 
-        pad_inches=0.05, dpi=300
+        pad_inches=0.0, dpi=300
     )
     plt.close()
 
