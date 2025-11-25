@@ -157,13 +157,15 @@ def make_prj_single(snapshot, filename, basepath):
         # stars
         d = ds.box(region[:3], region[3:])
         age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
-        # mask = age < 100
-        mask = age < 100000
+        mask = age < 500
+        # mask = age < 100000
+        rgba_colors = np.ones((len(age[mask]),4))
+        rgba_colors[:, 3] = np.exp(-age[mask]/100.0)
         ax0.scatter(
             d["STAR", "POSITION_%s"%prjs[idx_x].upper()][mask].to_value(unit),
             d["STAR", "POSITION_%s"%prjs[idx_y].upper()][mask].to_value(unit), 
-            fc='w', ec='none', s=d["STAR", "MASS"][mask].to_value("Msun")/5e5, 
-            alpha=np.exp(-age[mask]/100) # default: 0.7
+            fc=rgba_colors, ec='none', s=d["STAR", "MASS"][mask].to_value("Msun")/5e5, 
+            # alpha=0.7
         )
 
         # ruler
