@@ -20,6 +20,7 @@ import yt
 from prj import prj
 from age_spreads import *
 from utils import *
+from data_type import *
 
 #ID DescID Mvir Vmax Vrms Rvir Rs Np X Y Z VX VY VZ JX JY JZ Spin rs_klypin Mvir_all M200b M200c M500c M2500c Xoff Voff spin_bullock b_to_a c_to_a A[x] A[y] A[z] b_to_a(500c) c_to_a(500c) A[x](500c) A[y](500c) A[z](500c) T/|U| M_pe_Behroozi M_pe_Diemer Type SM Gas BH_Mass
 
@@ -100,23 +101,24 @@ def find_main_mpb(tree):
     '''
     find the main halo
     '''
-    snap = tree[:,31].astype(int)
+    snap = tree['Snap_idx'].astype(int)
     lastsnap = np.max(snap)
     tree_lastsnap = tree[snap==lastsnap]
-    mvir_lastsnap = tree_lastsnap[:,10]
+    mvir_lastsnap = tree_lastsnap['Mvir']
 
     arg_main = np.argmax(mvir_lastsnap) # main halo is the most massive
-    mainleafid = int(tree_lastsnap[arg_main,34])
-    mpb_main = tree[tree[:,34].astype(int)==mainleafid]
+    mainleafid = tree_lastsnap['Last_mainleaf_depthfirst_ID'][arg_main]
+    mpb_main = tree[tree['Last_mainleaf_depthfirst_ID']==mainleafid]
 
-    return mpb_main[mpb_main[:,31].argsort()] # sort by snap number
+    return mpb_main[mpb_main['Snap_idx'].argsort()] # sort by snap number
+
+# def save_mpb(mpb):
+#     np.savetxt(mpb)
 
 def make_prj_single(snapshot, filename, basepath):
 
     ds = yt.load(filename)
     center = (snapshot[17:20]*ds.units.Mpccm/ds.units.h).to_value('code_length')
-
-    d = ds.all_data()
 
     x0 = center[0]
     y0 = center[1]
@@ -209,25 +211,22 @@ def make_prj_single(snapshot, filename, basepath):
     plt.close()
 
 def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
-    a_mpb = mpb[:,0]
-    x_mpb = mpb[:,17]
-    y_mpb = mpb[:,18]
-    z_mpb = mpb[:,19]
+    a_mpb = mpb['scale']
     da = 0.005
-    x_smooth = smooth_time_series(a_mpb, x_mpb, da)
-    y_smooth = smooth_time_series(a_mpb, y_mpb, da)
-    z_smooth = smooth_time_series(a_mpb, z_mpb, da)
+    x_smooth = smooth_time_series(a_mpb, mpb['x'], da)
+    y_smooth = smooth_time_series(a_mpb, mpb['y'], da)
+    z_smooth = smooth_time_series(a_mpb, mpb['z'], da)
     for idx in range(len(mpb)):
         snapshot = copy(mpb[idx])
-        currentsnap = int(snapshot[31])
+        currentsnap = int(snapshot['Snap_idx'])
         filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
-        snapshot[17] = x_smooth[idx]
-        snapshot[18] = y_smooth[idx]
-        snapshot[19] = z_smooth[idx]
-        print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
+        snapshot['x'] = x_smooth[idx]
+        snapshot['y'] = y_smooth[idx]
+        snapshot['z'] = z_smooth[idx]
+        print(idx, currentsnap, snapshot['scale'], filename)
         # if idx % 100 == 0:
         # if idx == len(mpb) - 1:
-        make_prj_single(snapshot, filename, basepath)
+        # make_prj_single(snapshot, filename, basepath)
 
 if __name__ == '__main__':
 
@@ -251,7 +250,7 @@ if __name__ == '__main__':
         dtype={'names': ('filename', 'snap_original'), 'formats': ('U20', int)}
     )
 
-    tree = np.loadtxt(treepath, skiprows=49)
+    tree = np.loadtxt(treepath, skiprows=49, dtype=dtype_tree)
     mpb_main = find_main_mpb(tree)
 
     # merger tree snap number can differ
