@@ -221,9 +221,9 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         snapshot = copy(mpb[idx])
         currentsnap = int(snapshot[31])
         filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
-        # snapshot[17] = x_smooth[idx]
-        # snapshot[18] = y_smooth[idx]
-        # snapshot[19] = z_smooth[idx]
+        snapshot[17] = x_smooth[idx]
+        snapshot[18] = y_smooth[idx]
+        snapshot[19] = z_smooth[idx]
         print(idx, currentsnap, snapshot[0], snapshot[17:20], filename)
         # if idx % 100 == 0:
         # if idx == len(mpb) - 1:
