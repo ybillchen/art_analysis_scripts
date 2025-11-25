@@ -234,7 +234,7 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
 def star_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     lastsnapshot = copy(mpb[-1])
     lastsnap = lastsnapshot['Snap_idx']
-    filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
+    filename = os.path.join(basepath, filename_list_for_tree[lastsnap])
 
     ds = yt.load(filename)
 
