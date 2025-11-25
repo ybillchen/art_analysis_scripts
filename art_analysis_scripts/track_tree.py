@@ -118,12 +118,11 @@ def find_main_mpb(tree):
 def make_prj_single(snapshot, filename, basepath):
 
     ds = yt.load(filename)
-    center = (snapshot[17:20]*ds.units.Mpccm/ds.units.h).to_value('code_length')
 
-    x0 = center[0]
-    y0 = center[1]
-    z0 = center[2]
-    size = (10.0*ds.units.kpc).to_value('code_length')
+    x0 = (snapshot['x']*ds.units.Mpccm/ds.units.h).to_value('code_length')
+    y0 = (snapshot['y']*ds.units.Mpccm/ds.units.h).to_value('code_length')
+    z0 = (snapshot['z']*ds.units.Mpccm/ds.units.h).to_value('code_length')
+    size = (6.0*ds.units.kpc).to_value('code_length')
 
     level = 10
     factor = 0.6
@@ -158,12 +157,13 @@ def make_prj_single(snapshot, filename, basepath):
         # stars
         d = ds.box(region[:3], region[3:])
         age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
-        mask = age < 100
-        # mask = age < 100000
+        # mask = age < 100
+        mask = age < 100000
         ax0.scatter(
             d["STAR", "POSITION_%s"%prjs[idx_x].upper()][mask].to_value(unit),
             d["STAR", "POSITION_%s"%prjs[idx_y].upper()][mask].to_value(unit), 
-            fc='w', ec='none', s=d["STAR", "MASS"][mask].to_value("Msun")/5e5, alpha=0.7
+            fc='w', ec='none', s=d["STAR", "MASS"][mask].to_value("Msun")/5e5, 
+            alpha=np.exp(-age/100) # default: 0.7
         )
 
         # ruler
@@ -205,14 +205,14 @@ def make_prj_single(snapshot, filename, basepath):
 
     plt.tight_layout()
     plt.savefig(
-        filename.replace('out/snap_', 'analysis/prj_zy_young_').replace('.art', '.png'), 
+        filename.replace('out/snap_', 'analysis/prj_zy_').replace('.art', '.png'), 
         bbox_inches ="tight", pad_inches=0.05, dpi=300
     )
     plt.close()
 
 def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
     a_mpb = mpb['scale']
-    da = 0.005
+    da = 0.0025
     x_smooth = smooth_time_series(a_mpb, mpb['x'], da)
     y_smooth = smooth_time_series(a_mpb, mpb['y'], da)
     z_smooth = smooth_time_series(a_mpb, mpb['z'], da)
@@ -226,7 +226,7 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
         print(idx, currentsnap, snapshot['scale'], filename)
         # if idx % 100 == 0:
         # if idx == len(mpb) - 1:
-        # make_prj_single(snapshot, filename, basepath)
+        make_prj_single(snapshot, filename, basepath)
 
 if __name__ == '__main__':
 
