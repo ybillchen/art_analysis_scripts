@@ -185,9 +185,9 @@ def make_prj_single(snapshot, filename, basepath):
             r"%d %s"%(ruler,unit), ha="center", va="bottom", color="w", fontsize=12
         )
         ax0.text(
-            (centers[idx_x]-0.47*size)*unit_convert, 
-            (centers[idx_y]+0.47*size)*unit_convert, 
-            r"z = %.1f"%((1/ds.scale_factor)-1), ha="left", va="top", color="w", fontsize=12
+            (centers[idx_x]-0.45*size)*unit_convert, 
+            (centers[idx_y]+0.45*size)*unit_convert, 
+            r"z = %.1f"%((1/ds.scale_factor)-1), ha="left", va="top", color="w", fontsize=15
         )
 
         ax0.set_xlabel(r"%s (%s)"%(prjs[idx_x], unit))
