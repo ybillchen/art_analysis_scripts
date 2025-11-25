@@ -206,7 +206,7 @@ def make_prj_single(snapshot, filename, basepath):
     #     (centers[idx_y]+0.45*size)*unit_convert, 
     #     r"$R_{\rm GMC} = %d$ pc"%10, ha="left", va="top", color="w")
 
-    plt.tight_layout()
+    # plt.tight_layout()
     plt.savefig(
         filename.replace('out/snap_', 'analysis/prj_zy_').replace('.art', '.png'), 
         pad_inches=0.0, dpi=300
