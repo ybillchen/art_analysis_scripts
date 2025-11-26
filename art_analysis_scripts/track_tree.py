@@ -122,7 +122,7 @@ def make_prj_single(snapshot, filename, basepath):
     x0 = (snapshot['x']*ds.units.Mpccm/ds.units.h).to_value('code_length')
     y0 = (snapshot['y']*ds.units.Mpccm/ds.units.h).to_value('code_length')
     z0 = (snapshot['z']*ds.units.Mpccm/ds.units.h).to_value('code_length')
-    size = (6.0*ds.units.kpc).to_value('code_length')
+    size = (10.0*ds.units.kpc).to_value('code_length')
 
     level = 10
     factor = 0.6
@@ -208,7 +208,7 @@ def make_prj_single(snapshot, filename, basepath):
 
     # plt.tight_layout()
     plt.savefig(
-        filename.replace('out/snap_', 'analysis/prj_zy_').replace('.art', '.png'), 
+        filename.replace('out/snap_', 'analysis/prj_zy_10kpc_').replace('.art', '.png'), 
         pad_inches=0.0, dpi=300
     )
     plt.close()
@@ -286,6 +286,6 @@ if __name__ == '__main__':
 
     filename_list_for_tree = snap_list['filename'][dsnap:]
 
-    star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
+    # star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
 
-    # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
+    make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
