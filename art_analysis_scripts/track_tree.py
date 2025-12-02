@@ -21,6 +21,7 @@ from prj import prj
 from age_spreads import *
 from utils import *
 from datatype import *
+from skirt_interface import art2skirt
 
 #ID DescID Mvir Vmax Vrms Rvir Rs Np X Y Z VX VY VZ JX JY JZ Spin rs_klypin Mvir_all M200b M200c M500c M2500c Xoff Voff spin_bullock b_to_a c_to_a A[x] A[y] A[z] b_to_a(500c) c_to_a(500c) A[x](500c) A[y](500c) A[z](500c) T/|U| M_pe_Behroozi M_pe_Diemer Type SM Gas BH_Mass
 
@@ -254,9 +255,24 @@ def star_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     savename = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.txt')
     np.savetxt(savename, out)
 
+def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
+    lastsnapshot = copy(mpb[-1])
+    lastsnap = lastsnapshot['Snap_idx']
+    filename = os.path.join(basepath, filename_list_for_tree[lastsnap])
+
+    ds = yt.load(filename)
+
+    center = ds.arr([lastsnapshot['x'],lastsnapshot['y'],lastsnapshot['z']], 'Mpccm/h')
+    rvir = ds.arr(lastsnapshot['Rvir'], 'kpccm/h')
+
+    savename = filename.replace('out/snap_', 'analysis/skirt_at_').replace('.art', '')
+    d = ds.sphere(center, rvir)
+
+    art2skirt(ds, d, center, savenamebase)
+
 if __name__ == '__main__':
 
-    simgroup = 'mh5e12_p12'
+    simgroup = 'mh5e12_km'
     simname = '1112809'
     simeff = simgroup.split('_')[-1]
     savebase = simname + '_' + simeff
@@ -287,5 +303,6 @@ if __name__ == '__main__':
     filename_list_for_tree = snap_list['filename'][dsnap:]
 
     # star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
+    skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
 
-    make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
+    # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
