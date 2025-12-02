@@ -265,9 +265,9 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     center = ds.arr([lastsnapshot['x'],lastsnapshot['y'],lastsnapshot['z']], 'Mpccm/h')
     rvir = ds.arr(lastsnapshot['Rvir'], 'kpccm/h')
 
-    savename = filename.replace('out/snap_', 'analysis/skirt_at_').replace('.art', '')
     d = ds.sphere(center, rvir)
 
+    savenamebase = filename.replace('out/snap_', 'analysis/skirt_at_').replace('.art', '')
     art2skirt(ds, d, center, savenamebase)
 
 if __name__ == '__main__':
