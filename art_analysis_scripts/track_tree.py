@@ -273,7 +273,7 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
 
 if __name__ == '__main__':
 
-    simgroup = 'mh5e12_km'
+    simgroup = 'mh5e12_pm'
     simname = '1112809'
     simeff = simgroup.split('_')[-1]
     savebase = simname + '_' + simeff
