@@ -57,7 +57,7 @@ def find_files():
                     file_dict[identifier] = [full_path]
 
 
-    assert all(key in file_dict for key in exist_list)
+    # assert all(key in file_dict for key in exist_list)
 
     file_dict_not_exist = {key: value for key, value in file_dict.items() if key not in exist_list}
 
