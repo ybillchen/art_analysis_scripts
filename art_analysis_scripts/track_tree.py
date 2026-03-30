@@ -237,6 +237,8 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
             # if idx % 100 == 0:
             # if idx == len(mpb) - 1:
             make_prj_single(snapshot, filename, basepath)
+            if len(a_list) == 0:
+                break
 
 def star_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     lastsnapshot = copy(mpb[-1])
