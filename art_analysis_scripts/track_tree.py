@@ -133,15 +133,17 @@ def make_prj_single(snapshot, filename, basepath):
 
     ruler = 1.0 # in unit
 
-    fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
-    ax0.set_position([0.0, 0.0, 1.0, 1.0])
-    axs = [ax0]
-    # fig, axs = plt.subplots(1, 2, figsize=(6,3))
+    # fig, ax0 = plt.subplots(1, 1, figsize=(3,3))
+    # ax0.set_position([0.0, 0.0, 1.0, 1.0])
+    # axs = [ax0]
+    fig, axs = plt.subplots(1, 2,  figsize=(6,3))
+    axs[0].set_position([0.01, 0.02, 0.48, 0.96])
+    axs[1].set_position([0.51, 0.02, 0.48, 0.96])
 
     prjs = ["x", "y", "z"]
     centers = [x0, y0, z0]
 
-    for ax0, idx_x, idx_y in zip(axs, [2, 0], [1, 1]):
+    for ax0, idx_x, idx_y in zip(axs, [0, 2], [1, 1]):
 
         # gas
         mesh, region = prj(ds, [x0, y0, z0], 
@@ -208,10 +210,9 @@ def make_prj_single(snapshot, filename, basepath):
     #     r"$R_{\rm GMC} = %d$ pc"%10, ha="left", va="top", color="w")
 
     # plt.tight_layout()
-    plt.savefig(
-        filename.replace('out/snap_', 'analysis/prj_zy_10kpc_').replace('.art', '.png'), 
-        pad_inches=0.0, dpi=300
-    )
+    output_path = filename.replace('out/snap_', 'analysis/prj_mpb/prj_').replace('.art', '.png')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    plt.savefig(output_path, pad_inches=0.0, dpi=300)
     plt.close()
 
 def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
@@ -220,17 +221,22 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
     x_smooth = smooth_time_series(a_mpb, mpb['x'], da)
     y_smooth = smooth_time_series(a_mpb, mpb['y'], da)
     z_smooth = smooth_time_series(a_mpb, mpb['z'], da)
+    z_list = np.array([12, 10, 8, 6, 5])
+    a_list = 1 / (1+z_list)
     for idx in range(len(mpb)):
         snapshot = copy(mpb[idx])
         currentsnap = snapshot['Snap_idx']
-        filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
-        snapshot['x'] = x_smooth[idx]
-        snapshot['y'] = y_smooth[idx]
-        snapshot['z'] = z_smooth[idx]
-        print(idx, currentsnap, snapshot['scale'], filename)
-        # if idx % 100 == 0:
-        # if idx == len(mpb) - 1:
-        make_prj_single(snapshot, filename, basepath)
+        currenta = snapshot['scale']
+        if currenta >= a_list[0]:
+            a_list = np.delete(a_list, 0)
+            filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
+            snapshot['x'] = x_smooth[idx]
+            snapshot['y'] = y_smooth[idx]
+            snapshot['z'] = z_smooth[idx]
+            print(idx, currentsnap, currenta, filename)
+            # if idx % 100 == 0:
+            # if idx == len(mpb) - 1:
+            make_prj_single(snapshot, filename, basepath)
 
 def star_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     lastsnapshot = copy(mpb[-1])
@@ -303,7 +309,7 @@ if __name__ == '__main__':
 
     filename_list_for_tree = snap_list['filename'][dsnap:]
 
-    star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
+    # star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
     # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
 
-    # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
+    make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
