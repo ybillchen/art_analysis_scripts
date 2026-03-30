@@ -261,8 +261,9 @@ def star_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     eps_int = get_eps_int(d)
     out = np.column_stack([initial_mass, f_bound0, t_form, t_ave, t_dur, t_spread, eps_int])
 
-    savename = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.txt')
-    np.savetxt(savename, out)
+    output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.txt')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    np.savetxt(output_path, out)
 
 def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     lastsnapshot = copy(mpb[-1])
@@ -276,8 +277,9 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
 
     d = ds.sphere(center, rvir)
 
-    savenamebase = filename.replace('out/snap_', 'analysis/skirt_at_').replace('.art', '')
-    art2skirt(ds, d, center, savenamebase)
+    output_path = filename.replace('out/snap_', 'analysis/skirt_at_').replace('.art', '')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    art2skirt(ds, d, center, output_path)
 
 if __name__ == '__main__':
 
