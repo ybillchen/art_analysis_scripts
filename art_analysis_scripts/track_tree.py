@@ -313,7 +313,7 @@ if __name__ == '__main__':
 
     filename_list_for_tree = snap_list['filename'][dsnap:]
 
-    star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
+    # star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
     # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
 
-    # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
+    make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
