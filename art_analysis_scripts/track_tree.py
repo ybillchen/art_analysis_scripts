@@ -289,7 +289,7 @@ if __name__ == '__main__':
     args = sys.argv[1:]
 
     if len(args) > 0:
-        basepath = os.path(args[0])
+        basepath = os.path.dirname(args[0])
     if len(args) > 1:
         raise ValueError('Too many arguments')
 
