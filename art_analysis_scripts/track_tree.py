@@ -281,39 +281,60 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     art2skirt(ds, d, center, output_path)
 
+def process_folder(basepath):
+    """Process a single simulation folder."""
+    try:
+        treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
+        snap_list = np.loadtxt(
+            os.path.join(basepath, 'rockstar_halos/datasets.txt'),
+            dtype={'names': ('filename', 'snap_original'), 'formats': ('U20', int)}
+        )
+
+        tree = np.loadtxt(treepath, skiprows=49, dtype=dtype_tree)
+        mpb_main = find_main_mpb(tree)
+
+        # merger tree snap number can differ
+        lastsnap_original = snap_list['snap_original'][-1]
+        lastsnap_tree = mpb_main['Snap_idx'][-1]
+        dsnap = int(lastsnap_original-lastsnap_tree)
+
+        filename_list_for_tree = snap_list['filename'][dsnap:]
+
+        star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
+        # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
+        # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
+
+        print(f"Processed: {basepath}")
+    except Exception as e:
+        print(f"Error processing {basepath}: {e}")
+
+def scan_subfolders(root_path, root_folder):
+    """Scan and process all subfolders in a root folder."""
+    folder_path = os.path.join(root_path, root_folder)
+    for entry in sorted(os.listdir(folder_path)):
+        subfolder_path = os.path.join(folder_path, entry)
+        basepath = os.path.join(subfolder_path, "run")
+        if os.path.isdir(basepath):
+            process_folder(basepath)
+
+def process_all_folders(root_path, root_folders):
+    """Process all folders."""
+    for root_folder in root_folders:
+        print(f"Processing folder: {root_folder}")
+        scan_subfolders(root_path, root_folder)
+
 if __name__ == '__main__':
 
-    simgroup = 'mh5e12_p12'
-    simname = '1112809'
-    simeff = simgroup.split('_')[-1]
-    savebase = simname + '_' + simeff
-
-    basepath = '/scratch/08199/tg874988/art_simulations/hydro/%s/%s/run/'%(simgroup,simname)
+    root_path = "/scratch/08199/tg874988/art_simulations/hydro"
+    root_folders = ["mh2e12_eps100", "mh2e12_eps10", "mh2e12_eps1", "mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
 
     args = sys.argv[1:]
 
     if len(args) > 0:
-        basepath = os.path.dirname(args[0])
-    if len(args) > 1:
-        raise ValueError('Too many arguments')
-
-    treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
-    snap_list = np.loadtxt(
-        os.path.join(basepath, 'rockstar_halos/datasets.txt'),
-        dtype={'names': ('filename', 'snap_original'), 'formats': ('U20', int)}
-    )
-
-    tree = np.loadtxt(treepath, skiprows=49, dtype=dtype_tree)
-    mpb_main = find_main_mpb(tree)
-
-    # merger tree snap number can differ
-    lastsnap_original = snap_list['snap_original'][-1]
-    lastsnap_tree = mpb_main['Snap_idx'][-1]
-    dsnap = int(lastsnap_original-lastsnap_tree)
-
-    filename_list_for_tree = snap_list['filename'][dsnap:]
-
-    # star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
-    # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
-
-    make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
+        # If argument provided, process single folder
+        basepath = os.path.dirname(args[0]) if args[0].endswith('.art') else args[0]
+        basepath = os.path.join(basepath, "run") if not basepath.endswith("run") else basepath
+        process_folder(basepath)
+    else:
+        # Process all folders
+        process_all_folders(root_path, root_folders)
