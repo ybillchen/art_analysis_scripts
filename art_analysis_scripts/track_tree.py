@@ -253,7 +253,7 @@ def star_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     d = ds.sphere(center, rvir)
 
     initial_mass = d[('STAR', 'initial_mass')].to_value('Msun')
-    mass = d[('STAR', 'mass')].to_value('Msun')
+    mass = d[('STAR', 'MASS')].to_value('Msun')
     f_bound0 = get_fbound0(d)
     t_form = d[("STAR", "creation_time")].to_value("Myr")
     t_ave = ave_time(d)
