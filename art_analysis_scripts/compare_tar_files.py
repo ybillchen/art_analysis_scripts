@@ -66,7 +66,6 @@ class TarFileComparator:
         ssh_cmd = f"find {self.remote_path} -name '*.tar' -type f -exec sh -c 'echo \"$0|$(stat -c%s \"$0\")\"' {{}} \\;"
 
         try:
-            self.log(f"SSH command: {ssh_cmd}", "DEBUG")
             result = subprocess.run(
                 ['ssh', self.remote_host, ssh_cmd],
                 capture_output=True,
@@ -76,15 +75,12 @@ class TarFileComparator:
 
             if result.returncode != 0:
                 print(f"[ERROR] SSH error: {result.stderr}", file=sys.stderr)
-                self.log(f"SSH stdout: {result.stdout}", "DEBUG")
                 return False
 
             # Parse output
-            self.log(f"SSH returned {len(result.stdout)} bytes", "DEBUG")
             for line in result.stdout.strip().split('\n'):
                 if not line:
                     continue
-                self.log(f"Parsing line: {line}", "DEBUG")
                 try:
                     full_path, size = line.split('|')
                     size = int(size)
@@ -93,9 +89,7 @@ class TarFileComparator:
                         'size': size,
                         'full_path': full_path
                     }
-                    self.log(f"Added: {rel_path} ({size} bytes)", "DEBUG")
-                except ValueError as e:
-                    self.log(f"Failed to parse line: {line} - {e}", "DEBUG")
+                except ValueError:
                     continue
         except subprocess.TimeoutExpired:
             print("[ERROR] SSH command timed out", file=sys.stderr)
@@ -110,29 +104,23 @@ class TarFileComparator:
     def compare_files(self):
         """Compare tar files between local and remote by size"""
         all_keys = set(self.local_files.keys()) | set(self.remote_files.keys())
-        self.log(f"Total unique files: {len(all_keys)}", "DEBUG")
 
         for rel_path in sorted(all_keys):
             if rel_path not in self.local_files:
                 self.missing_on_local.append(rel_path)
-                self.log(f"Missing local: {rel_path}", "DEBUG")
             elif rel_path not in self.remote_files:
                 self.missing_on_remote.append(rel_path)
-                self.log(f"Missing remote: {rel_path}", "DEBUG")
             else:
                 # Both exist - check if sizes match
                 local_info = self.local_files[rel_path]
                 remote_info = self.remote_files[rel_path]
 
                 if local_info['size'] != remote_info['size']:
-                    self.log(f"Size mismatch {rel_path}: local={local_info['size']}, remote={remote_info['size']}", "DEBUG")
                     self.differences.append({
                         'path': rel_path,
                         'local_size': local_info['size'],
                         'remote_size': remote_info['size']
                     })
-                else:
-                    self.log(f"Match: {rel_path} ({local_info['size']} bytes)", "DEBUG")
 
     def print_report(self):
         """Print comparison report"""
