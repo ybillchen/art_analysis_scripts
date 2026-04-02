@@ -17,9 +17,6 @@ import os
 import sys
 import subprocess
 import argparse
-import hashlib
-from pathlib import Path
-from collections import defaultdict
 
 
 class TarFileComparator:
@@ -50,11 +47,9 @@ class TarFileComparator:
                         full_path = os.path.join(root, file)
                         try:
                             size = os.path.getsize(full_path)
-                            checksum = self._compute_md5(full_path)
                             rel_path = os.path.relpath(full_path, self.local_path)
                             self.local_files[rel_path] = {
                                 'size': size,
-                                'md5': checksum,
                                 'full_path': full_path
                             }
                         except Exception as e:
@@ -67,10 +62,10 @@ class TarFileComparator:
 
     def get_remote_tar_files(self):
         """Find all .tar files on remote backup server via SSH"""
-        # Build SSH command to find and checksum tar files
+        # Build SSH command to find tar files and get their sizes
         ssh_cmd = (
             f"find {self.remote_path} -name '*.tar' -type f "
-            "-exec sh -c 'echo \"$0|$(stat -c%s \"$0\")|$(md5sum \"$0\" | cut -d\" \" -f1)\"' {{}} \\;"
+            "-exec sh -c 'echo \"$0|$(stat -c%s \"$0\")\"' {{}} \\;"
         )
 
         try:
@@ -90,12 +85,11 @@ class TarFileComparator:
                 if not line:
                     continue
                 try:
-                    full_path, size, checksum = line.split('|')
+                    full_path, size = line.split('|')
                     size = int(size)
                     rel_path = os.path.relpath(full_path, self.remote_path)
                     self.remote_files[rel_path] = {
                         'size': size,
-                        'md5': checksum,
                         'full_path': full_path
                     }
                 except ValueError:
@@ -109,20 +103,9 @@ class TarFileComparator:
 
         return True
 
-    def _compute_md5(self, filepath):
-        """Compute MD5 checksum of a file"""
-        hash_md5 = hashlib.md5()
-        try:
-            with open(filepath, 'rb') as f:
-                for chunk in iter(lambda: f.read(4096), b''):
-                    hash_md5.update(chunk)
-            return hash_md5.hexdigest()
-        except Exception as e:
-            self.log(f"Error computing checksum for {filepath}: {e}", "ERROR")
-            return None
 
     def compare_files(self):
-        """Compare tar files between local and remote"""
+        """Compare tar files between local and remote by size"""
         all_keys = set(self.local_files.keys()) | set(self.remote_files.keys())
 
         for rel_path in sorted(all_keys):
@@ -131,17 +114,15 @@ class TarFileComparator:
             elif rel_path not in self.remote_files:
                 self.missing_on_remote.append(rel_path)
             else:
-                # Both exist - check if they match
+                # Both exist - check if sizes match
                 local_info = self.local_files[rel_path]
                 remote_info = self.remote_files[rel_path]
 
-                if local_info['md5'] != remote_info['md5']:
+                if local_info['size'] != remote_info['size']:
                     self.differences.append({
                         'path': rel_path,
                         'local_size': local_info['size'],
-                        'remote_size': remote_info['size'],
-                        'local_md5': local_info['md5'],
-                        'remote_md5': remote_info['md5']
+                        'remote_size': remote_info['size']
                     })
 
     def print_report(self):
@@ -151,14 +132,14 @@ class TarFileComparator:
 
         # Files that differ (most critical)
         if self.differences:
-            print(f"\n[ERROR] {len(self.differences)} CONFLICTING FILES:")
+            print(f"\n[ERROR] {len(self.differences)} CONFLICTING FILES (size mismatch):")
             for diff in sorted(self.differences, key=lambda x: x['path'])[:5]:
                 path = diff['path']
                 local_size = diff['local_size']
                 remote_size = diff['remote_size']
                 print(f"  {path}")
-                print(f"    Local:  {local_size} bytes (md5: {diff['local_md5'][:12]}...)")
-                print(f"    Remote: {remote_size} bytes (md5: {diff['remote_md5'][:12]}...)")
+                print(f"    Local:  {local_size} bytes")
+                print(f"    Remote: {remote_size} bytes")
             if len(self.differences) > 5:
                 print(f"  ... and {len(self.differences) - 5} more")
 
