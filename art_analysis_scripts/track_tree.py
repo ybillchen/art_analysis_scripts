@@ -7,6 +7,7 @@ All rights reserved.
 
 import os
 import sys
+import argparse
 sys.path.append('.')
 from copy import copy
 
@@ -240,15 +241,19 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
             if len(a_list) == 0:
                 break
 
-def star_at_last_snapshot(mpb, filename_list_for_tree, basepath):
-    lastsnapshot = copy(mpb[-1])
-    lastsnap = lastsnapshot['Snap_idx']
-    filename = os.path.join(basepath, filename_list_for_tree[lastsnap])
+def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
+    if scalefactor is None:
+        idx = -1
+    else:
+        idx = np.argmin(np.abs(mpb['scale'] - scalefactor))
+    snapshot = copy(mpb[idx])
+    snap = snapshot['Snap_idx']
+    filename = os.path.join(basepath, filename_list_for_tree[snap])
 
     ds = yt.load(filename)
 
-    center = ds.arr([lastsnapshot['x'],lastsnapshot['y'],lastsnapshot['z']], 'Mpccm/h')
-    rvir = ds.arr(lastsnapshot['Rvir'], 'kpccm/h')
+    center = ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h')
+    rvir = ds.arr(snapshot['Rvir'], 'kpccm/h')
 
     d = ds.sphere(center, rvir)
 
@@ -282,7 +287,7 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     art2skirt(ds, d, center, output_path)
 
-def process_folder(basepath):
+def process_folder(basepath, scalefactor=None):
     """Process a single simulation folder."""
     try:
         treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
@@ -301,7 +306,7 @@ def process_folder(basepath):
 
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
-        star_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
+        star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
 
@@ -309,33 +314,36 @@ def process_folder(basepath):
     except Exception as e:
         print(f"Error processing {basepath}: {e}")
 
-def scan_subfolders(root_path, root_folder):
+def scan_subfolders(root_path, root_folder, scalefactor=None):
     """Scan and process all subfolders in a root folder."""
     folder_path = os.path.join(root_path, root_folder)
     for entry in sorted(os.listdir(folder_path)):
         subfolder_path = os.path.join(folder_path, entry)
         basepath = os.path.join(subfolder_path, "run")
         if os.path.isdir(basepath):
-            process_folder(basepath)
+            process_folder(basepath, scalefactor=scalefactor)
 
-def process_all_folders(root_path, root_folders):
+def process_all_folders(root_path, root_folders, scalefactor=None):
     """Process all folders."""
     for root_folder in root_folders:
         print(f"Processing folder: {root_folder}")
-        scan_subfolders(root_path, root_folder)
+        scan_subfolders(root_path, root_folder, scalefactor=scalefactor)
 
 if __name__ == '__main__':
 
     root_path = "/scratch/08199/tg874988/art_simulations/hydro"
     root_folders = ["mh2e12_eps100", "mh2e12_eps10", "mh2e12_eps1", "mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
 
-    args = sys.argv[1:]
+    parser = argparse.ArgumentParser()
+    parser.add_argument('basepath', nargs='?', default=None,
+                        help='Path to a single simulation run folder (or .art file)')
+    parser.add_argument('--scalefactor', '-a', type=float, default=None,
+                        help='Scale factor to analyse (default: last snapshot)')
+    args = parser.parse_args()
 
-    if len(args) > 0:
-        # If argument provided, process single folder
-        basepath = os.path.dirname(args[0]) if args[0].endswith('.art') else args[0]
+    if args.basepath is not None:
+        basepath = os.path.dirname(args.basepath) if args.basepath.endswith('.art') else args.basepath
         basepath = os.path.join(basepath, "run") if not basepath.endswith("run") else basepath
-        process_folder(basepath)
+        process_folder(basepath, scalefactor=args.scalefactor)
     else:
-        # Process all folders
-        process_all_folders(root_path, root_folders)
+        process_all_folders(root_path, root_folders, scalefactor=args.scalefactor)
