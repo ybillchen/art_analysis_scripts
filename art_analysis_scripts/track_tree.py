@@ -218,14 +218,16 @@ def make_prj_single(
     plt.savefig(output_path, pad_inches=0.0, dpi=300)
     plt.close()
 
-def make_prj_along_mpb(mpb, filename_list_for_tree, basepath):
+def make_prj_along_mpb(mpb, filename_list_for_tree, basepath, scalefactor=None):
     a_mpb = mpb['scale']
     da = 0.0025
     x_smooth = smooth_time_series(a_mpb, mpb['x'], da)
     y_smooth = smooth_time_series(a_mpb, mpb['y'], da)
     z_smooth = smooth_time_series(a_mpb, mpb['z'], da)
-    z_list = np.array([12, 10, 8, 6, 5])
-    a_list = 1 / (1+z_list)
+    if scalefactor is None:
+        a_list = 1 / (1+np.array([12, 10, 8, 6, 5]))
+    else:
+        a_list = np.array([scalefactor])
     for idx in range(len(mpb)):
         snapshot = copy(mpb[idx])
         currentsnap = snapshot['Snap_idx']
@@ -310,9 +312,18 @@ def process_folder(basepath, scalefactor=None):
 
         # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
-        # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath, field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0)
-        make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath, field="temperature", field_unit="K", weight="mass", vmin=1e1, vmax=1e4)
-        # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath, field="metallicity", field_unit="1", weight="mass", vmin=1e-4, vmax=1e0)
+        # make_prj_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, 
+        #     field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+        # )
+        make_prj_along_mpb(
+            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, 
+            field="temperature", field_unit="K", weight="mass", vmin=1e1, vmax=1e4
+        )
+        make_prj_along_mpb(
+            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, 
+            field="metallicity", field_unit="1", weight="mass", vmin=1e-4, vmax=1e0
+        )
 
         print(f"Processed: {basepath}")
     except Exception as e:
