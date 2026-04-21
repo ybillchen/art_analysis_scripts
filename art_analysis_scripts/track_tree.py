@@ -333,10 +333,10 @@ def process_folder(basepath, scalefactor=None):
         #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
         #     field="metallicity", field_unit="1", weight="mass", vmin=1e-5, vmax=1e-2
         # )
-        make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlBu',
-            field="M", field_unit="1", weight="mass", vmin=1e-2, vmax=1e2, scale='log',
-        )
+        # make_prj_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlBu',
+        #     field="M", field_unit="1", weight="mass", vmin=1e-2, vmax=1e2, scale='log',
+        # )
         make_prj_along_mpb(
             mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlBu',
             field="avir", field_unit="1", weight="mass", vmin=1e-2, vmax=1e2, scale='log',
