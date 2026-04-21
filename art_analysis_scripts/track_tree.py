@@ -154,6 +154,7 @@ def make_prj_single(
             size, level=level, prj_x=prjs[idx_x], prj_y=prjs[idx_y], 
             field=field, unit=field_unit, factor=factor, weight=weight
         )
+        mesh += 1e-10 # a small offset to avoid zero
         ax0.imshow(
             mesh.T, origin="lower", norm=LogNorm(vmin=vmin, vmax=vmax), cmap=cmap,
             extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
@@ -323,11 +324,11 @@ def process_folder(basepath, scalefactor=None):
         # )
         make_prj_along_mpb(
             mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
-            field="temperature", field_unit="K", weight="mass", vmin=1e3, vmax=1e7
+            field="temperature", field_unit="K", weight="mass", vmin=1e3, vmax=1e6
         )
         make_prj_along_mpb(
             mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
-            field="metallicity", field_unit="1", weight="mass", vmin=1e-6, vmax=1e-2
+            field="metallicity", field_unit="1", weight="mass", vmin=1e-5, vmax=1e-2
         )
 
         print(f"Processed: {basepath}")
