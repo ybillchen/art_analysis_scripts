@@ -64,7 +64,7 @@ def prj(
         ether = d["artio", "HVAR_INTERNAL_ENERGY"].to_value("code_mass*code_velocity**2/code_length**3")
         z = np.sqrt(eturb / (0.5*gamma*(gamma-1.0)*ether))
     elif field == "avir":
-        avir_factor = (10.0 / (np.pi*ds.units.gravitational_constant) / d["gas", "dx"]**2).to_value(
+        avir_factor = (10.0 / (np.pi * ds.units.gravitational_constant * d["gas", "dx"]**2)).to_value(
             "code_mass/code_velocity**2/code_length**3"
         )
         gamma = d["artio", "HVAR_GAMMA"].to_value("1")

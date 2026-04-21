@@ -284,6 +284,35 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     np.savetxt(output_path, out)
 
+
+def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
+    if scalefactor is None:
+        idx = -1
+    else:
+        idx = np.argmin(np.abs(mpb['scale'] - scalefactor))
+    snapshot = copy(mpb[idx])
+    snap = snapshot['Snap_idx']
+    filename = os.path.join(basepath, filename_list_for_tree[snap])
+
+    ds = yt.load(filename)
+
+    center = ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h')
+    rvir = ds.arr(snapshot['Rvir'], 'kpccm/h')
+
+    d = ds.sphere(center, rvir)
+
+    density = d[('gas', 'density')].to_value('Msun/kpc**3')
+    temperature = d[('gas', 'temperature')].to_value('K')
+    metallicity = d[('gas', 'metallicity')].to_value('1')
+    size = d[('gas', 'dx')].to_value('kpc')
+    eturb = d[('gas', 'thermal_energy_density')].to_value('Msun*(km/s)**2/kpc**3')
+    ether = d[('gas', 'thermal_energy_density')].to_value('Msun*(km/s)**2/kpc**3')
+    out = np.column_stack([density, temperature, metallicity, size, eturb, ether])
+
+    output_path = filename.replace('out/snap_', 'analysis/gas_at_').replace('.art', '.txt')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    np.savetxt(output_path, out)
+
 def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     lastsnapshot = copy(mpb[-1])
     lastsnap = lastsnapshot['Snap_idx']
@@ -320,27 +349,28 @@ def process_folder(basepath, scalefactor=None):
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
         # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
+        gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
-        make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='magma',
-            field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
-        )
-        make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
-            field="temperature", field_unit="K", weight="mass", vmin=1e3, vmax=1e6
-        )
-        make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
-            field="metallicity", field_unit="1", weight="mass", vmin=1e-5, vmax=1e-2
-        )
-        make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlBu',
-            field="M", field_unit="1", weight="mass", vmin=1e-2, vmax=1e2, scale='log',
-        )
-        make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlBu',
-            field="avir", field_unit="1", weight="mass", vmin=1e-3, vmax=1e3, scale='log',
-        )
+        # make_prj_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='magma',
+        #     field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+        # )
+        # make_prj_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
+        #     field="temperature", field_unit="K", weight="mass", vmin=1e3, vmax=1e6
+        # )
+        # make_prj_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
+        #     field="metallicity", field_unit="1", weight="mass", vmin=1e-5, vmax=1e-2
+        # )
+        # make_prj_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlBu',
+        #     field="M", field_unit="1", weight="mass", vmin=1e-2, vmax=1e2, scale='log',
+        # )
+        # make_prj_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlBu',
+        #     field="avir", field_unit="1", weight="mass", vmin=1e-3, vmax=1e3, scale='log',
+        # )
 
         print(f"Processed: {basepath}")
     except Exception as e:
