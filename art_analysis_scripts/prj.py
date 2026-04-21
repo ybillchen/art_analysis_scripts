@@ -16,7 +16,10 @@ from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import yt
 
-def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3", factor=0.5, weight="volume"):
+def prj(
+    ds, center, size, level=10, prj_x="x", prj_y="y", 
+    field="density", unit="Msun/pc**3", factor=0.5, weight="volume", scale="linear"
+):
     """
     generate quadtree-like projection for gas
     ds: ARTIODataset
@@ -54,10 +57,15 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     x = d["gas", prj_x].to_value("code_length")
     y = d["gas", prj_y].to_value("code_length")
     dx = d["gas", "dx"].to_value("code_length")
+
     if field == "turb2ther":
-        z = d["artio", "HVAR_GAS_TURBULENT_ENERGY"].to_value("1") / d["artio", "HVAR_INTERNAL_ENERGY"].to_value("code_mass*code_velocity**2/code_length**3")
+        z = d["artio", "HVAR_GAS_TURBULENT_ENERGY"].to_value("1") / \
+            d["artio", "HVAR_INTERNAL_ENERGY"].to_value("code_mass*code_velocity**2/code_length**3")
     else:
         z = d["gas", field].to_value(unit)
+
+    if scale == "log":
+        z = np.log10(z)
 
     if weight == "mass":
         rho = d["gas", "density"].to_value("Msun/kpc**3")
@@ -92,6 +100,9 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
 
     if weight == "mass":
         mesh = np.where(mesh_den > 0, mesh_num / mesh_den, 0.0)
+
+    if scale == "log":
+        mesh = 10**mesh
 
     return mesh, region
 

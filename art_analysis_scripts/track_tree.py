@@ -119,7 +119,8 @@ def save_mpb(mpb):
 
 def make_prj_single(
     snapshot, filename, basepath, cmap='magma',
-    field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+    field="density", field_unit="Msun/pc**3", weight="volume", 
+    vmin=1e-4, vmax=1e0, scale="linear"
 ):
 
     ds = yt.load(filename)
@@ -152,7 +153,7 @@ def make_prj_single(
         # gas
         mesh, region = prj(ds, [x0, y0, z0], 
             size, level=level, prj_x=prjs[idx_x], prj_y=prjs[idx_y], 
-            field=field, unit=field_unit, factor=factor, weight=weight
+            field=field, unit=field_unit, factor=factor, weight=weight, scale=scale
         )
         mesh += 1e-10 # a small offset to avoid zero
         ax0.imshow(
@@ -220,7 +221,8 @@ def make_prj_single(
 
 def make_prj_along_mpb(
     mpb, filename_list_for_tree, basepath, scalefactor=None, cmap='magma',
-    field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+    field="density", field_unit="Msun/pc**3", weight="volume", 
+    vmin=1e-4, vmax=1e0, scale="linear"
 ):
     a_mpb = mpb['scale']
     da = 0.0025
@@ -246,7 +248,8 @@ def make_prj_along_mpb(
             # if idx == len(mpb) - 1:
             make_prj_single(
                 snapshot, filename, basepath, cmap=cmap,
-                field=field, field_unit=field_unit, weight=weight, vmin=vmin, vmax=vmax
+                field=field, field_unit=field_unit, weight=weight, 
+                vmin=vmin, vmax=vmax, scale=scale,
             )
             if len(a_list) == 0:
                 break
@@ -331,8 +334,8 @@ def process_folder(basepath, scalefactor=None):
         #     field="metallicity", field_unit="1", weight="mass", vmin=1e-5, vmax=1e-2
         # )
         make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
-            field="turb2ther", field_unit="1", weight="mass", vmin=1e-2, vmax=1e2
+            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='PuOr',
+            field="turb2ther", field_unit="1", weight="mass", vmin=1e-3, vmax=1e3, scale='log',
         )
 
         print(f"Processed: {basepath}")
