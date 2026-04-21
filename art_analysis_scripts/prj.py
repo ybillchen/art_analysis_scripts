@@ -58,9 +58,11 @@ def prj(
     y = d["gas", prj_y].to_value("code_length")
     dx = d["gas", "dx"].to_value("code_length")
 
-    if field == "turb2ther":
-        z = d["artio", "HVAR_GAS_TURBULENT_ENERGY"].to_value("1") / \
-            d["artio", "HVAR_INTERNAL_ENERGY"].to_value("code_mass*code_velocity**2/code_length**3")
+    if field == "M":
+        gamma = d["artio", "HVAR_GAMMA"].to_value("1")
+        eturb = d["artio", "HVAR_GAS_TURBULENT_ENERGY"].to_value("1")
+        ether = d["artio", "HVAR_INTERNAL_ENERGY"].to_value("code_mass*code_velocity**2/code_length**3")
+        z = np.sqrt(eturb / ether * 2.0 / (gamma * (gamma-1.0)))
     else:
         z = d["gas", field].to_value(unit)
 
