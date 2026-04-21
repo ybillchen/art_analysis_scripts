@@ -323,11 +323,11 @@ def process_folder(basepath, scalefactor=None):
         # )
         make_prj_along_mpb(
             mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
-            field="temperature", field_unit="K", weight="mass", vmin=1e1, vmax=1e4
+            field="temperature", field_unit="K", weight="mass", vmin=1e3, vmax=1e7
         )
         make_prj_along_mpb(
             mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
-            field="metallicity", field_unit="1", weight="mass", vmin=1e-4, vmax=1e0
+            field="metallicity", field_unit="1", weight="mass", vmin=1e-6, vmax=1e-2
         )
 
         print(f"Processed: {basepath}")
