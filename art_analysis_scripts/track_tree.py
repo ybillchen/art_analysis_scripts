@@ -305,7 +305,7 @@ def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
     temperature = d[('gas', 'temperature')].to_value('K')
     metallicity = d[('gas', 'metallicity')].to_value('1')
     size = d[('gas', 'dx')].to_value('kpc')
-    eturb = d[('gas', 'thermal_energy_density')].to_value('Msun*(km/s)**2/kpc**3')
+    eturb = d[('gas', 'kinetic_energy_density')].to_value('Msun*(km/s)**2/kpc**3')
     ether = d[('gas', 'thermal_energy_density')].to_value('Msun*(km/s)**2/kpc**3')
     out = np.column_stack([density, temperature, metallicity, size, eturb, ether])
 
