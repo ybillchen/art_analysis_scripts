@@ -218,7 +218,10 @@ def make_prj_single(
     plt.savefig(output_path, pad_inches=0.0, dpi=300)
     plt.close()
 
-def make_prj_along_mpb(mpb, filename_list_for_tree, basepath, scalefactor=None):
+def make_prj_along_mpb(
+    mpb, filename_list_for_tree, basepath, scalefactor=None,
+    field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+):
     a_mpb = mpb['scale']
     da = 0.0025
     x_smooth = smooth_time_series(a_mpb, mpb['x'], da)
@@ -241,7 +244,10 @@ def make_prj_along_mpb(mpb, filename_list_for_tree, basepath, scalefactor=None):
             print(idx, currentsnap, currenta, filename)
             # if idx % 100 == 0:
             # if idx == len(mpb) - 1:
-            make_prj_single(snapshot, filename, basepath)
+            make_prj_single(
+                snapshot, filename, basepath, 
+                field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+            )
             if len(a_list) == 0:
                 break
 
