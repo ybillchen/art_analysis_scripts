@@ -334,7 +334,7 @@ def process_folder(basepath, scalefactor=None):
         #     field="metallicity", field_unit="1", weight="mass", vmin=1e-5, vmax=1e-2
         # )
         make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='PuOr',
+            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlGn',
             field="turb2ther", field_unit="1", weight="mass", vmin=1e-3, vmax=1e3, scale='log',
         )
 
