@@ -246,7 +246,7 @@ def make_prj_along_mpb(
             # if idx == len(mpb) - 1:
             make_prj_single(
                 snapshot, filename, basepath, 
-                field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+                field=field, field_unit=field_unit, weight=weight, vmin=vmin, vmax=vmax
             )
             if len(a_list) == 0:
                 break
