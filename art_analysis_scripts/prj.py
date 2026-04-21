@@ -54,7 +54,11 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     x = d["gas", prj_x].to_value("code_length")
     y = d["gas", prj_y].to_value("code_length")
     dx = d["gas", "dx"].to_value("code_length")
-    z = d["gas", field].to_value(unit)
+    if field == "turb2ther":
+        z = d["gas", "HVAR_GAS_TURBULENT_ENERGY"] / d["gas", "HVAR_INTERNAL_ENERGY"]
+        z = z.to_value(unit)
+    else:
+        z = d["gas", field].to_value(unit)
 
     if weight == "mass":
         rho = d["gas", "density"].to_value("Msun/kpc**3")
