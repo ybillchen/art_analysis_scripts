@@ -117,7 +117,10 @@ def find_main_mpb(tree):
 def save_mpb(mpb):
     np.savetxt(mpb, fmt=fmt_tree)
 
-def make_prj_single(snapshot, filename, basepath):
+def make_prj_single(
+    snapshot, filename, basepath, 
+    field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+):
 
     ds = yt.load(filename)
 
@@ -149,11 +152,10 @@ def make_prj_single(snapshot, filename, basepath):
         # gas
         mesh, region = prj(ds, [x0, y0, z0], 
             size, level=level, prj_x=prjs[idx_x], prj_y=prjs[idx_y], 
-            field="density", unit="Msun/pc**3", factor=factor
+            field=field, unit=field_unit, factor=factor, weight=weight
         )
         ax0.imshow(
-            # mesh.T, origin="lower", norm=LogNorm(vmin=1e-5, vmax=1e-1), # default
-            mesh.T, origin="lower", norm=LogNorm(vmin=1e-4, vmax=1e0),
+            mesh.T, origin="lower", norm=LogNorm(vmin=vmin, vmax=vmax),
             cmap='magma',
             extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
                 region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)]
@@ -211,7 +213,7 @@ def make_prj_single(snapshot, filename, basepath):
     #     r"$R_{\rm GMC} = %d$ pc"%10, ha="left", va="top", color="w")
 
     # plt.tight_layout()
-    output_path = filename.replace('out/snap_', 'analysis/prj_mpb/prj_').replace('.art', '.png')
+    output_path = filename.replace('out/snap_', f'analysis/prj_mpb/prj_{field}_').replace('.art', '.png')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     plt.savefig(output_path, pad_inches=0.0, dpi=300)
     plt.close()
@@ -306,9 +308,11 @@ def process_folder(basepath, scalefactor=None):
 
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
-        star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
+        # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
-        # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath)
+        # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath, field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0)
+        make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath, field="temperature", field_unit="K", weight="mass", vmin=1e1, vmax=1e4)
+        # make_prj_along_mpb(mpb_main, filename_list_for_tree, basepath, field="metallicity", field_unit="1", weight="mass", vmin=1e-4, vmax=1e0)
 
         print(f"Processed: {basepath}")
     except Exception as e:
@@ -335,10 +339,14 @@ if __name__ == '__main__':
     root_folders = ["mh2e12_eps100", "mh2e12_eps10", "mh2e12_eps1", "mh2e12_km", "mh3e12_km", "mh5e12_km", "mh2e12_p12", "mh3e12_p12", "mh5e12_p12"]
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('basepath', nargs='?', default=None,
-                        help='Path to a single simulation run folder (or .art file)')
-    parser.add_argument('--scalefactor', '-a', type=float, default=None,
-                        help='Scale factor to analyse (default: last snapshot)')
+    parser.add_argument(
+        'basepath', nargs='?', default=None,
+        help='Path to a single simulation run folder (or .art file)'
+    )
+    parser.add_argument(
+        '--scalefactor', '-a', type=float, default=None,
+        help='Scale factor to analyse (default: last snapshot)'
+    )
     args = parser.parse_args()
 
     if args.basepath is not None:

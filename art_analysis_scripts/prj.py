@@ -16,12 +16,12 @@ from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import yt
 
-def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3", factor=0.5):
+def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit="Msun/pc**3", factor=0.5, weight="volume"):
     """
     generate quadtree-like projection for gas
-    effective volume weighted projection
     ds: ARTIODataset
     center: [x0, y0, z0] in code_length
+    weight: "volume" (default) or "mass"
     """
 
     dx_level = 2**-level # in code_length
@@ -36,7 +36,6 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     N1["z"] = np.ceil((center[2]+factor*size)/dx_level)
 
     N = int(np.max((N1["x"]-N0["x"],N1["y"]-N0["y"],N1["z"]-N0["z"])))
-    mesh = np.zeros((N, N)) # pixel mesh
     N1["x"] = N0["x"] + N # update to the longest side
     N1["y"] = N0["y"] + N
     N1["z"] = N0["z"] + N
@@ -57,21 +56,39 @@ def prj(ds, center, size, level=10, prj_x="x", prj_y="y", field="density", unit=
     dx = d["gas", "dx"].to_value("code_length")
     z = d["gas", field].to_value(unit)
 
+    if weight == "mass":
+        rho = d["gas", "density"].to_value("Msun/kpc**3")
+        mesh_num = np.zeros((N, N))
+        mesh_den = np.zeros((N, N))
+    else:
+        mesh = np.zeros((N, N))
+
     for i in range(len(x)):
         if dx[i] <= dx_level:
             # the cell is within a pixel
             ix = np.floor(x[i]/dx_level-N0[prj_x]).astype(int)
             iy = np.floor(y[i]/dx_level-N0[prj_y]).astype(int)
-            normalize = dx[i]**3 / (N*dx_level**3) # volume weighted
-            mesh[ix, iy] += z[i] * normalize
+            if weight == "mass":
+                w = rho[i] * dx[i]**3
+                mesh_num[ix, iy] += z[i] * w
+                mesh_den[ix, iy] += w
+            else:
+                mesh[ix, iy] += z[i] * dx[i]**3 / (N*dx_level**3)  # volume weighted
         else:
             # the cell covers many pixels
             ix0 = np.rint((x[i]-dx[i]/2)/dx_level-N0[prj_x]).astype(int)
             iy0 = np.rint((y[i]-dx[i]/2)/dx_level-N0[prj_y]).astype(int)
             ix1 = np.rint((x[i]+dx[i]/2)/dx_level-N0[prj_x]).astype(int)
             iy1 = np.rint((y[i]+dx[i]/2)/dx_level-N0[prj_y]).astype(int)
-            normalize = dx[i] * dx_level**2 / (N*dx_level**3) # volume weighted
-            mesh[ix0:ix1, iy0:iy1] += z[i] * normalize
+            if weight == "mass":
+                w = rho[i] * dx[i] * dx_level**2  # mass per pixel from this cell
+                mesh_num[ix0:ix1, iy0:iy1] += z[i] * w
+                mesh_den[ix0:ix1, iy0:iy1] += w
+            else:
+                mesh[ix0:ix1, iy0:iy1] += z[i] * dx[i] * dx_level**2 / (N*dx_level**3)  # volume weighted
+
+    if weight == "mass":
+        mesh = np.where(mesh_den > 0, mesh_num / mesh_den, 0.0)
 
     return mesh, region
 
