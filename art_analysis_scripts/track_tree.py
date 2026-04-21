@@ -118,7 +118,7 @@ def save_mpb(mpb):
     np.savetxt(mpb, fmt=fmt_tree)
 
 def make_prj_single(
-    snapshot, filename, basepath, 
+    snapshot, filename, basepath, cmap='magma',
     field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
 ):
 
@@ -155,8 +155,7 @@ def make_prj_single(
             field=field, unit=field_unit, factor=factor, weight=weight
         )
         ax0.imshow(
-            mesh.T, origin="lower", norm=LogNorm(vmin=vmin, vmax=vmax),
-            cmap='magma',
+            mesh.T, origin="lower", norm=LogNorm(vmin=vmin, vmax=vmax), cmap=cmap,
             extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
                 region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)]
         )
@@ -219,7 +218,7 @@ def make_prj_single(
     plt.close()
 
 def make_prj_along_mpb(
-    mpb, filename_list_for_tree, basepath, scalefactor=None,
+    mpb, filename_list_for_tree, basepath, scalefactor=None, cmap='magma',
     field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
 ):
     a_mpb = mpb['scale']
@@ -245,7 +244,7 @@ def make_prj_along_mpb(
             # if idx % 100 == 0:
             # if idx == len(mpb) - 1:
             make_prj_single(
-                snapshot, filename, basepath, 
+                snapshot, filename, basepath, cmap=cmap,
                 field=field, field_unit=field_unit, weight=weight, vmin=vmin, vmax=vmax
             )
             if len(a_list) == 0:
@@ -319,15 +318,15 @@ def process_folder(basepath, scalefactor=None):
         # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(
-        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, 
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='magma',
         #     field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
         # )
         make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, 
+            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
             field="temperature", field_unit="K", weight="mass", vmin=1e1, vmax=1e4
         )
         make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, 
+            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
             field="metallicity", field_unit="1", weight="mass", vmin=1e-4, vmax=1e0
         )
 
