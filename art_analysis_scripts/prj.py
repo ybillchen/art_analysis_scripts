@@ -63,6 +63,13 @@ def prj(
         eturb = d["artio", "HVAR_GAS_TURBULENT_ENERGY"].to_value("1")
         ether = d["artio", "HVAR_INTERNAL_ENERGY"].to_value("code_mass*code_velocity**2/code_length**3")
         z = np.sqrt(eturb / ether * 2.0 / (gamma * (gamma-1.0)))
+    if field == "avir":
+        avir_factor = (10/(np.pi*ds.units.gravitational_constant)/d["gas", "dx"]**2).to_value("code_mass/code_velocity**2/code_length**3")
+        gamma = d["artio", "HVAR_GAMMA"].to_value("1")
+        eturb = d["artio", "HVAR_GAS_TURBULENT_ENERGY"].to_value("1")
+        ether = d["artio", "HVAR_INTERNAL_ENERGY"].to_value("code_mass*code_velocity**2/code_length**3")
+        rho = d["gas", "density"].to_value("code_mass/code_length**3")
+        z = avir_factor * (eturb + 0.5*gamma*(gamma-1.0)*ether) / rho**2;
     else:
         z = d["gas", field].to_value(unit)
 
