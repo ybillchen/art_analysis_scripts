@@ -305,8 +305,10 @@ def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
     temperature = d[('gas', 'temperature')].to_value('K')
     metallicity = d[('gas', 'metallicity')].to_value('1')
     size = d[('gas', 'dx')].to_value('kpc')
-    eturb = d[('gas', 'kinetic_energy_density')].to_value('Msun*(km/s)**2/kpc**3')
-    ether = d[('gas', 'thermal_energy_density')].to_value('Msun*(km/s)**2/kpc**3')
+    eturb = d[('artio', 'HVAR_GAS_TURBULENT_ENERGY')].to_value('1')
+    eturb *= (ds.units.code_mass*ds.units.code_velocity**2/ds.units.code_length**3)
+    eturb = eturb.xsto_value('Msun*(km/s)**2/kpc**3')
+    ether = d[('artio', 'HVAR_INTERNAL_ENERGY')].to_value('Msun*(km/s)**2/kpc**3')
     out = np.column_stack([density, temperature, metallicity, size, eturb, ether])
 
     output_path = filename.replace('out/snap_', 'analysis/gas_at_').replace('.art', '.txt')
