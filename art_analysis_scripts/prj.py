@@ -71,7 +71,7 @@ def prj(
         eturb = d["artio", "HVAR_GAS_TURBULENT_ENERGY"].to_value("1")
         ether = d["artio", "HVAR_INTERNAL_ENERGY"].to_value("code_mass*code_velocity**2/code_length**3")
         rho = d["gas", "density"].to_value("code_mass/code_length**3")
-        z = avir_factor * (2.0*eturb + gamma*(gamma-1.0)*ether) / rho**2;
+        z = avir_factor * (2.0*eturb + gamma*(gamma-1.0)*ether) / rho**2
     else:
         z = d["gas", field].to_value(unit)
 
