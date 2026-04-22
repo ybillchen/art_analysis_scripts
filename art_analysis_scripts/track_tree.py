@@ -307,7 +307,7 @@ def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
     size = d[('gas', 'dx')].to_value('kpc')
     eturb = d[('artio', 'HVAR_GAS_TURBULENT_ENERGY')].to_value('1')
     eturb *= (ds.units.code_mass*ds.units.code_velocity**2/ds.units.code_length**3)
-    eturb = eturb.xsto_value('Msun*(km/s)**2/kpc**3')
+    eturb = eturb.to_value('Msun*(km/s)**2/kpc**3')
     ether = d[('artio', 'HVAR_INTERNAL_ENERGY')].to_value('Msun*(km/s)**2/kpc**3')
     out = np.column_stack([density, temperature, metallicity, size, eturb, ether])
 
