@@ -309,7 +309,10 @@ def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
     eturb *= (ds.units.code_mass*ds.units.code_velocity**2/ds.units.code_length**3)
     eturb = eturb.to_value('Msun*(km/s)**2/kpc**3')
     ether = d[('artio', 'HVAR_INTERNAL_ENERGY')].to_value('Msun*(km/s)**2/kpc**3')
-    out = np.column_stack([density, temperature, metallicity, size, eturb, ether])
+    x = (d[('gas', 'x')] - center[0]).to_value('kpc')
+    y = (d[('gas', 'y')] - center[1]).to_value('kpc')
+    z = (d[('gas', 'z')] - center[2]).to_value('kpc')
+    out = np.column_stack([density, temperature, metallicity, size, eturb, ether, x, y, z])
 
     output_path = filename.replace('out/snap_', 'analysis/gas_at_').replace('.art', '.txt')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -351,7 +354,7 @@ def process_folder(basepath, scalefactor=None):
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
         # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
-        # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
+        gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(
         #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='magma',
@@ -369,10 +372,10 @@ def process_folder(basepath, scalefactor=None):
         #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='RdYlBu',
         #     field="M", field_unit="1", weight="mass", vmin=1e-2, vmax=1e2, scale='log',
         # )
-        make_prj_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
-            field="avir", field_unit="1", weight="mass", vmin=1e1, vmax=1e7, scale='log',
-        )
+        # make_prj_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
+        #     field="avir", field_unit="1", weight="mass", vmin=1e1, vmax=1e7, scale='log',
+        # )
 
         print(f"Processed: {basepath}")
     except Exception as e:
