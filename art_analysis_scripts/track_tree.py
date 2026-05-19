@@ -278,7 +278,10 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None)
     t_dur = duration(d)
     t_spread = age_spread(d)
     eps_int = get_eps_int(d)
-    out = np.column_stack([initial_mass, mass, f_bound0, t_form, t_ave, t_dur, t_spread, eps_int])
+    x = d[('STAR', 'POSITION_X')].to_value('kpc')
+    y = d[('STAR', 'POSITION_Y')].to_value('kpc')
+    z = d[('STAR', 'POSITION_Z')].to_value('kpc')
+    out = np.column_stack([initial_mass, mass, f_bound0, t_form, t_ave, t_dur, t_spread, eps_int, x, y, z])
 
     output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.txt')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -353,8 +356,8 @@ def process_folder(basepath, scalefactor=None):
 
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
-        # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
-        gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
+        star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
+        # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(
         #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='magma',
