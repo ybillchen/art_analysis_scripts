@@ -317,7 +317,7 @@ def baryon_fraction_at_scalefactor(mpb, filename_list_for_tree, basepath, scalef
     filename = os.path.join(basepath, filename_list_for_tree[snap])
 
     ds = yt.load(filename)
-    fb = ds.omega_baryon / ds.omega_matter
+    fb = 0.04897 / ds.omega_matter
 
     center = ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h')
     rvir = ds.arr(snapshot['Rvir'], 'kpccm/h')
