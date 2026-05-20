@@ -30,6 +30,7 @@ class TarFileComparator:
         self.differences = []
         self.missing_on_remote = []
         self.missing_on_local = []
+        self.suspect_local_files = []  # rockstar_halos.tar where remote > local
 
     def log(self, msg, level="INFO"):
         """Print log message (only DEBUG with verbose flag)"""
@@ -116,11 +117,15 @@ class TarFileComparator:
                 remote_info = self.remote_files[rel_path]
 
                 if local_info['size'] != remote_info['size']:
-                    self.differences.append({
+                    diff = {
                         'path': rel_path,
                         'local_size': local_info['size'],
                         'remote_size': remote_info['size']
-                    })
+                    }
+                    self.differences.append(diff)
+                    if (os.path.basename(rel_path) == 'rockstar_halos.tar'
+                            and remote_info['size'] > local_info['size']):
+                        self.suspect_local_files.append(local_info['full_path'])
 
     def print_report(self):
         """Print comparison report"""
@@ -152,6 +157,12 @@ class TarFileComparator:
         """Check if there are conflicting files that would be overwritten"""
         return len(self.differences) > 0
 
+    def write_suspect_file(self, path):
+        """Write local paths of suspect rockstar_halos.tar files (remote > local) to a file."""
+        with open(path, 'w') as f:
+            for p in self.suspect_local_files:
+                f.write(p + '\n')
+
     def run(self):
         """Run full comparison"""
         if not self.get_local_tar_files():
@@ -178,6 +189,8 @@ def main():
                         help='Remote host (default: $ARCHIVER)')
     parser.add_argument('--remote-path', default='/scoutfs/projects/TG-AST200017/stampede3/',
                         help='Remote path (default: /scoutfs/projects/TG-AST200017/stampede3/)')
+    parser.add_argument('--suspect-file', default=None,
+                        help='Write local paths of suspect rockstar_halos.tar files to this file')
 
     args = parser.parse_args()
 
@@ -204,6 +217,9 @@ def main():
     if not comparator.run():
         print("\nERROR: Comparison failed", file=sys.stderr)
         return 1
+
+    if args.suspect_file is not None:
+        comparator.write_suspect_file(args.suspect_file)
 
     if comparator.has_conflicts():
         print("[ERROR] SYNC BLOCKED: Conflicting files detected")
