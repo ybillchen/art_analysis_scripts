@@ -357,7 +357,7 @@ def process_folder(basepath, scalefactor=None):
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
         star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
-        # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
+        gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(
         #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='magma',
