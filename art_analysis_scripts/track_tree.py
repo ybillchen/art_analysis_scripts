@@ -307,6 +307,31 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
         np.savetxt(output_path, out, fmt=['%.6e']*11 + ['%d'])
 
 
+def baryon_fraction_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
+    if scalefactor is None:
+        idx = -1
+    else:
+        idx = np.argmin(np.abs(mpb['scale'] - scalefactor))
+    snapshot = copy(mpb[idx])
+    snap = snapshot['Snap_idx']
+    filename = os.path.join(basepath, filename_list_for_tree[snap])
+
+    ds = yt.load(filename)
+    fb = ds.omega_baryon / ds.omega_matter
+
+    center = ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h')
+    rvir = ds.arr(snapshot['Rvir'], 'kpccm/h')
+    mhalo = snapshot['Mvir'] / ds.hubble_constant  # Msun/h -> Msun
+
+    d = ds.sphere(center, rvir)
+    mstar = d[('STAR', 'MASS')].to_value('Msun').sum()
+
+    fbar = mstar / (mhalo * fb)
+    parts = basepath.rstrip('/').split('/')
+    name = f"{parts[-3]}/{parts[-2]}"
+    print(f"{name}  Mstar = {mstar:.3e} Msun  Mhalo = {mhalo:.3e} Msun  fbar = {fbar:.4f}")
+
+
 def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None, fmt='txt'):
     if scalefactor is None:
         idx = -1
@@ -389,8 +414,9 @@ def process_folder(basepath, scalefactor=None, fmt='txt'):
 
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
-        star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, fmt=fmt)
-        gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, fmt=fmt)
+        # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, fmt=fmt)
+        # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, fmt=fmt)
+        baryon_fraction_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(
         #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='magma',
