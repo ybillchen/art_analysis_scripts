@@ -53,8 +53,42 @@ if [ -z "$ARCHIVER" ]; then
     exit 2
 fi
 
+# Temp file to collect suspect rockstar_halos.tar paths (remote > local)
+SUSPECT_FILE=$(mktemp)
+trap 'rm -f "$SUSPECT_FILE"' EXIT
+
 # Run comparison check
 python3 "$COMPARE_SCRIPT" $VERBOSE \
     --local-path "$SCRATCH" \
     --remote-host "$ARCHIVER" \
-    --remote-path "/scoutfs/projects/TG-AST200017/stampede3/"
+    --remote-path "/scoutfs/projects/TG-AST200017/stampede3/" \
+    --suspect-file "$SUSPECT_FILE"
+
+COMPARE_EXIT=$?
+
+# If any rockstar_halos.tar files have remote > local, offer to delete local copies
+if [ -s "$SUSPECT_FILE" ]; then
+    echo ""
+    echo "[WARN] The following local rockstar_halos.tar files are smaller than their remote"
+    echo "       counterparts. This likely means the local copy is incomplete or corrupt:"
+    echo ""
+    while IFS= read -r f; do
+        echo "  $f"
+    done < "$SUSPECT_FILE"
+    echo ""
+    read -r -p "Delete these local files? [y/N] " REPLY
+    case "$REPLY" in
+        [yY][eE][sS]|[yY])
+            while IFS= read -r f; do
+                echo "Deleting: $f"
+                rm -f "$f"
+            done < "$SUSPECT_FILE"
+            echo "Done."
+            ;;
+        *)
+            echo "Skipped deletion."
+            ;;
+    esac
+fi
+
+exit $COMPARE_EXIT
