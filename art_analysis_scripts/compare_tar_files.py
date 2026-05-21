@@ -17,6 +17,7 @@ import os
 import sys
 import subprocess
 import argparse
+import concurrent.futures
 
 
 class TarFileComparator:
@@ -31,6 +32,9 @@ class TarFileComparator:
         self.missing_on_local = []
         self.local_smaller = []  # local < remote: local may be damaged
         self.local_larger = []   # local > remote: remote may be wrong
+        self.check_integrity = False
+        self.broken_local = []
+        self.broken_remote = []
 
     def log(self, msg, level="INFO"):
         """Print log message (only DEBUG with verbose flag)"""
@@ -154,6 +158,19 @@ class TarFileComparator:
                 print(f"    Local:  {entry['local_size']} bytes")
                 print(f"    Remote: {entry['remote_size']} bytes")
 
+        # Broken local tars
+        if self.broken_local:
+            print(f"\n[ERROR] {len(self.broken_local)} broken local tar files (failed tar -tf):")
+            for entry in self.broken_local:
+                print(f"  {entry['rel_path']}")
+                print(f"    Error: {entry['error']}")
+
+        # Broken remote tars
+        if self.broken_remote:
+            print(f"\n[WARN] {len(self.broken_remote)} broken remote tar files (failed tar -tf):")
+            for entry in self.broken_remote:
+                print(f"  {entry['rel_path']}")
+
         # Files only on local
         if self.missing_on_remote:
             print(f"\n[INFO] {len(self.missing_on_remote)} files only on local (will be uploaded)")
@@ -163,8 +180,8 @@ class TarFileComparator:
             print(f"[INFO] {len(self.missing_on_local)} files only on remote (will be preserved)")
 
     def has_conflicts(self):
-        """Block sync only when local is smaller than remote (local may be damaged)"""
-        return len(self.local_smaller) > 0
+        """Block sync when local may be damaged (smaller than remote, or broken)"""
+        return len(self.local_smaller) > 0 or len(self.broken_local) > 0
 
     def write_suspect_file(self, path):
         """Write path|local_size|remote_size for files where local < remote."""
@@ -178,6 +195,66 @@ class TarFileComparator:
             for entry in self.local_larger:
                 f.write(f"{entry['full_path']}|{entry['local_size']}|{entry['remote_size']}\n")
 
+    def write_broken_local_file(self, path):
+        """Write path|error for each broken local tar file."""
+        with open(path, 'w') as f:
+            for entry in self.broken_local:
+                error = (entry.get('error') or '').replace('\n', ' ')
+                f.write(f"{entry['full_path']}|{error}\n")
+
+    def write_broken_remote_file(self, path):
+        """Write remote path for each broken remote tar file."""
+        with open(path, 'w') as f:
+            for entry in self.broken_remote:
+                f.write(entry['full_path'] + '\n')
+
+    def check_local_integrity(self):
+        """Run tar -tf on each local tar file in parallel."""
+        def _check(item):
+            rel_path, info = item
+            result = subprocess.run(['tar', '-tf', info['full_path']], capture_output=True)
+            ok = result.returncode == 0
+            err = result.stderr.decode('utf-8', errors='replace').strip().split('\n')[0] if not ok else None
+            return rel_path, info['full_path'], ok, err
+
+        print(f"Checking integrity of {len(self.local_files)} local tar files...")
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            for rel_path, full_path, ok, err in executor.map(_check, self.local_files.items()):
+                if not ok:
+                    self.broken_local.append({
+                        'rel_path': rel_path,
+                        'full_path': full_path,
+                        'error': err
+                    })
+
+    def check_remote_integrity(self):
+        """Run tar -tf on all remote tar files via a single parallel SSH call."""
+        print(f"Checking integrity of {len(self.remote_files)} remote tar files...")
+        ssh_cmd = (
+            f"find {self.remote_path} -name '*.tar' -type f "
+            f"| xargs -P 8 -I{{}} sh -c 'tar -tf \"{{}}\" > /dev/null 2>&1 || echo \"{{}}\"'"
+        )
+        try:
+            result = subprocess.run(
+                ['ssh', self.remote_host, ssh_cmd],
+                capture_output=True, text=True, timeout=3600
+            )
+            for line in result.stdout.strip().split('\n'):
+                line = line.strip()
+                if line:
+                    rel_path = os.path.relpath(line, self.remote_path)
+                    self.broken_remote.append({
+                        'rel_path': rel_path,
+                        'full_path': line
+                    })
+        except subprocess.TimeoutExpired:
+            print("[ERROR] Remote integrity check timed out", file=sys.stderr)
+            return False
+        except Exception as e:
+            print(f"[ERROR] Remote integrity check failed: {e}", file=sys.stderr)
+            return False
+        return True
+
     def run(self):
         """Run full comparison"""
         if not self.get_local_tar_files():
@@ -187,6 +264,12 @@ class TarFileComparator:
             return False
 
         self.compare_files()
+
+        if self.check_integrity:
+            self.check_local_integrity()
+            if not self.check_remote_integrity():
+                return False
+
         self.print_report()
 
         return True
@@ -208,6 +291,12 @@ def main():
                         help='Write local paths of files where local < remote to this file')
     parser.add_argument('--local-larger-file', default=None,
                         help='Write local paths of files where local > remote to this file')
+    parser.add_argument('--check-integrity', action='store_true',
+                        help='Run tar -tf on each tar file to detect corruption (slower)')
+    parser.add_argument('--broken-local-file', default=None,
+                        help='Write path|error for broken local tar files to this file')
+    parser.add_argument('--broken-remote-file', default=None,
+                        help='Write remote paths of broken remote tar files to this file')
 
     args = parser.parse_args()
 
@@ -230,6 +319,7 @@ def main():
         args.remote_path,
         verbose=args.verbose
     )
+    comparator.check_integrity = args.check_integrity
 
     if not comparator.run():
         print("\nERROR: Comparison failed", file=sys.stderr)
@@ -240,6 +330,12 @@ def main():
 
     if args.local_larger_file is not None:
         comparator.write_local_larger_file(args.local_larger_file)
+
+    if args.broken_local_file is not None:
+        comparator.write_broken_local_file(args.broken_local_file)
+
+    if args.broken_remote_file is not None:
+        comparator.write_broken_remote_file(args.broken_remote_file)
 
     if comparator.has_conflicts():
         print("[ERROR] SYNC BLOCKED: Conflicting files detected")

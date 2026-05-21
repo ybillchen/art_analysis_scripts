@@ -8,6 +8,7 @@ import os
 import tarfile
 import glob
 import re
+import subprocess
 from multiprocessing import Pool
 import argparse
 
@@ -87,6 +88,22 @@ def validate_snap_a_files(identifier, files):
 
     return True, None
 
+def verify_tar(args):
+    """Check tar integrity by listing contents. Returns (path, is_valid, error)."""
+    i, tar_path, ntot = args
+    result = subprocess.run(
+        ['tar', '-tf', tar_path],
+        capture_output=True,
+        text=True
+    )
+    if result.returncode == 0:
+        print(f'{i}/{ntot}: OK      {tar_path} \n', end='')
+        return tar_path, True, None
+    else:
+        err = result.stderr.strip().split('\n')[0]
+        print(f'{i}/{ntot}: BROKEN  {tar_path}: {err} \n', end='')
+        return tar_path, False, err
+
 def archive_files(args):
     i, identifier, files, check_exists, ntot = args
     target_dir = os.path.dirname(files[0])
@@ -116,8 +133,8 @@ def archive_files(args):
 
 def find_files(base_dir):
     file_dict = {}
-    exist_list = []
-    
+    exist_tars = {}  # identifier -> tar_path
+
     for root, dirs, files in os.walk(base_dir):
         for file in files:
             filename_parts = file.split('.')
@@ -129,8 +146,8 @@ def find_files(base_dir):
                 continue
 
             if file.endswith('tar'):
-                assert not identifier in exist_list
-                exist_list.append(identifier)
+                assert identifier not in exist_tars
+                exist_tars[identifier] = os.path.join(root, file)
             else:
                 full_path = os.path.join(root, file)
                 if identifier in file_dict:
@@ -138,27 +155,47 @@ def find_files(base_dir):
                 else:
                     file_dict[identifier] = [full_path]
 
+    file_dict_not_exist = {key: value for key, value in file_dict.items() if key not in exist_tars}
 
-    # assert all(key in file_dict for key in exist_list)
-
-    file_dict_not_exist = {key: value for key, value in file_dict.items() if key not in exist_list}
-
-    return file_dict.items(), file_dict_not_exist.items()
+    return file_dict.items(), file_dict_not_exist.items(), exist_tars
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Archive files based on identifiers')
     parser.add_argument('--max-processes', type=int, default=os.cpu_count(), help='Maximum number of parallel processes')
     parser.add_argument('--check-exists', action='store_true', help='Check if tar file exists and skip if so')
+    parser.add_argument('--repair', action='store_true', help='Verify existing tar files, delete broken ones, then archive missing files')
     args = parser.parse_args()
-    
-    # Base directory path
+
     base_dir = os.environ['SCRATCH']
-    file_groups_all, file_groups_not_exist = find_files(base_dir)
-    file_groups = file_groups_not_exist if args.check_exists else file_groups_all
-    process_args = [(i, identifier, files, args.check_exists, len(file_groups)) for 
+    file_groups_all, file_groups_not_exist, exist_tars = find_files(base_dir)
+
+    if args.repair:
+        tar_paths = list(exist_tars.values())
+        ntot = len(tar_paths)
+        print(f'Checking {ntot} existing tar files...')
+        verify_args = [(i, p, ntot) for i, p in enumerate(tar_paths)]
+        with Pool(processes=args.max_processes) as pool:
+            results = pool.map(verify_tar, verify_args)
+
+        broken = [(path, err) for path, ok, err in results if not ok]
+        if broken:
+            print(f'\n{len(broken)} broken tar file(s) found — deleting:')
+            for path, err in broken:
+                os.remove(path)
+                print(f'  Deleted: {path}')
+                print(f'    Reason: {err}')
+        else:
+            print('All existing tar files are valid.')
+
+        # Re-scan after deletion so missing list is up to date
+        file_groups_all, file_groups_not_exist, exist_tars = find_files(base_dir)
+
+    file_groups = file_groups_not_exist if (args.check_exists or args.repair) else file_groups_all
+    ntot = len(file_groups)
+    process_args = [(i, identifier, files, True, ntot) for
         i, (identifier, files) in enumerate(file_groups)]
-    
-    print('Number of tar files to create: %d'%len(file_groups))
-    print('Number of processes: %d'%args.max_processes)
+
+    print(f'Number of tar files to create: {ntot}')
+    print(f'Number of processes: {args.max_processes}')
     with Pool(processes=args.max_processes) as pool:
         pool.map(archive_files, process_args)
