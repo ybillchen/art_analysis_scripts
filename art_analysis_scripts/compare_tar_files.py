@@ -311,7 +311,7 @@ class TarFileComparator:
                 status, _, path = line.partition('|')
                 done += 1
                 print(f"\r  {done}/{total}", end='', flush=True)
-                if status.strip() == '1':
+                if status.strip() != '0':
                     rel_path = os.path.relpath(path, self.remote_path)
                     self.broken_remote.append({'rel_path': rel_path, 'full_path': path})
             proc.wait()
