@@ -80,61 +80,48 @@ COMPARE_EXIT=$?
 # 1. UNEXPECTED: local > remote, remote intact — warn only, does not block sync
 if [ -s "$LARGER_REMOTE_OK_FILE" ]; then
     echo ""
-    echo "[UNEXPECTED] The following files have local > remote but the remote is intact."
-    echo "             This may mean local was recently updated. Rsync will overwrite remote."
-    echo ""
+    echo "[UNEXPECTED] local > remote but remote is intact (rsync will overwrite remote):"
     while IFS='|' read -r f local_size remote_size; do
-        echo "  \$SCRATCH${f#$SCRATCH}"
-        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
+        echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)"
     done < "$LARGER_REMOTE_OK_FILE"
 fi
 
 # 2. INFO: local > remote, remote broken — re-sync will fix
 if [ -s "$LARGER_REMOTE_BROKEN_FILE" ]; then
     echo ""
-    echo "[INFO] The following remote files are broken and smaller than local."
-    echo "       Re-syncing will overwrite them with the intact local copies."
-    echo ""
+    echo "[INFO] local > remote and remote is broken (re-sync will fix):"
     while IFS='|' read -r f local_size remote_size; do
-        echo "  $f"
-        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
+        echo "  $f  (local: $local_size B, remote: $remote_size B)"
     done < "$LARGER_REMOTE_BROKEN_FILE"
 fi
 
 # 3. UNEXPECTED: local < remote, local intact — SYNC BLOCKED
 if [ -s "$SMALLER_OK_FILE" ]; then
     echo ""
-    echo "[UNEXPECTED] The following files have local < remote but the local is intact."
-    echo "             Manual investigation required. SYNC BLOCKED."
-    echo ""
+    echo "[UNEXPECTED] local < remote but local is intact — SYNC BLOCKED:"
     while IFS='|' read -r f local_size remote_size; do
-        echo "  \$SCRATCH${f#$SCRATCH}"
-        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
+        echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)"
     done < "$SMALLER_OK_FILE"
 fi
 
 # 4. EXPECTED: local < remote, local broken — offer deletion
 if [ -s "$SMALLER_BROKEN_FILE" ]; then
     echo ""
-    echo "[WARN] The following local files are broken and smaller than their remote counterparts:"
-    echo ""
+    echo "[WARN] local < remote and local is broken:"
     while IFS='|' read -r f local_size remote_size err; do
-        echo "  \$SCRATCH${f#$SCRATCH}"
-        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
-        echo "    Error:  $err"
+        echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)  [$err]"
     done < "$SMALLER_BROKEN_FILE"
     echo ""
     read -r -p "Delete these broken local files? [y/N] " REPLY
     case "$REPLY" in
         [yY][eE][sS]|[yY])
             while IFS='|' read -r f local_size remote_size err; do
-                echo "Deleting: \$SCRATCH${f#$SCRATCH}"
-                rm -f "$f"
+                rm -f "$f" && echo "Deleted: \$SCRATCH${f#$SCRATCH}"
             done < "$SMALLER_BROKEN_FILE"
-            echo "Done. Run: python pack_files.py --repair  to regenerate."
+            echo "Run: python pack_files.py --repair  to regenerate."
             ;;
         *)
-            echo "Skipped deletion."
+            echo "Skipped."
             ;;
     esac
 fi
@@ -142,24 +129,21 @@ fi
 # 5. Remaining broken locals — offer deletion
 if [ -s "$BROKEN_REMAINING_FILE" ]; then
     echo ""
-    echo "[WARN] The following local files are broken (size matches remote or no remote counterpart):"
-    echo ""
+    echo "[WARN] broken local files (size matches remote or no remote counterpart):"
     while IFS='|' read -r f err; do
-        echo "  \$SCRATCH${f#$SCRATCH}"
-        echo "    Error: $err"
+        echo "  \$SCRATCH${f#$SCRATCH}  [$err]"
     done < "$BROKEN_REMAINING_FILE"
     echo ""
     read -r -p "Delete these broken local files? [y/N] " REPLY
     case "$REPLY" in
         [yY][eE][sS]|[yY])
             while IFS='|' read -r f err; do
-                echo "Deleting: \$SCRATCH${f#$SCRATCH}"
-                rm -f "$f"
+                rm -f "$f" && echo "Deleted: \$SCRATCH${f#$SCRATCH}"
             done < "$BROKEN_REMAINING_FILE"
-            echo "Done. Run: python pack_files.py --repair  to regenerate."
+            echo "Run: python pack_files.py --repair  to regenerate."
             ;;
         *)
-            echo "Skipped deletion."
+            echo "Skipped."
             ;;
     esac
 fi

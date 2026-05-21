@@ -176,46 +176,22 @@ class TarFileComparator:
                 self.broken_remaining.append(entry)
 
     def print_report(self):
-        """Print comparison report"""
-        print(f"Local:  {len(self.local_files)} tar files")
-        print(f"Remote: {len(self.remote_files)} tar files")
-
-        if self.larger_remote_ok:
-            print(f"\n[UNEXPECTED] {len(self.larger_remote_ok)} files where local > remote but remote is intact:")
-            for entry in self.larger_remote_ok:
-                print(f"  {entry['rel_path']}")
-                print(f"    Local:  {entry['local_size']} bytes  |  Remote: {entry['remote_size']} bytes")
-
-        if self.larger_remote_broken:
-            print(f"\n[INFO] {len(self.larger_remote_broken)} files where local > remote and remote is broken (re-sync will fix):")
-            for entry in self.larger_remote_broken:
-                print(f"  {entry['rel_path']}")
-                print(f"    Local:  {entry['local_size']} bytes  |  Remote: {entry['remote_size']} bytes")
-
-        if self.smaller_ok:
-            print(f"\n[UNEXPECTED] {len(self.smaller_ok)} files where local < remote but local is intact:")
-            for entry in self.smaller_ok:
-                print(f"  {entry['rel_path']}")
-                print(f"    Local:  {entry['local_size']} bytes  |  Remote: {entry['remote_size']} bytes")
-
-        if self.smaller_broken:
-            print(f"\n[WARN] {len(self.smaller_broken)} files where local < remote and local is broken:")
-            for entry in self.smaller_broken:
-                print(f"  {entry['rel_path']}")
-                print(f"    Local:  {entry['local_size']} bytes  |  Remote: {entry['remote_size']} bytes")
-                print(f"    Error:  {entry['error']}")
-
-        if self.broken_remaining:
-            print(f"\n[WARN] {len(self.broken_remaining)} broken local files (size matches remote or no remote counterpart):")
-            for entry in self.broken_remaining:
-                print(f"  {entry['rel_path']}")
-                print(f"    Error: {entry['error']}")
-
+        """Print summary counts."""
+        print(f"Local:  {len(self.local_files)} tar files  |  Remote: {len(self.remote_files)} tar files")
         if self.missing_on_remote:
-            print(f"\n[INFO] {len(self.missing_on_remote)} files only on local (will be uploaded)")
-
+            print(f"  {len(self.missing_on_remote)} only on local (will be uploaded)")
         if self.missing_on_local:
-            print(f"[INFO] {len(self.missing_on_local)} files only on remote (will be preserved)")
+            print(f"  {len(self.missing_on_local)} only on remote (will be preserved)")
+        if self.larger_remote_ok:
+            print(f"  {len(self.larger_remote_ok)} local > remote, remote intact [UNEXPECTED]")
+        if self.larger_remote_broken:
+            print(f"  {len(self.larger_remote_broken)} local > remote, remote broken [re-sync will fix]")
+        if self.smaller_ok:
+            print(f"  {len(self.smaller_ok)} local < remote, local intact [UNEXPECTED — SYNC BLOCKED]")
+        if self.smaller_broken:
+            print(f"  {len(self.smaller_broken)} local < remote, local broken [offer delete]")
+        if self.broken_remaining:
+            print(f"  {len(self.broken_remaining)} broken local, no size mismatch [offer delete]")
 
     def has_conflicts(self):
         """Block sync when broken/unexpected local files are present."""
