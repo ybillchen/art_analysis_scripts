@@ -62,8 +62,9 @@ SMALLER_OK_FILE=$(mktemp)           # local < remote AND local intact (unexpecte
 LARGER_REMOTE_BROKEN_FILE=$(mktemp) # local > remote AND only remote broken
 LARGER_REMOTE_OK_FILE=$(mktemp)     # local > remote AND remote intact (unexpected)
 BOTH_BROKEN_FILE=$(mktemp)          # size mismatch AND both broken
-BROKEN_REMAINING_FILE=$(mktemp)     # broken local, sizes match or no remote
-trap 'rm -f "$SMALLER_BROKEN_FILE" "$SMALLER_OK_FILE" "$LARGER_REMOTE_BROKEN_FILE" "$LARGER_REMOTE_OK_FILE" "$BOTH_BROKEN_FILE" "$BROKEN_REMAINING_FILE"' EXIT
+BROKEN_SIZE_MATCH_FILE=$(mktemp)    # broken local, size matches remote
+BROKEN_NO_REMOTE_FILE=$(mktemp)     # broken local, no remote counterpart
+trap 'rm -f "$SMALLER_BROKEN_FILE" "$SMALLER_OK_FILE" "$LARGER_REMOTE_BROKEN_FILE" "$LARGER_REMOTE_OK_FILE" "$BOTH_BROKEN_FILE" "$BROKEN_SIZE_MATCH_FILE" "$BROKEN_NO_REMOTE_FILE"' EXIT
 
 # Run comparison pipeline
 python3 "$COMPARE_SCRIPT" $VERBOSE \
@@ -75,7 +76,8 @@ python3 "$COMPARE_SCRIPT" $VERBOSE \
     --larger-remote-broken-file "$LARGER_REMOTE_BROKEN_FILE" \
     --larger-remote-ok-file "$LARGER_REMOTE_OK_FILE" \
     --both-broken-file "$BOTH_BROKEN_FILE" \
-    --broken-remaining-file "$BROKEN_REMAINING_FILE"
+    --broken-size-match-file "$BROKEN_SIZE_MATCH_FILE" \
+    --broken-no-remote-file "$BROKEN_NO_REMOTE_FILE"
 
 COMPARE_EXIT=$?
 
@@ -137,20 +139,42 @@ if [ -s "$SMALLER_BROKEN_FILE" ]; then
     esac
 fi
 
-# 7. Remaining broken locals — offer deletion
-if [ -s "$BROKEN_REMAINING_FILE" ]; then
+# 7. Broken local, size matches remote — offer deletion
+if [ -s "$BROKEN_SIZE_MATCH_FILE" ]; then
     echo ""
-    echo "[WARN] broken local files (size matches remote or no remote counterpart):"
+    echo "[WARN] broken local files, size matches remote:"
     while IFS='|' read -r f err; do
         echo "  \$SCRATCH${f#$SCRATCH}  [$err]"
-    done < "$BROKEN_REMAINING_FILE"
+    done < "$BROKEN_SIZE_MATCH_FILE"
     echo ""
     read -r -p "Delete these broken local files? [y/N] " REPLY
     case "$REPLY" in
         [yY][eE][sS]|[yY])
             while IFS='|' read -r f err; do
                 rm -f "$f" && echo "Deleted: \$SCRATCH${f#$SCRATCH}"
-            done < "$BROKEN_REMAINING_FILE"
+            done < "$BROKEN_SIZE_MATCH_FILE"
+            echo "Run: python pack_files.py --repair  to regenerate."
+            ;;
+        *)
+            echo "Skipped."
+            ;;
+    esac
+fi
+
+# 8. Broken local, no remote counterpart — offer deletion
+if [ -s "$BROKEN_NO_REMOTE_FILE" ]; then
+    echo ""
+    echo "[WARN] broken local files, no remote counterpart:"
+    while IFS='|' read -r f err; do
+        echo "  \$SCRATCH${f#$SCRATCH}  [$err]"
+    done < "$BROKEN_NO_REMOTE_FILE"
+    echo ""
+    read -r -p "Delete these broken local files? [y/N] " REPLY
+    case "$REPLY" in
+        [yY][eE][sS]|[yY])
+            while IFS='|' read -r f err; do
+                rm -f "$f" && echo "Deleted: \$SCRATCH${f#$SCRATCH}"
+            done < "$BROKEN_NO_REMOTE_FILE"
             echo "Run: python pack_files.py --repair  to regenerate."
             ;;
         *)

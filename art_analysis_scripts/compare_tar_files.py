@@ -42,7 +42,8 @@ class TarFileComparator:
         self.larger_remote_broken = []  # local > remote AND only remote broken
         self.larger_remote_ok = []      # local > remote AND remote intact (unexpected)
         self.both_broken = []           # size mismatch AND both local and remote broken
-        self.broken_remaining = []      # broken local, sizes match or no remote (offer delete)
+        self.broken_size_match = []     # broken local, size matches remote
+        self.broken_no_remote = []      # broken local, no remote counterpart
         self._ssh_socket = None
 
     def log(self, msg, level="INFO"):
@@ -177,33 +178,30 @@ class TarFileComparator:
                 self.larger_remote_ok.append(entry)
 
         mismatch_rel = smaller_rel | larger_rel
+        missing_on_remote_set = set(self.missing_on_remote)
         for entry in self.broken_local:
             if entry['rel_path'] not in mismatch_rel:
-                self.broken_remaining.append(entry)
+                if entry['rel_path'] in missing_on_remote_set:
+                    self.broken_no_remote.append(entry)
+                else:
+                    self.broken_size_match.append(entry)
 
     def print_report(self):
-        """Print summary counts."""
+        """Print summary counts for all categories."""
         print(f"Local:  {len(self.local_files)} tar files  |  Remote: {len(self.remote_files)} tar files")
-        if self.missing_on_remote:
-            print(f"  {len(self.missing_on_remote)} only on local (will be uploaded)")
-        if self.missing_on_local:
-            print(f"  {len(self.missing_on_local)} only on remote (will be preserved)")
-        if self.larger_remote_ok:
-            print(f"  {len(self.larger_remote_ok)} local > remote, remote intact [UNEXPECTED]")
-        if self.larger_remote_broken:
-            print(f"  {len(self.larger_remote_broken)} local > remote, only remote broken [re-sync will fix]")
-        if self.smaller_ok:
-            print(f"  {len(self.smaller_ok)} local < remote, local intact [UNEXPECTED — SYNC BLOCKED]")
-        if self.smaller_broken:
-            print(f"  {len(self.smaller_broken)} local < remote, only local broken [offer delete]")
-        if self.both_broken:
-            print(f"  {len(self.both_broken)} size mismatch, both broken [SYNC BLOCKED]")
-        if self.broken_remaining:
-            print(f"  {len(self.broken_remaining)} broken local, no size mismatch [offer delete]")
+        print(f"  {len(self.missing_on_remote):4d}  only on local (will be uploaded)")
+        print(f"  {len(self.missing_on_local):4d}  only on remote (will be preserved)")
+        print(f"  {len(self.larger_remote_ok):4d}  local > remote, remote intact [UNEXPECTED]")
+        print(f"  {len(self.larger_remote_broken):4d}  local > remote, only remote broken [re-sync will fix]")
+        print(f"  {len(self.smaller_ok):4d}  local < remote, local intact [UNEXPECTED — SYNC BLOCKED]")
+        print(f"  {len(self.smaller_broken):4d}  local < remote, only local broken [offer delete]")
+        print(f"  {len(self.both_broken):4d}  size mismatch, both broken [SYNC BLOCKED]")
+        print(f"  {len(self.broken_size_match):4d}  broken local, size matches remote [offer delete]")
+        print(f"  {len(self.broken_no_remote):4d}  broken local, no remote counterpart [offer delete]")
 
     def has_conflicts(self):
         """Block sync when broken/unexpected local files are present."""
-        return bool(self.smaller_broken or self.smaller_ok or self.both_broken or self.broken_remaining)
+        return bool(self.smaller_broken or self.smaller_ok or self.both_broken or self.broken_size_match or self.broken_no_remote)
 
     def _clean_error(self, entry):
         return (entry.get('error') or '').replace('\n', ' ')
@@ -234,9 +232,14 @@ class TarFileComparator:
             for e in self.larger_remote_ok:
                 f.write(f"{e['full_path']}|{e['local_size']}|{e['remote_size']}\n")
 
-    def write_broken_remaining_file(self, path):
+    def write_broken_size_match_file(self, path):
         with open(path, 'w') as f:
-            for e in self.broken_remaining:
+            for e in self.broken_size_match:
+                f.write(f"{e['full_path']}|{self._clean_error(e)}\n")
+
+    def write_broken_no_remote_file(self, path):
+        with open(path, 'w') as f:
+            for e in self.broken_no_remote:
                 f.write(f"{e['full_path']}|{self._clean_error(e)}\n")
 
     def check_local_integrity(self):
@@ -357,8 +360,10 @@ def main():
                         help='local > remote AND only remote broken: remote_path|local_size|remote_size')
     parser.add_argument('--larger-remote-ok-file', default=None,
                         help='local > remote AND remote intact (unexpected): full_path|local_size|remote_size')
-    parser.add_argument('--broken-remaining-file', default=None,
-                        help='broken local, sizes match or no remote: full_path|error')
+    parser.add_argument('--broken-size-match-file', default=None,
+                        help='broken local, size matches remote: full_path|error')
+    parser.add_argument('--broken-no-remote-file', default=None,
+                        help='broken local, no remote counterpart: full_path|error')
 
     args = parser.parse_args()
 
@@ -396,8 +401,10 @@ def main():
         comparator.write_larger_remote_broken_file(args.larger_remote_broken_file)
     if args.larger_remote_ok_file is not None:
         comparator.write_larger_remote_ok_file(args.larger_remote_ok_file)
-    if args.broken_remaining_file is not None:
-        comparator.write_broken_remaining_file(args.broken_remaining_file)
+    if args.broken_size_match_file is not None:
+        comparator.write_broken_size_match_file(args.broken_size_match_file)
+    if args.broken_no_remote_file is not None:
+        comparator.write_broken_no_remote_file(args.broken_no_remote_file)
 
     if comparator.has_conflicts():
         print("[ERROR] SYNC BLOCKED: Conflicting files detected")
