@@ -2,11 +2,14 @@
 
 # Check tar files on local and remote for conflicts before sync.
 #
-# This script compares tar files between local and remote, detecting any
-# conflicts (files that exist on both sides with different checksums).
+# Pipeline:
+#   1. Check integrity of all local tar files
+#   2. Fetch remote tar sizes and compare with local
+#   3. Check integrity of remote files that mismatch local
+#   4. Cross-reference to produce 5 output categories
 #
 # Usage:
-#   ./check_tar_files.sh [--verbose] [--no-check-integrity]
+#   ./check_tar_files.sh [--verbose]
 #
 # Environment Variables:
 #   SCRATCH      - Local source directory (required)
@@ -23,15 +26,10 @@ COMPARE_SCRIPT="$SCRIPT_DIR/compare_tar_files.py"
 
 # Parse arguments
 VERBOSE=""
-NO_CHECK_INTEGRITY=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --verbose|-v)
             VERBOSE="--verbose"
-            shift
-            ;;
-        --no-check-integrity)
-            NO_CHECK_INTEGRITY="--no-check-integrity"
             shift
             ;;
         *)
@@ -58,80 +56,81 @@ if [ -z "$ARCHIVER" ]; then
     exit 2
 fi
 
-# Temp files for all mismatch and integrity categories
-SMALLER_FILE=$(mktemp)        # local < remote (size)
-LARGER_FILE=$(mktemp)         # local > remote (size)
-BROKEN_LOCAL_FILE=$(mktemp)   # local tar failed tar -tf
-BROKEN_REMOTE_FILE=$(mktemp)  # remote tar failed tar -tf
-trap 'rm -f "$SMALLER_FILE" "$LARGER_FILE" "$BROKEN_LOCAL_FILE" "$BROKEN_REMOTE_FILE"' EXIT
+# Temp files for the 5 output categories
+SMALLER_BROKEN_FILE=$(mktemp)       # local < remote AND local broken
+SMALLER_OK_FILE=$(mktemp)           # local < remote AND local intact (unexpected)
+LARGER_REMOTE_BROKEN_FILE=$(mktemp) # local > remote AND remote broken
+LARGER_REMOTE_OK_FILE=$(mktemp)     # local > remote AND remote intact (unexpected)
+BROKEN_REMAINING_FILE=$(mktemp)     # broken local, sizes match or no remote
+trap 'rm -f "$SMALLER_BROKEN_FILE" "$SMALLER_OK_FILE" "$LARGER_REMOTE_BROKEN_FILE" "$LARGER_REMOTE_OK_FILE" "$BROKEN_REMAINING_FILE"' EXIT
 
-# Run comparison check
-python3 "$COMPARE_SCRIPT" $VERBOSE $NO_CHECK_INTEGRITY \
+# Run comparison pipeline
+python3 "$COMPARE_SCRIPT" $VERBOSE \
     --local-path "$SCRATCH" \
     --remote-host "$ARCHIVER" \
     --remote-path "/scoutfs/projects/TG-AST200017/stampede3/" \
-    --suspect-file "$SMALLER_FILE" \
-    --local-larger-file "$LARGER_FILE" \
-    --broken-local-file "$BROKEN_LOCAL_FILE" \
-    --broken-remote-file "$BROKEN_REMOTE_FILE"
+    --smaller-broken-file "$SMALLER_BROKEN_FILE" \
+    --smaller-ok-file "$SMALLER_OK_FILE" \
+    --larger-remote-broken-file "$LARGER_REMOTE_BROKEN_FILE" \
+    --larger-remote-ok-file "$LARGER_REMOTE_OK_FILE" \
+    --broken-remaining-file "$BROKEN_REMAINING_FILE"
 
 COMPARE_EXIT=$?
 
-# Category 1: local < remote — local may be damaged, offer deletion
-if [ -s "$SMALLER_FILE" ]; then
+# 1. UNEXPECTED: local > remote, remote intact — warn only, does not block sync
+if [ -s "$LARGER_REMOTE_OK_FILE" ]; then
     echo ""
-    echo "[WARN] The following local tar files are smaller than their remote counterparts."
-    echo "       This likely means the local copy is incomplete or corrupt:"
-    echo ""
-    while IFS='|' read -r f local_size remote_size; do
-        echo "  \$SCRATCH${f#$SCRATCH}"
-        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
-    done < "$SMALLER_FILE"
-    echo ""
-    read -r -p "Delete these local files? [y/N] " REPLY
-    case "$REPLY" in
-        [yY][eE][sS]|[yY])
-            while IFS='|' read -r f local_size remote_size; do
-                echo "Deleting: \$SCRATCH${f#$SCRATCH}"
-                rm -f "$f"
-            done < "$SMALLER_FILE"
-            echo "Done."
-            ;;
-        *)
-            echo "Skipped deletion."
-            ;;
-    esac
-fi
-
-# Category 2: local > remote — remote may be wrong, list for manual inspection
-if [ -s "$LARGER_FILE" ]; then
-    echo ""
-    echo "[INFO] The following local tar files are larger than their remote counterparts."
-    echo "       Check these files on the remote server:"
+    echo "[UNEXPECTED] The following files have local > remote but the remote is intact."
+    echo "             This may mean local was recently updated. Rsync will overwrite remote."
     echo ""
     while IFS='|' read -r f local_size remote_size; do
         echo "  \$SCRATCH${f#$SCRATCH}"
         echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
-    done < "$LARGER_FILE"
+    done < "$LARGER_REMOTE_OK_FILE"
 fi
 
-# Broken local tars — offer deletion (run pack_files.py --repair to regenerate)
-if [ -s "$BROKEN_LOCAL_FILE" ]; then
+# 2. INFO: local > remote, remote broken — re-sync will fix
+if [ -s "$LARGER_REMOTE_BROKEN_FILE" ]; then
     echo ""
-    echo "[ERROR] The following local tar files failed integrity check (tar -tf):"
+    echo "[INFO] The following remote files are broken and smaller than local."
+    echo "       Re-syncing will overwrite them with the intact local copies."
     echo ""
-    while IFS='|' read -r f err; do
+    while IFS='|' read -r f local_size remote_size; do
+        echo "  $f"
+        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
+    done < "$LARGER_REMOTE_BROKEN_FILE"
+fi
+
+# 3. UNEXPECTED: local < remote, local intact — SYNC BLOCKED
+if [ -s "$SMALLER_OK_FILE" ]; then
+    echo ""
+    echo "[UNEXPECTED] The following files have local < remote but the local is intact."
+    echo "             Manual investigation required. SYNC BLOCKED."
+    echo ""
+    while IFS='|' read -r f local_size remote_size; do
         echo "  \$SCRATCH${f#$SCRATCH}"
-        echo "    Error: $err"
-    done < "$BROKEN_LOCAL_FILE"
+        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
+    done < "$SMALLER_OK_FILE"
+fi
+
+# 4. EXPECTED: local < remote, local broken — offer deletion
+if [ -s "$SMALLER_BROKEN_FILE" ]; then
+    echo ""
+    echo "[WARN] The following local files are broken and smaller than their remote counterparts:"
+    echo ""
+    while IFS='|' read -r f local_size remote_size err; do
+        echo "  \$SCRATCH${f#$SCRATCH}"
+        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
+        echo "    Error:  $err"
+    done < "$SMALLER_BROKEN_FILE"
     echo ""
     read -r -p "Delete these broken local files? [y/N] " REPLY
     case "$REPLY" in
         [yY][eE][sS]|[yY])
-            while IFS='|' read -r f err; do
+            while IFS='|' read -r f local_size remote_size err; do
                 echo "Deleting: \$SCRATCH${f#$SCRATCH}"
                 rm -f "$f"
-            done < "$BROKEN_LOCAL_FILE"
+            done < "$SMALLER_BROKEN_FILE"
             echo "Done. Run: python pack_files.py --repair  to regenerate."
             ;;
         *)
@@ -140,15 +139,29 @@ if [ -s "$BROKEN_LOCAL_FILE" ]; then
     esac
 fi
 
-# Broken remote tars — list for manual inspection (re-sync will overwrite them)
-if [ -s "$BROKEN_REMOTE_FILE" ]; then
+# 5. Remaining broken locals — offer deletion
+if [ -s "$BROKEN_REMAINING_FILE" ]; then
     echo ""
-    echo "[WARN] The following remote tar files failed integrity check (tar -tf):"
-    echo "       Re-syncing from local will overwrite these."
+    echo "[WARN] The following local files are broken (size matches remote or no remote counterpart):"
     echo ""
-    while IFS= read -r f; do
-        echo "  $f"
-    done < "$BROKEN_REMOTE_FILE"
+    while IFS='|' read -r f err; do
+        echo "  \$SCRATCH${f#$SCRATCH}"
+        echo "    Error: $err"
+    done < "$BROKEN_REMAINING_FILE"
+    echo ""
+    read -r -p "Delete these broken local files? [y/N] " REPLY
+    case "$REPLY" in
+        [yY][eE][sS]|[yY])
+            while IFS='|' read -r f err; do
+                echo "Deleting: \$SCRATCH${f#$SCRATCH}"
+                rm -f "$f"
+            done < "$BROKEN_REMAINING_FILE"
+            echo "Done. Run: python pack_files.py --repair  to regenerate."
+            ;;
+        *)
+            echo "Skipped deletion."
+            ;;
+    esac
 fi
 
 exit $COMPARE_EXIT

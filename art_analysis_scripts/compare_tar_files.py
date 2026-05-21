@@ -31,11 +31,17 @@ class TarFileComparator:
         self.remote_files = {}
         self.missing_on_remote = []
         self.missing_on_local = []
-        self.local_smaller = []  # local < remote: local may be damaged
-        self.local_larger = []   # local > remote: remote may be wrong
-        self.check_integrity = True
+        # intermediate results
+        self.local_smaller = []
+        self.local_larger = []
         self.broken_local = []
         self.broken_remote = []
+        # final cross-referenced categories
+        self.smaller_broken = []        # local < remote AND local broken (offer delete)
+        self.smaller_ok = []            # local < remote AND local intact (unexpected)
+        self.larger_remote_broken = []  # local > remote AND remote broken (re-sync fixes)
+        self.larger_remote_ok = []      # local > remote AND remote intact (unexpected)
+        self.broken_remaining = []      # broken local, sizes match or no remote (offer delete)
         self._ssh_socket = None
 
     def log(self, msg, level="INFO"):
@@ -144,78 +150,105 @@ class TarFileComparator:
                         'remote_size': remote_info['size']
                     })
 
+    def categorize_results(self):
+        """Cross-reference integrity and size-mismatch results into 5 output categories."""
+        broken_local_map = {e['rel_path']: e for e in self.broken_local}
+        broken_remote_rel = {e['rel_path'] for e in self.broken_remote}
+        smaller_rel = {e['rel_path'] for e in self.local_smaller}
+        larger_rel  = {e['rel_path'] for e in self.local_larger}
+
+        for entry in self.local_smaller:
+            bl = broken_local_map.get(entry['rel_path'])
+            if bl:
+                self.smaller_broken.append({**entry, 'error': bl['error']})
+            else:
+                self.smaller_ok.append(entry)
+
+        for entry in self.local_larger:
+            if entry['rel_path'] in broken_remote_rel:
+                self.larger_remote_broken.append(entry)
+            else:
+                self.larger_remote_ok.append(entry)
+
+        mismatch_rel = smaller_rel | larger_rel
+        for entry in self.broken_local:
+            if entry['rel_path'] not in mismatch_rel:
+                self.broken_remaining.append(entry)
+
     def print_report(self):
         """Print comparison report"""
         print(f"Local:  {len(self.local_files)} tar files")
         print(f"Remote: {len(self.remote_files)} tar files")
 
-        # Category 1: local < remote (local may be damaged)
-        if self.local_smaller:
-            print(f"\n[WARN] {len(self.local_smaller)} files where local < remote (local may be damaged):")
-            for entry in self.local_smaller[:5]:
+        if self.larger_remote_ok:
+            print(f"\n[UNEXPECTED] {len(self.larger_remote_ok)} files where local > remote but remote is intact:")
+            for entry in self.larger_remote_ok:
                 print(f"  {entry['rel_path']}")
-                print(f"    Local:  {entry['local_size']} bytes")
-                print(f"    Remote: {entry['remote_size']} bytes")
-            if len(self.local_smaller) > 5:
-                print(f"  ... and {len(self.local_smaller) - 5} more")
+                print(f"    Local:  {entry['local_size']} bytes  |  Remote: {entry['remote_size']} bytes")
 
-        # Category 2: local > remote (remote may be wrong)
-        if self.local_larger:
-            print(f"\n[INFO] {len(self.local_larger)} files where local > remote (check remote):")
-            for entry in self.local_larger:
+        if self.larger_remote_broken:
+            print(f"\n[INFO] {len(self.larger_remote_broken)} files where local > remote and remote is broken (re-sync will fix):")
+            for entry in self.larger_remote_broken:
                 print(f"  {entry['rel_path']}")
-                print(f"    Local:  {entry['local_size']} bytes")
-                print(f"    Remote: {entry['remote_size']} bytes")
+                print(f"    Local:  {entry['local_size']} bytes  |  Remote: {entry['remote_size']} bytes")
 
-        # Broken local tars
-        if self.broken_local:
-            print(f"\n[ERROR] {len(self.broken_local)} broken local tar files (failed tar -tf):")
-            for entry in self.broken_local:
+        if self.smaller_ok:
+            print(f"\n[UNEXPECTED] {len(self.smaller_ok)} files where local < remote but local is intact:")
+            for entry in self.smaller_ok:
+                print(f"  {entry['rel_path']}")
+                print(f"    Local:  {entry['local_size']} bytes  |  Remote: {entry['remote_size']} bytes")
+
+        if self.smaller_broken:
+            print(f"\n[WARN] {len(self.smaller_broken)} files where local < remote and local is broken:")
+            for entry in self.smaller_broken:
+                print(f"  {entry['rel_path']}")
+                print(f"    Local:  {entry['local_size']} bytes  |  Remote: {entry['remote_size']} bytes")
+                print(f"    Error:  {entry['error']}")
+
+        if self.broken_remaining:
+            print(f"\n[WARN] {len(self.broken_remaining)} broken local files (size matches remote or no remote counterpart):")
+            for entry in self.broken_remaining:
                 print(f"  {entry['rel_path']}")
                 print(f"    Error: {entry['error']}")
 
-        # Broken remote tars
-        if self.broken_remote:
-            print(f"\n[WARN] {len(self.broken_remote)} broken remote tar files (failed tar -tf):")
-            for entry in self.broken_remote:
-                print(f"  {entry['rel_path']}")
-
-        # Files only on local
         if self.missing_on_remote:
             print(f"\n[INFO] {len(self.missing_on_remote)} files only on local (will be uploaded)")
 
-        # Files only on remote
         if self.missing_on_local:
             print(f"[INFO] {len(self.missing_on_local)} files only on remote (will be preserved)")
 
     def has_conflicts(self):
-        """Block sync when local may be damaged (smaller than remote, or broken)"""
-        return len(self.local_smaller) > 0 or len(self.broken_local) > 0
+        """Block sync when broken/unexpected local files are present."""
+        return bool(self.smaller_broken or self.smaller_ok or self.broken_remaining)
 
-    def write_suspect_file(self, path):
-        """Write path|local_size|remote_size for files where local < remote."""
-        with open(path, 'w') as f:
-            for entry in self.local_smaller:
-                f.write(f"{entry['full_path']}|{entry['local_size']}|{entry['remote_size']}\n")
+    def _clean_error(self, entry):
+        return (entry.get('error') or '').replace('\n', ' ')
 
-    def write_local_larger_file(self, path):
-        """Write path|local_size|remote_size for files where local > remote."""
+    def write_smaller_broken_file(self, path):
         with open(path, 'w') as f:
-            for entry in self.local_larger:
-                f.write(f"{entry['full_path']}|{entry['local_size']}|{entry['remote_size']}\n")
+            for e in self.smaller_broken:
+                f.write(f"{e['full_path']}|{e['local_size']}|{e['remote_size']}|{self._clean_error(e)}\n")
 
-    def write_broken_local_file(self, path):
-        """Write path|error for each broken local tar file."""
+    def write_smaller_ok_file(self, path):
         with open(path, 'w') as f:
-            for entry in self.broken_local:
-                error = (entry.get('error') or '').replace('\n', ' ')
-                f.write(f"{entry['full_path']}|{error}\n")
+            for e in self.smaller_ok:
+                f.write(f"{e['full_path']}|{e['local_size']}|{e['remote_size']}\n")
 
-    def write_broken_remote_file(self, path):
-        """Write remote path for each broken remote tar file."""
+    def write_larger_remote_broken_file(self, path):
         with open(path, 'w') as f:
-            for entry in self.broken_remote:
-                f.write(entry['full_path'] + '\n')
+            for e in self.larger_remote_broken:
+                remote_path = self.remote_files[e['rel_path']]['full_path']
+                f.write(f"{remote_path}|{e['local_size']}|{e['remote_size']}\n")
+
+    def write_larger_remote_ok_file(self, path):
+        with open(path, 'w') as f:
+            for e in self.larger_remote_ok:
+                f.write(f"{e['full_path']}|{e['local_size']}|{e['remote_size']}\n")
+
+    def write_broken_remaining_file(self, path):
+        with open(path, 'w') as f:
+            for e in self.broken_remaining:
+                f.write(f"{e['full_path']}|{self._clean_error(e)}\n")
 
     def check_local_integrity(self):
         """Run tar -tf on each local tar file in parallel, with progress."""
@@ -289,24 +322,22 @@ class TarFileComparator:
         return True
 
     def run(self):
-        """Run full comparison"""
+        """Run full comparison pipeline."""
         self._ssh_socket = os.path.join(tempfile.gettempdir(), f'ssh_ctrl_{os.getpid()}')
         try:
             if not self.get_local_tar_files():
                 return False
+            self.check_local_integrity()
 
             if not self.get_remote_tar_files():
                 return False
-
             self.compare_files()
 
-            if self.check_integrity:
-                self.check_local_integrity()
-                if not self.check_remote_integrity():
-                    return False
+            if not self.check_remote_integrity():
+                return False
 
+            self.categorize_results()
             self.print_report()
-
             return True
         finally:
             subprocess.run(
@@ -327,17 +358,16 @@ def main():
                         help='Remote host (default: $ARCHIVER)')
     parser.add_argument('--remote-path', default='/scoutfs/projects/TG-AST200017/stampede3/',
                         help='Remote path (default: /scoutfs/projects/TG-AST200017/stampede3/)')
-    parser.add_argument('--suspect-file', default=None,
-                        help='Write local paths of files where local < remote to this file')
-    parser.add_argument('--local-larger-file', default=None,
-                        help='Write local paths of files where local > remote to this file')
-    parser.add_argument('--no-check-integrity', dest='check_integrity', action='store_false',
-                        help='Skip tar -tf integrity check on each tar file')
-    parser.set_defaults(check_integrity=True)
-    parser.add_argument('--broken-local-file', default=None,
-                        help='Write path|error for broken local tar files to this file')
-    parser.add_argument('--broken-remote-file', default=None,
-                        help='Write remote paths of broken remote tar files to this file')
+    parser.add_argument('--smaller-broken-file', default=None,
+                        help='local < remote AND local broken: full_path|local_size|remote_size|error')
+    parser.add_argument('--smaller-ok-file', default=None,
+                        help='local < remote AND local intact (unexpected): full_path|local_size|remote_size')
+    parser.add_argument('--larger-remote-broken-file', default=None,
+                        help='local > remote AND remote broken: remote_path|local_size|remote_size')
+    parser.add_argument('--larger-remote-ok-file', default=None,
+                        help='local > remote AND remote intact (unexpected): full_path|local_size|remote_size')
+    parser.add_argument('--broken-remaining-file', default=None,
+                        help='broken local, sizes match or no remote: full_path|error')
 
     args = parser.parse_args()
 
@@ -360,23 +390,21 @@ def main():
         args.remote_path,
         verbose=args.verbose
     )
-    comparator.check_integrity = args.check_integrity
 
     if not comparator.run():
         print("\nERROR: Comparison failed", file=sys.stderr)
         return 1
 
-    if args.suspect_file is not None:
-        comparator.write_suspect_file(args.suspect_file)
-
-    if args.local_larger_file is not None:
-        comparator.write_local_larger_file(args.local_larger_file)
-
-    if args.broken_local_file is not None:
-        comparator.write_broken_local_file(args.broken_local_file)
-
-    if args.broken_remote_file is not None:
-        comparator.write_broken_remote_file(args.broken_remote_file)
+    if args.smaller_broken_file is not None:
+        comparator.write_smaller_broken_file(args.smaller_broken_file)
+    if args.smaller_ok_file is not None:
+        comparator.write_smaller_ok_file(args.smaller_ok_file)
+    if args.larger_remote_broken_file is not None:
+        comparator.write_larger_remote_broken_file(args.larger_remote_broken_file)
+    if args.larger_remote_ok_file is not None:
+        comparator.write_larger_remote_ok_file(args.larger_remote_ok_file)
+    if args.broken_remaining_file is not None:
+        comparator.write_broken_remaining_file(args.broken_remaining_file)
 
     if comparator.has_conflicts():
         print("[ERROR] SYNC BLOCKED: Conflicting files detected")
