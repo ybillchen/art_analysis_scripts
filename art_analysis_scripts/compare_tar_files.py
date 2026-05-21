@@ -167,16 +167,16 @@ class TarFileComparator:
         return len(self.local_smaller) > 0
 
     def write_suspect_file(self, path):
-        """Write local paths of files where local < remote."""
+        """Write path|local_size|remote_size for files where local < remote."""
         with open(path, 'w') as f:
             for entry in self.local_smaller:
-                f.write(entry['full_path'] + '\n')
+                f.write(f"{entry['full_path']}|{entry['local_size']}|{entry['remote_size']}\n")
 
     def write_local_larger_file(self, path):
-        """Write local paths of files where local > remote."""
+        """Write path|local_size|remote_size for files where local > remote."""
         with open(path, 'w') as f:
             for entry in self.local_larger:
-                f.write(entry['full_path'] + '\n')
+                f.write(f"{entry['full_path']}|{entry['local_size']}|{entry['remote_size']}\n")
 
     def run(self):
         """Run full comparison"""

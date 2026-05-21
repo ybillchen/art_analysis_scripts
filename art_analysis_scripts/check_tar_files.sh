@@ -74,15 +74,16 @@ if [ -s "$SMALLER_FILE" ]; then
     echo "[WARN] The following local tar files are smaller than their remote counterparts."
     echo "       This likely means the local copy is incomplete or corrupt:"
     echo ""
-    while IFS= read -r f; do
-        echo "  $f"
+    while IFS='|' read -r f local_size remote_size; do
+        echo "  \$SCRATCH${f#$SCRATCH}"
+        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
     done < "$SMALLER_FILE"
     echo ""
     read -r -p "Delete these local files? [y/N] " REPLY
     case "$REPLY" in
         [yY][eE][sS]|[yY])
-            while IFS= read -r f; do
-                echo "Deleting: $f"
+            while IFS='|' read -r f local_size remote_size; do
+                echo "Deleting: \$SCRATCH${f#$SCRATCH}"
                 rm -f "$f"
             done < "$SMALLER_FILE"
             echo "Done."
@@ -99,8 +100,9 @@ if [ -s "$LARGER_FILE" ]; then
     echo "[INFO] The following local tar files are larger than their remote counterparts."
     echo "       Check these files on the remote server:"
     echo ""
-    while IFS= read -r f; do
-        echo "  $f"
+    while IFS='|' read -r f local_size remote_size; do
+        echo "  \$SCRATCH${f#$SCRATCH}"
+        echo "    Local:  $local_size bytes  |  Remote: $remote_size bytes"
     done < "$LARGER_FILE"
 fi
 
