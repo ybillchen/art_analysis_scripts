@@ -245,19 +245,31 @@ class TarFileComparator:
         print()
 
     def check_remote_integrity(self):
-        """Run tar -tf on all remote tar files via SSH, streaming progress line by line."""
-        total = len(self.remote_files)
-        print(f"Checking integrity of {total} remote tar files...", flush=True)
-        # Print exit status and path per file: "0|/path" (ok) or "1|/path" (broken)
-        ssh_cmd = (
-            f"find {self.remote_path} -name '*.tar' -type f "
-            f"| xargs -P 8 -I{{}} sh -c 'tar -tf \"{{}}\" > /dev/null 2>&1; echo \"$?|{{}}\"'"
-        )
+        """Run tar -tf on remote tar files that have a size mismatch with local."""
+        mismatched = [
+            self.remote_files[entry['rel_path']]['full_path']
+            for entry in (self.local_smaller + self.local_larger)
+            if entry['rel_path'] in self.remote_files
+        ]
+        if not mismatched:
+            print("No size mismatches — skipping remote integrity check.")
+            return True
+
+        total = len(mismatched)
+        print(f"Checking integrity of {total} mismatched remote tar files...", flush=True)
+        # Receive paths on stdin, emit "exit_code|path" per file
+        ssh_cmd = "xargs -P 8 -I{} sh -c 'tar -tf \"{}\" > /dev/null 2>&1; echo \"$?|{}\"'"
         try:
             proc = subprocess.Popen(
                 self._ssh_args() + [self.remote_host, ssh_cmd],
-                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+                stdin=subprocess.PIPE,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True
             )
+            proc.stdin.write('\n'.join(mismatched) + '\n')
+            proc.stdin.close()
+
             done = 0
             for line in proc.stdout:
                 line = line.strip()
