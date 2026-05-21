@@ -18,6 +18,7 @@ import sys
 import subprocess
 import argparse
 import concurrent.futures
+import tempfile
 
 
 class TarFileComparator:
@@ -35,6 +36,7 @@ class TarFileComparator:
         self.check_integrity = True
         self.broken_local = []
         self.broken_remote = []
+        self._ssh_socket = None
 
     def log(self, msg, level="INFO"):
         """Print log message (only DEBUG with verbose flag)"""
@@ -65,6 +67,13 @@ class TarFileComparator:
 
         return True
 
+    def _ssh_args(self):
+        """SSH args with ControlMaster multiplexing to reuse a single connection."""
+        return ['ssh',
+                '-o', f'ControlPath={self._ssh_socket}',
+                '-o', 'ControlMaster=auto',
+                '-o', 'ControlPersist=60s']
+
     def get_remote_tar_files(self):
         """Find all .tar files on remote backup server via SSH"""
         # Build SSH command to find tar files and get their sizes
@@ -72,7 +81,7 @@ class TarFileComparator:
 
         try:
             result = subprocess.run(
-                ['ssh', self.remote_host, ssh_cmd],
+                self._ssh_args() + [self.remote_host, ssh_cmd],
                 capture_output=True,
                 text=True,
                 timeout=300
@@ -209,7 +218,7 @@ class TarFileComparator:
                 f.write(entry['full_path'] + '\n')
 
     def check_local_integrity(self):
-        """Run tar -tf on each local tar file in parallel."""
+        """Run tar -tf on each local tar file in parallel, with progress."""
         def _check(item):
             rel_path, info = item
             result = subprocess.run(['tar', '-tf', info['full_path']], capture_output=True)
@@ -217,62 +226,81 @@ class TarFileComparator:
             err = result.stderr.decode('utf-8', errors='replace').strip().split('\n')[0] if not ok else None
             return rel_path, info['full_path'], ok, err
 
-        print(f"Checking integrity of {len(self.local_files)} local tar files...")
+        items = list(self.local_files.items())
+        total = len(items)
+        print(f"Checking integrity of {total} local tar files...", flush=True)
+        done = 0
         with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-            for rel_path, full_path, ok, err in executor.map(_check, self.local_files.items()):
+            futures = [executor.submit(_check, item) for item in items]
+            for future in concurrent.futures.as_completed(futures):
+                rel_path, full_path, ok, err = future.result()
+                done += 1
+                print(f"\r  {done}/{total}", end='', flush=True)
                 if not ok:
                     self.broken_local.append({
                         'rel_path': rel_path,
                         'full_path': full_path,
                         'error': err
                     })
+        print()
 
     def check_remote_integrity(self):
-        """Run tar -tf on all remote tar files via a single parallel SSH call."""
-        print(f"Checking integrity of {len(self.remote_files)} remote tar files...")
+        """Run tar -tf on all remote tar files via SSH, streaming progress line by line."""
+        total = len(self.remote_files)
+        print(f"Checking integrity of {total} remote tar files...", flush=True)
+        # Print exit status and path per file: "0|/path" (ok) or "1|/path" (broken)
         ssh_cmd = (
             f"find {self.remote_path} -name '*.tar' -type f "
-            f"| xargs -P 8 -I{{}} sh -c 'tar -tf \"{{}}\" > /dev/null 2>&1 || echo \"{{}}\"'"
+            f"| xargs -P 8 -I{{}} sh -c 'tar -tf \"{{}}\" > /dev/null 2>&1; echo \"$?|{{}}\"'"
         )
         try:
-            result = subprocess.run(
-                ['ssh', self.remote_host, ssh_cmd],
-                capture_output=True, text=True, timeout=3600
+            proc = subprocess.Popen(
+                self._ssh_args() + [self.remote_host, ssh_cmd],
+                stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
             )
-            for line in result.stdout.strip().split('\n'):
+            done = 0
+            for line in proc.stdout:
                 line = line.strip()
-                if line:
-                    rel_path = os.path.relpath(line, self.remote_path)
-                    self.broken_remote.append({
-                        'rel_path': rel_path,
-                        'full_path': line
-                    })
-        except subprocess.TimeoutExpired:
-            print("[ERROR] Remote integrity check timed out", file=sys.stderr)
-            return False
+                if not line:
+                    continue
+                status, _, path = line.partition('|')
+                done += 1
+                print(f"\r  {done}/{total}", end='', flush=True)
+                if status.strip() == '1':
+                    rel_path = os.path.relpath(path, self.remote_path)
+                    self.broken_remote.append({'rel_path': rel_path, 'full_path': path})
+            proc.wait()
+            print()
         except Exception as e:
-            print(f"[ERROR] Remote integrity check failed: {e}", file=sys.stderr)
+            print(f"\n[ERROR] Remote integrity check failed: {e}", file=sys.stderr)
             return False
         return True
 
     def run(self):
         """Run full comparison"""
-        if not self.get_local_tar_files():
-            return False
-
-        if not self.get_remote_tar_files():
-            return False
-
-        self.compare_files()
-
-        if self.check_integrity:
-            self.check_local_integrity()
-            if not self.check_remote_integrity():
+        self._ssh_socket = os.path.join(tempfile.gettempdir(), f'ssh_ctrl_{os.getpid()}')
+        try:
+            if not self.get_local_tar_files():
                 return False
 
-        self.print_report()
+            if not self.get_remote_tar_files():
+                return False
 
-        return True
+            self.compare_files()
+
+            if self.check_integrity:
+                self.check_local_integrity()
+                if not self.check_remote_integrity():
+                    return False
+
+            self.print_report()
+
+            return True
+        finally:
+            subprocess.run(
+                self._ssh_args() + ['-O', 'exit', self.remote_host],
+                capture_output=True
+            )
 
 
 def main():
