@@ -27,10 +27,10 @@ class TarFileComparator:
         self.verbose = verbose
         self.local_files = {}
         self.remote_files = {}
-        self.differences = []
         self.missing_on_remote = []
         self.missing_on_local = []
-        self.suspect_local_files = []  # rockstar_halos.tar where remote > local
+        self.local_smaller = []  # local < remote: local may be damaged
+        self.local_larger = []   # local > remote: remote may be wrong
 
     def log(self, msg, level="INFO"):
         """Print log message (only DEBUG with verbose flag)"""
@@ -116,34 +116,43 @@ class TarFileComparator:
                 local_info = self.local_files[rel_path]
                 remote_info = self.remote_files[rel_path]
 
-                if local_info['size'] != remote_info['size']:
-                    diff = {
-                        'path': rel_path,
+                if local_info['size'] < remote_info['size']:
+                    self.local_smaller.append({
+                        'full_path': local_info['full_path'],
+                        'rel_path': rel_path,
                         'local_size': local_info['size'],
                         'remote_size': remote_info['size']
-                    }
-                    self.differences.append(diff)
-                    if (os.path.basename(rel_path) == 'rockstar_halos.tar'
-                            and remote_info['size'] > local_info['size']):
-                        self.suspect_local_files.append(local_info['full_path'])
+                    })
+                elif local_info['size'] > remote_info['size']:
+                    self.local_larger.append({
+                        'full_path': local_info['full_path'],
+                        'rel_path': rel_path,
+                        'local_size': local_info['size'],
+                        'remote_size': remote_info['size']
+                    })
 
     def print_report(self):
         """Print comparison report"""
         print(f"Local:  {len(self.local_files)} tar files")
         print(f"Remote: {len(self.remote_files)} tar files")
 
-        # Files that differ (most critical)
-        if self.differences:
-            print(f"\n[ERROR] {len(self.differences)} CONFLICTING FILES (size mismatch):")
-            for diff in sorted(self.differences, key=lambda x: x['path'])[:5]:
-                path = diff['path']
-                local_size = diff['local_size']
-                remote_size = diff['remote_size']
-                print(f"  {path}")
-                print(f"    Local:  {local_size} bytes")
-                print(f"    Remote: {remote_size} bytes")
-            if len(self.differences) > 5:
-                print(f"  ... and {len(self.differences) - 5} more")
+        # Category 1: local < remote (local may be damaged)
+        if self.local_smaller:
+            print(f"\n[WARN] {len(self.local_smaller)} files where local < remote (local may be damaged):")
+            for entry in self.local_smaller[:5]:
+                print(f"  {entry['rel_path']}")
+                print(f"    Local:  {entry['local_size']} bytes")
+                print(f"    Remote: {entry['remote_size']} bytes")
+            if len(self.local_smaller) > 5:
+                print(f"  ... and {len(self.local_smaller) - 5} more")
+
+        # Category 2: local > remote (remote may be wrong)
+        if self.local_larger:
+            print(f"\n[INFO] {len(self.local_larger)} files where local > remote (check remote):")
+            for entry in self.local_larger:
+                print(f"  {entry['rel_path']}")
+                print(f"    Local:  {entry['local_size']} bytes")
+                print(f"    Remote: {entry['remote_size']} bytes")
 
         # Files only on local
         if self.missing_on_remote:
@@ -154,14 +163,20 @@ class TarFileComparator:
             print(f"[INFO] {len(self.missing_on_local)} files only on remote (will be preserved)")
 
     def has_conflicts(self):
-        """Check if there are conflicting files that would be overwritten"""
-        return len(self.differences) > 0
+        """Block sync only when local is smaller than remote (local may be damaged)"""
+        return len(self.local_smaller) > 0
 
     def write_suspect_file(self, path):
-        """Write local paths of suspect rockstar_halos.tar files (remote > local) to a file."""
+        """Write local paths of files where local < remote."""
         with open(path, 'w') as f:
-            for p in self.suspect_local_files:
-                f.write(p + '\n')
+            for entry in self.local_smaller:
+                f.write(entry['full_path'] + '\n')
+
+    def write_local_larger_file(self, path):
+        """Write local paths of files where local > remote."""
+        with open(path, 'w') as f:
+            for entry in self.local_larger:
+                f.write(entry['full_path'] + '\n')
 
     def run(self):
         """Run full comparison"""
@@ -190,7 +205,9 @@ def main():
     parser.add_argument('--remote-path', default='/scoutfs/projects/TG-AST200017/stampede3/',
                         help='Remote path (default: /scoutfs/projects/TG-AST200017/stampede3/)')
     parser.add_argument('--suspect-file', default=None,
-                        help='Write local paths of suspect rockstar_halos.tar files to this file')
+                        help='Write local paths of files where local < remote to this file')
+    parser.add_argument('--local-larger-file', default=None,
+                        help='Write local paths of files where local > remote to this file')
 
     args = parser.parse_args()
 
@@ -220,6 +237,9 @@ def main():
 
     if args.suspect_file is not None:
         comparator.write_suspect_file(args.suspect_file)
+
+    if args.local_larger_file is not None:
+        comparator.write_local_larger_file(args.local_larger_file)
 
     if comparator.has_conflicts():
         print("[ERROR] SYNC BLOCKED: Conflicting files detected")

@@ -53,28 +53,30 @@ if [ -z "$ARCHIVER" ]; then
     exit 2
 fi
 
-# Temp file to collect suspect rockstar_halos.tar paths (remote > local)
-SUSPECT_FILE=$(mktemp)
-trap 'rm -f "$SUSPECT_FILE"' EXIT
+# Temp files for the two mismatch categories
+SMALLER_FILE=$(mktemp)   # local < remote
+LARGER_FILE=$(mktemp)    # local > remote
+trap 'rm -f "$SMALLER_FILE" "$LARGER_FILE"' EXIT
 
 # Run comparison check
 python3 "$COMPARE_SCRIPT" $VERBOSE \
     --local-path "$SCRATCH" \
     --remote-host "$ARCHIVER" \
     --remote-path "/scoutfs/projects/TG-AST200017/stampede3/" \
-    --suspect-file "$SUSPECT_FILE"
+    --suspect-file "$SMALLER_FILE" \
+    --local-larger-file "$LARGER_FILE"
 
 COMPARE_EXIT=$?
 
-# If any rockstar_halos.tar files have remote > local, offer to delete local copies
-if [ -s "$SUSPECT_FILE" ]; then
+# Category 1: local < remote — local may be damaged, offer deletion
+if [ -s "$SMALLER_FILE" ]; then
     echo ""
-    echo "[WARN] The following local rockstar_halos.tar files are smaller than their remote"
-    echo "       counterparts. This likely means the local copy is incomplete or corrupt:"
+    echo "[WARN] The following local tar files are smaller than their remote counterparts."
+    echo "       This likely means the local copy is incomplete or corrupt:"
     echo ""
     while IFS= read -r f; do
         echo "  $f"
-    done < "$SUSPECT_FILE"
+    done < "$SMALLER_FILE"
     echo ""
     read -r -p "Delete these local files? [y/N] " REPLY
     case "$REPLY" in
@@ -82,13 +84,24 @@ if [ -s "$SUSPECT_FILE" ]; then
             while IFS= read -r f; do
                 echo "Deleting: $f"
                 rm -f "$f"
-            done < "$SUSPECT_FILE"
+            done < "$SMALLER_FILE"
             echo "Done."
             ;;
         *)
             echo "Skipped deletion."
             ;;
     esac
+fi
+
+# Category 2: local > remote — remote may be wrong, list for manual inspection
+if [ -s "$LARGER_FILE" ]; then
+    echo ""
+    echo "[INFO] The following local tar files are larger than their remote counterparts."
+    echo "       Check these files on the remote server:"
+    echo ""
+    while IFS= read -r f; do
+        echo "  $f"
+    done < "$LARGER_FILE"
 fi
 
 exit $COMPARE_EXIT
