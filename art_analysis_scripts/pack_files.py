@@ -161,7 +161,7 @@ def find_files(base_dir):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Archive files based on identifiers')
-    parser.add_argument('--max-processes', type=int, default=os.cpu_count(), help='Maximum number of parallel processes')
+    parser.add_argument('--max-processes', type=int, default=1, help='Maximum number of parallel processes')
     parser.add_argument('--check-exists', action='store_true', help='Check if tar file exists and skip if so')
     parser.add_argument('--repair', action='store_true', help='Verify existing tar files, delete broken ones, then archive missing files')
     args = parser.parse_args()

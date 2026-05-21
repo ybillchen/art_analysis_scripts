@@ -6,7 +6,7 @@
 # conflicts (files that exist on both sides with different checksums).
 #
 # Usage:
-#   ./check_tar_files.sh [--verbose] [--check-integrity]
+#   ./check_tar_files.sh [--verbose] [--no-check-integrity]
 #
 # Environment Variables:
 #   SCRATCH      - Local source directory (required)
@@ -23,15 +23,15 @@ COMPARE_SCRIPT="$SCRIPT_DIR/compare_tar_files.py"
 
 # Parse arguments
 VERBOSE=""
-CHECK_INTEGRITY=""
+NO_CHECK_INTEGRITY=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --verbose|-v)
             VERBOSE="--verbose"
             shift
             ;;
-        --check-integrity)
-            CHECK_INTEGRITY="--check-integrity"
+        --no-check-integrity)
+            NO_CHECK_INTEGRITY="--no-check-integrity"
             shift
             ;;
         *)
@@ -66,7 +66,7 @@ BROKEN_REMOTE_FILE=$(mktemp)  # remote tar failed tar -tf
 trap 'rm -f "$SMALLER_FILE" "$LARGER_FILE" "$BROKEN_LOCAL_FILE" "$BROKEN_REMOTE_FILE"' EXIT
 
 # Run comparison check
-python3 "$COMPARE_SCRIPT" $VERBOSE $CHECK_INTEGRITY \
+python3 "$COMPARE_SCRIPT" $VERBOSE $NO_CHECK_INTEGRITY \
     --local-path "$SCRATCH" \
     --remote-host "$ARCHIVER" \
     --remote-path "/scoutfs/projects/TG-AST200017/stampede3/" \

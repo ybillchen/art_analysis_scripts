@@ -32,7 +32,7 @@ class TarFileComparator:
         self.missing_on_local = []
         self.local_smaller = []  # local < remote: local may be damaged
         self.local_larger = []   # local > remote: remote may be wrong
-        self.check_integrity = False
+        self.check_integrity = True
         self.broken_local = []
         self.broken_remote = []
 
@@ -291,8 +291,9 @@ def main():
                         help='Write local paths of files where local < remote to this file')
     parser.add_argument('--local-larger-file', default=None,
                         help='Write local paths of files where local > remote to this file')
-    parser.add_argument('--check-integrity', action='store_true',
-                        help='Run tar -tf on each tar file to detect corruption (slower)')
+    parser.add_argument('--no-check-integrity', dest='check_integrity', action='store_false',
+                        help='Skip tar -tf integrity check on each tar file')
+    parser.set_defaults(check_integrity=True)
     parser.add_argument('--broken-local-file', default=None,
                         help='Write path|error for broken local tar files to this file')
     parser.add_argument('--broken-remote-file', default=None,
