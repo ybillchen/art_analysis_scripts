@@ -110,13 +110,26 @@ if [ -s "$LARGER_REMOTE_BROKEN_FILE" ]; then
     done < "$LARGER_REMOTE_BROKEN_FILE"
 fi
 
-# 4. size mismatch, both broken — SYNC BLOCKED
+# 4. size mismatch, both broken — offer deletion of local
 if [ -s "$BOTH_BROKEN_FILE" ]; then
     echo ""
     echo "[ERROR] size mismatch, both broken — SYNC BLOCKED:"
     while IFS='|' read -r f local_size remote_size err; do
         echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)  [local: $err]"
     done < "$BOTH_BROKEN_FILE"
+    echo ""
+    read -r -p "Delete these broken local files? [y/N] " REPLY
+    case "$REPLY" in
+        [yY][eE][sS]|[yY])
+            while IFS='|' read -r f local_size remote_size err; do
+                rm -f "$f" && echo "Deleted: \$SCRATCH${f#$SCRATCH}"
+            done < "$BOTH_BROKEN_FILE"
+            echo "Run: python pack_files.py --repair  to regenerate."
+            ;;
+        *)
+            echo "Skipped."
+            ;;
+    esac
 fi
 
 # 5. local < remote, only remote broken (local intact) — re-sync will fix
