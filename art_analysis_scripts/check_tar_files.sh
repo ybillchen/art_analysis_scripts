@@ -89,7 +89,7 @@ if [ -s "$BOTH_INTACT_FILE" ]; then
     echo "[UNEXPECTED] size mismatch but both intact — SYNC BLOCKED:"
     while IFS='|' read -r f local_size remote_size; do
         echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)"
-    done < "$BOTH_INTACT_FILE"
+    done < <(sort "$BOTH_INTACT_FILE")
 fi
 
 # 2. local > remote, only local broken (remote intact) — SYNC BLOCKED
@@ -98,7 +98,7 @@ if [ -s "$LARGER_REMOTE_OK_FILE" ]; then
     echo "[ERROR] local > remote, only remote intact (local broken) — SYNC BLOCKED:"
     while IFS='|' read -r f local_size remote_size; do
         echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)"
-    done < "$LARGER_REMOTE_OK_FILE"
+    done < <(sort "$LARGER_REMOTE_OK_FILE")
 fi
 
 # 3. local > remote, only remote broken — re-sync will fix
@@ -107,7 +107,7 @@ if [ -s "$LARGER_REMOTE_BROKEN_FILE" ]; then
     echo "[INFO] local > remote, only remote broken (re-sync will fix):"
     while IFS='|' read -r f local_size remote_size; do
         echo "  $f  (local: $local_size B, remote: $remote_size B)"
-    done < "$LARGER_REMOTE_BROKEN_FILE"
+    done < <(sort "$LARGER_REMOTE_BROKEN_FILE")
 fi
 
 # 4. size mismatch, both broken — offer deletion of local
@@ -116,7 +116,7 @@ if [ -s "$BOTH_BROKEN_FILE" ]; then
     echo "[ERROR] size mismatch, both broken — SYNC BLOCKED:"
     while IFS='|' read -r f local_size remote_size err; do
         echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)  [local: $err]"
-    done < "$BOTH_BROKEN_FILE"
+    done < <(sort "$BOTH_BROKEN_FILE")
     echo ""
     read -r -p "Delete these broken local files? [y/N] " REPLY
     case "$REPLY" in
@@ -138,7 +138,7 @@ if [ -s "$SMALLER_OK_FILE" ]; then
     echo "[INFO] local < remote, only remote broken (re-sync will fix):"
     while IFS='|' read -r f local_size remote_size; do
         echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)"
-    done < "$SMALLER_OK_FILE"
+    done < <(sort "$SMALLER_OK_FILE")
 fi
 
 # 6. EXPECTED: local < remote, only local broken — offer deletion
@@ -147,7 +147,7 @@ if [ -s "$SMALLER_BROKEN_FILE" ]; then
     echo "[WARN] local < remote and local is broken:"
     while IFS='|' read -r f local_size remote_size err; do
         echo "  \$SCRATCH${f#$SCRATCH}  (local: $local_size B, remote: $remote_size B)  [$err]"
-    done < "$SMALLER_BROKEN_FILE"
+    done < <(sort "$SMALLER_BROKEN_FILE")
     echo ""
     read -r -p "Delete these broken local files? [y/N] " REPLY
     case "$REPLY" in
@@ -169,7 +169,7 @@ if [ -s "$BROKEN_SIZE_MATCH_FILE" ]; then
     echo "[WARN] broken local files, size matches remote:"
     while IFS='|' read -r f err; do
         echo "  \$SCRATCH${f#$SCRATCH}  [$err]"
-    done < "$BROKEN_SIZE_MATCH_FILE"
+    done < <(sort "$BROKEN_SIZE_MATCH_FILE")
     echo ""
     read -r -p "Delete these broken local files? [y/N] " REPLY
     case "$REPLY" in
@@ -191,7 +191,7 @@ if [ -s "$BROKEN_NO_REMOTE_FILE" ]; then
     echo "[WARN] broken local files, no remote counterpart:"
     while IFS='|' read -r f err; do
         echo "  \$SCRATCH${f#$SCRATCH}  [$err]"
-    done < "$BROKEN_NO_REMOTE_FILE"
+    done < <(sort "$BROKEN_NO_REMOTE_FILE")
     echo ""
     read -r -p "Delete these broken local files? [y/N] " REPLY
     case "$REPLY" in
