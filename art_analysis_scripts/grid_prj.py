@@ -171,13 +171,14 @@ if __name__ == '__main__':
 
     # --- layout (inches) ---
     FIG_W    = 10.0  # figure width, inches
-    MARGIN   = 0.05  # margin on all four sides, inches
+    MARGIN   = 0.05  # margin on left, top, bottom, inches
+    RMARGIN  = 0.50  # right margin — must fit colorbar tick labels, inches
     GAP      = 0.05  # gap between panels, same horizontally and vertically, inches
     CBAR_W   = 0.30  # colorbar width, inches
     CBAR_GAP = 0.10  # gap between panels and colorbar, inches
     N_ROWS, N_COLS = 2, 5
 
-    panel_area_w = FIG_W - 2*MARGIN - CBAR_GAP - CBAR_W
+    panel_area_w = FIG_W - MARGIN - RMARGIN - CBAR_GAP - CBAR_W
     panel_w = (panel_area_w - GAP*(N_COLS - 1)) / N_COLS  # inches; panel is square
     panel_h = panel_w
     FIG_H   = 2*MARGIN + N_ROWS*panel_h + GAP*(N_ROWS - 1)  # derived from square constraint
@@ -197,8 +198,8 @@ if __name__ == '__main__':
     sm = ScalarMappable(norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP)
     sm.set_array([])
     cbar = fig.colorbar(sm, cax=cbar_ax)
-    cbar.ax.yaxis.set_ticks_position('left')
-    cbar.ax.yaxis.set_label_position('left')
+    cbar.ax.yaxis.set_ticks_position('right')
+    cbar.ax.yaxis.set_label_position('right')
     cbar.ax.yaxis.set_tick_params(labelsize=10, labelcolor='black')
     cbar.ax.text(
         0.5, 0.5, r"$\Sigma_{\rm gas}$ [$M_\odot\,{\rm pc}^{-2}$]",

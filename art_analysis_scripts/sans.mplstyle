@@ -1,5 +1,5 @@
 font.family        : sans-serif
-font.sans-serif    : Helvetica, Liberation Sans, DejaVu Sans, Lucida Grande, Verdana
+font.sans-serif    : Helvetica, Nimbus Sans, Liberation Sans, DejaVu Sans, Lucida Grande, Verdana
 
 xtick.direction    : in
 ytick.direction    : in
