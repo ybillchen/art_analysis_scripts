@@ -16,6 +16,7 @@ matplotlib.use("agg")
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 plt.style.use(os.path.join(os.path.dirname(__file__), "sans.mplstyle"))
+matplotlib.rcParams['mathtext.default'] = 'regular'
 print("Font: %s" % fm.findfont(fm.FontProperties(family=matplotlib.rcParams['font.family'])))
 from matplotlib.colors import LogNorm
 from matplotlib.cm import ScalarMappable
