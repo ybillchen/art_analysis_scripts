@@ -139,7 +139,7 @@ def plot_panel(ax, basepath, label):
     ax.text(
         (centers[idx_x] - 0.45 * size) * unit_convert,
         (centers[idx_y] + 0.45 * size) * unit_convert,
-        r"z = %.1f" % (1 / ds.scale_factor - 1),
+        r"$z = %.1f$" % (1 / ds.scale_factor - 1),
         ha="left", va="top", color="w", fontsize=10
     )
 
