@@ -1,0 +1,13 @@
+font.family        : sans-serif
+font.sans-serif    : Helvetica, Liberation Sans, DejaVu Sans, Lucida Grande, Verdana
+
+xtick.direction    : in
+ytick.direction    : in
+xtick.top          : True
+xtick.bottom       : True
+ytick.left         : True
+ytick.right        : True
+xtick.minor.visible: True
+ytick.minor.visible: True
+
+lines.dashed_pattern : 2, 1
