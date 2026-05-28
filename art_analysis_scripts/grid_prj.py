@@ -176,8 +176,8 @@ if __name__ == '__main__':
         FIELD      = "temperature"
         FIELD_UNIT = "K"
         WEIGHT     = "mass"
-        VMIN       = 3e2
-        VMAX       = 3e6
+        VMIN       = 1e3
+        VMAX       = 1e7
         CBAR_LABEL = r"$\boldsymbol{T\ ({\rm K})}$"
         TEXT_COLOR = 'k'
     else:  # mach
