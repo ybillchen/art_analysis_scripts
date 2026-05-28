@@ -13,7 +13,9 @@ import numpy as np
 import matplotlib
 matplotlib.use("agg")
 import matplotlib.pyplot as plt
+import matplotlib.font_manager as fm
 plt.style.use(os.path.join(os.path.dirname(__file__), "sans.mplstyle"))
+print("Font: %s" % fm.findfont(fm.FontProperties(family=matplotlib.rcParams['font.family'])))
 from matplotlib.colors import LogNorm
 from matplotlib.cm import ScalarMappable
 import matplotlib.patheffects as pe
@@ -121,12 +123,12 @@ def plot_panel(ax, basepath, label):
     ax.scatter(
         d["STAR", "POSITION_%s" % prj_x.upper()][mask].to_value(unit),
         d["STAR", "POSITION_%s" % prj_y.upper()][mask].to_value(unit),
-        fc=rgba, ec='none', s=d["STAR", "MASS"][mask].to_value("Msun") / 5e5
+        fc=rgba, ec='none', s=d["STAR", "MASS"][mask].to_value("Msun") / 2e6
     )
 
     # ruler
     ruler_x = (centers[idx_x] + 0.43 * size) * unit_convert
-    ruler_y = (centers[idx_y] - 0.43 * size) * unit_convert
+    ruler_y = (centers[idx_y] - 0.33 * size) * unit_convert
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c="w")
     ax.text(ruler_x - 0.5 * ruler, ruler_y, r"%d %s" % (ruler, unit),
             ha="center", va="bottom", color="w", fontsize=10)
@@ -195,9 +197,9 @@ if __name__ == '__main__':
     sm = ScalarMappable(norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP)
     sm.set_array([])
     cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar.ax.yaxis.set_ticks_position('left')
+    cbar.ax.yaxis.set_label_position('left')
     cbar.ax.yaxis.set_tick_params(labelsize=10, labelcolor='black')
-    cbar.ax.yaxis.set_ticks_position('right')
-    cbar.ax.yaxis.set_label_position('right')
     cbar.ax.text(
         0.5, 0.5, r"$\Sigma_{\rm gas}$ [$M_\odot\,{\rm pc}^{-2}$]",
         transform=cbar.ax.transAxes, ha='center', va='center',
