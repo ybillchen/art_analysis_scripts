@@ -185,8 +185,8 @@ if __name__ == '__main__':
         FIELD      = "M"
         FIELD_UNIT = "1"
         WEIGHT     = "mass"
-        VMIN       = 1e-1
-        VMAX       = 1e1
+        VMIN       = 1e-2
+        VMAX       = 1e2
         CBAR_LABEL = r"$\boldsymbol{\mathcal{M}}$"
         TEXT_COLOR = 'k'
 
