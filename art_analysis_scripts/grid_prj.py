@@ -108,6 +108,7 @@ def plot_panel(ax, basepath, label):
 
     ax.imshow(
         mesh.T, origin="lower", norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP,
+        rasterized=True,
         extent=[
             region[idx_x].to_value(unit), region[idx_x + 3].to_value(unit),
             region[idx_y].to_value(unit), region[idx_y + 3].to_value(unit)
@@ -123,7 +124,8 @@ def plot_panel(ax, basepath, label):
     ax.scatter(
         d["STAR", "POSITION_%s" % prj_x.upper()][mask].to_value(unit),
         d["STAR", "POSITION_%s" % prj_y.upper()][mask].to_value(unit),
-        fc=rgba, ec='none', s=d["STAR", "MASS"][mask].to_value("Msun") / 2e6
+        fc=rgba, ec='none', s=d["STAR", "MASS"][mask].to_value("Msun") / 2e6,
+        rasterized=True
     )
 
     # ruler
@@ -167,7 +169,7 @@ if __name__ == '__main__':
     sim_group = KM_FOLDERS[0].split('_')[-1]  # "km" or "p12"
     z_str = "%g" % TARGET_Z
     os.makedirs(ANALYSIS_PATH, exist_ok=True)
-    output_path = os.path.join(ANALYSIS_PATH, "grid_prj_%s_z%s.png" % (sim_group, z_str))
+    output_path = os.path.join(ANALYSIS_PATH, "grid_prj_%s_z%s.pdf" % (sim_group, z_str))
 
     # --- layout (inches) ---
     FIG_W    = 10.0  # figure width, inches
@@ -217,6 +219,6 @@ if __name__ == '__main__':
             print("Skipped %s: %s" % (basepath, e))
             ax.set_visible(False)
 
-    plt.savefig(output_path, dpi=150)
+    plt.savefig(output_path, dpi=500)
     plt.close()
     print("Saved: %s" % output_path)
