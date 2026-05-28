@@ -171,7 +171,7 @@ if __name__ == '__main__':
     FIG_W  = 10.0  # figure width, inches
     MARGIN = 0.05  # margin on all four sides, inches
     GAP    = 0.05  # gap between panels, same horizontally and vertically, inches
-    N_ROWS, N_COLS = 5, 2
+    N_ROWS, N_COLS = 2, 5
 
     panel_w = (FIG_W - 2*MARGIN - GAP*(N_COLS - 1)) / N_COLS  # inches; panel is square
     panel_h = panel_w
