@@ -257,6 +257,12 @@ class TarFileComparator:
             for e in self.broken_no_remote:
                 f.write(f"{e['full_path']}|{self._clean_error(e)}\n")
 
+    def write_missing_on_remote_file(self, path):
+        with open(path, 'w') as f:
+            for rel_path in self.missing_on_remote:
+                info = self.local_files[rel_path]
+                f.write(f"{info['full_path']}|{info['size']}\n")
+
     def check_local_integrity(self):
         """Run tar -tf on each local tar file in parallel, with progress."""
         def _check(item):
@@ -381,6 +387,8 @@ def main():
                         help='broken local, size matches remote: full_path|error')
     parser.add_argument('--broken-no-remote-file', default=None,
                         help='broken local, no remote counterpart: full_path|error')
+    parser.add_argument('--missing-on-remote-file', default=None,
+                        help='only on local (no remote counterpart): full_path|local_size')
 
     args = parser.parse_args()
 
@@ -424,6 +432,8 @@ def main():
         comparator.write_broken_size_match_file(args.broken_size_match_file)
     if args.broken_no_remote_file is not None:
         comparator.write_broken_no_remote_file(args.broken_no_remote_file)
+    if args.missing_on_remote_file is not None:
+        comparator.write_missing_on_remote_file(args.missing_on_remote_file)
 
     if comparator.has_conflicts():
         print("[ERROR] SYNC BLOCKED: Conflicting files detected")

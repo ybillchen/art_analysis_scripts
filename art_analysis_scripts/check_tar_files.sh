@@ -65,7 +65,8 @@ BOTH_INTACT_FILE=$(mktemp)          # size mismatch, both intact
 BOTH_BROKEN_FILE=$(mktemp)          # size mismatch, both broken
 BROKEN_SIZE_MATCH_FILE=$(mktemp)    # broken local, size matches remote
 BROKEN_NO_REMOTE_FILE=$(mktemp)     # broken local, no remote counterpart
-trap 'rm -f "$SMALLER_BROKEN_FILE" "$SMALLER_OK_FILE" "$LARGER_REMOTE_BROKEN_FILE" "$LARGER_REMOTE_OK_FILE" "$BOTH_INTACT_FILE" "$BOTH_BROKEN_FILE" "$BROKEN_SIZE_MATCH_FILE" "$BROKEN_NO_REMOTE_FILE"' EXIT
+MISSING_ON_REMOTE_FILE=$(mktemp)    # only on local, no remote counterpart
+trap 'rm -f "$SMALLER_BROKEN_FILE" "$SMALLER_OK_FILE" "$LARGER_REMOTE_BROKEN_FILE" "$LARGER_REMOTE_OK_FILE" "$BOTH_INTACT_FILE" "$BOTH_BROKEN_FILE" "$BROKEN_SIZE_MATCH_FILE" "$BROKEN_NO_REMOTE_FILE" "$MISSING_ON_REMOTE_FILE"' EXIT
 
 # Run comparison pipeline
 python3 "$COMPARE_SCRIPT" $VERBOSE \
@@ -79,7 +80,8 @@ python3 "$COMPARE_SCRIPT" $VERBOSE \
     --both-intact-file "$BOTH_INTACT_FILE" \
     --both-broken-file "$BOTH_BROKEN_FILE" \
     --broken-size-match-file "$BROKEN_SIZE_MATCH_FILE" \
-    --broken-no-remote-file "$BROKEN_NO_REMOTE_FILE"
+    --broken-no-remote-file "$BROKEN_NO_REMOTE_FILE" \
+    --missing-on-remote-file "$MISSING_ON_REMOTE_FILE"
 
 COMPARE_EXIT=$?
 
@@ -205,6 +207,15 @@ if [ -s "$BROKEN_NO_REMOTE_FILE" ]; then
             echo "Skipped."
             ;;
     esac
+fi
+
+# 9. Only on local — informational
+if [ -s "$MISSING_ON_REMOTE_FILE" ]; then
+    echo ""
+    echo "[INFO] only on local (will be uploaded on next sync):"
+    while IFS='|' read -r f local_size; do
+        echo "  \$SCRATCH${f#$SCRATCH}  ($local_size B)"
+    done < <(sort "$MISSING_ON_REMOTE_FILE")
 fi
 
 exit $COMPARE_EXIT
