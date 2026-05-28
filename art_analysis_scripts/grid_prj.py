@@ -4,6 +4,7 @@ Copyright (c) 2025 Yingtian Chen
 All rights reserved.
 """
 
+import argparse
 import os
 import sys
 sys.path.append('.')
@@ -30,14 +31,6 @@ ANALYSIS_PATH = os.path.join(ROOT_PATH, "analysis")
 KM_FOLDERS = ["mh2e12_km", "mh3e12_km", "mh5e12_km"]
 TARGET_Z = 5.0
 TARGET_A = 1.0 / (1.0 + TARGET_Z)
-
-CMAP = 'magma'
-FIELD = "density"
-FIELD_UNIT = "Msun/pc**3"
-WEIGHT = "column"
-VMIN = 1e0
-VMAX = 1e4
-
 
 def collect_basepaths(root_path, km_folders):
     basepaths = []
@@ -133,21 +126,21 @@ def plot_panel(ax, basepath, label):
     ruler_y = (centers[idx_y] - 0.43 * size) * unit_convert
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c="w")
     ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, unit),
-            ha="center", va="bottom", color="w", fontsize=10)
+            ha="center", va="bottom", color="w", fontsize=12)
 
     # redshift label (top-left)
     ax.text(
         (centers[idx_x] - 0.45 * size) * unit_convert,
         (centers[idx_y] + 0.45 * size) * unit_convert,
         r"$z = %.1f$" % (1 / ds.scale_factor - 1),
-        ha="left", va="top", color="w", fontsize=10
+        ha="left", va="top", color="w", fontsize=12
     )
 
     # galaxy label (top-right)
     ax.text(
         (centers[idx_x] + 0.45 * size) * unit_convert,
         (centers[idx_y] + 0.45 * size) * unit_convert,
-        label, ha="right", va="top", color="w", fontsize=10
+        label, ha="right", va="top", color="w", fontsize=12
     )
 
     ax.set_xlim((centers[idx_x] - 0.5 * size) * unit_convert,
@@ -160,6 +153,37 @@ def plot_panel(ax, basepath, label):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--mode', default='density',
+                        choices=['density', 'temperature', 'mach'])
+    args = parser.parse_args()
+    MODE = args.mode
+
+    if MODE == "density":
+        CMAP       = 'magma'
+        FIELD      = "density"
+        FIELD_UNIT = "Msun/pc**3"
+        WEIGHT     = "column"
+        VMIN       = 1e0
+        VMAX       = 1e4
+        CBAR_LABEL = r"$\Sigma_{\rm gas}$ ($M_\odot\,{\rm pc}^{-2}$)"
+    elif MODE == "temperature":
+        CMAP       = 'inferno'
+        FIELD      = "temperature"
+        FIELD_UNIT = "K"
+        WEIGHT     = "mass"
+        VMIN       = 1e2
+        VMAX       = 1e7
+        CBAR_LABEL = r"$T_{\rm mw}$ (K)"
+    else:  # mach
+        CMAP       = 'viridis'
+        FIELD      = "M"
+        FIELD_UNIT = "1"
+        WEIGHT     = "mass"
+        VMIN       = 1e-1
+        VMAX       = 1e1
+        CBAR_LABEL = r"$\mathcal{M}_{\rm mw}$"
+
     yt.funcs.mylog.setLevel(50)
 
     basepaths = collect_basepaths(ROOT_PATH, KM_FOLDERS)
@@ -169,7 +193,7 @@ if __name__ == '__main__':
     sim_group = KM_FOLDERS[0].split('_')[-1]  # "km" or "p12"
     z_str = "%g" % TARGET_Z
     os.makedirs(ANALYSIS_PATH, exist_ok=True)
-    output_path = os.path.join(ANALYSIS_PATH, "grid_prj_%s_z%s.pdf" % (sim_group, z_str))
+    output_path = os.path.join(ANALYSIS_PATH, "grid_prj_%s_%s_z%s.pdf" % (sim_group, MODE, z_str))
 
     # --- layout (inches) ---
     FIG_W    = 10.0  # figure width, inches
@@ -203,11 +227,11 @@ if __name__ == '__main__':
     cbar = fig.colorbar(sm, cax=cbar_ax)
     cbar.ax.yaxis.set_ticks_position('right')
     cbar.ax.yaxis.set_label_position('right')
-    cbar.ax.yaxis.set_tick_params(labelsize=10, labelcolor='black')
+    cbar.ax.yaxis.set_tick_params(labelsize=12, labelcolor='black')
     cbar.ax.text(
-        0.5, 0.5, r"$\Sigma_{\rm gas}$ ($M_\odot\,{\rm pc}^{-2}$)",
+        0.5, 0.5, CBAR_LABEL,
         transform=cbar.ax.transAxes, ha='center', va='center',
-        color='black', fontsize=10, rotation=90,
+        color='black', fontsize=12, rotation=90,
         path_effects=[pe.withStroke(linewidth=3, foreground='white')]
     )
 
