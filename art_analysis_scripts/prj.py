@@ -94,6 +94,8 @@ def prj(
                 w = rho[i] * dx[i]**3
                 mesh_num[ix, iy] += z[i] * w
                 mesh_den[ix, iy] += w
+            elif weight == "column":
+                mesh[ix, iy] += z[i] * dx[i]  # rho * dz in code_length
             else:
                 mesh[ix, iy] += z[i] * dx[i]**3 / (N*dx_level**3)  # volume weighted
         else:
@@ -106,11 +108,15 @@ def prj(
                 w = rho[i] * dx[i] * dx_level**2  # mass per pixel from this cell
                 mesh_num[ix0:ix1, iy0:iy1] += z[i] * w
                 mesh_den[ix0:ix1, iy0:iy1] += w
+            elif weight == "column":
+                mesh[ix0:ix1, iy0:iy1] += z[i] * dx[i]  # rho * dz in code_length
             else:
                 mesh[ix0:ix1, iy0:iy1] += z[i] * dx[i] * dx_level**2 / (N*dx_level**3)  # volume weighted
 
     if weight == "mass":
         mesh = np.where(mesh_den > 0, mesh_num / mesh_den, 0.0)
+    elif weight == "column":
+        mesh *= (1.0 * ds.units.code_length).to_value('pc')  # convert to field_unit * pc, e.g. Msun/pc**2
 
     if scale == "log":
         mesh = 10**mesh

@@ -32,9 +32,9 @@ TARGET_A = 1.0 / (1.0 + TARGET_Z)
 CMAP = 'magma'
 FIELD = "density"
 FIELD_UNIT = "Msun/pc**3"
-WEIGHT = "volume"
-VMIN = 1e-4
-VMAX = 1e0
+WEIGHT = "column"
+VMIN = 1e0
+VMAX = 1e4
 
 
 def collect_basepaths(root_path, km_folders):
@@ -171,7 +171,7 @@ if __name__ == '__main__':
     FIG_W    = 10.0  # figure width, inches
     MARGIN   = 0.05  # margin on all four sides, inches
     GAP      = 0.05  # gap between panels, same horizontally and vertically, inches
-    CBAR_W   = 0.15  # colorbar width, inches
+    CBAR_W   = 0.30  # colorbar width, inches
     CBAR_GAP = 0.10  # gap between panels and colorbar, inches
     N_ROWS, N_COLS = 2, 5
 
@@ -195,8 +195,11 @@ if __name__ == '__main__':
     sm = ScalarMappable(norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP)
     sm.set_array([])
     cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar.ax.yaxis.set_tick_params(labelsize=10, labelcolor='black')
+    cbar.ax.yaxis.set_ticks_position('right')
+    cbar.ax.yaxis.set_label_position('right')
     cbar.ax.text(
-        0.5, 0.5, r"$\rho_{\rm gas}$ [$M_\odot\,{\rm pc}^{-3}$]",
+        0.5, 0.5, r"$\Sigma_{\rm gas}$ [$M_\odot\,{\rm pc}^{-2}$]",
         transform=cbar.ax.transAxes, ha='center', va='center',
         color='black', fontsize=10, rotation=90,
         path_effects=[pe.withStroke(linewidth=2, foreground='white')]
