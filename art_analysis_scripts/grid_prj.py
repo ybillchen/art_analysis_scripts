@@ -40,6 +40,8 @@ def collect_basepaths(root_path, km_folders):
     for folder in km_folders:
         folder_path = os.path.join(root_path, folder)
         for entry in sorted(os.listdir(folder_path)):
+            if not entry.isdigit():
+                continue
             bp = os.path.join(folder_path, entry, "run")
             if os.path.isdir(bp):
                 basepaths.append(bp)
