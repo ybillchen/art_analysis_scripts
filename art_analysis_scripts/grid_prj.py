@@ -77,7 +77,7 @@ def get_snapshot_at_scalefactor(basepath, target_a):
     return snapshot, filename
 
 
-def plot_panel(ax, basepath):
+def plot_panel(ax, basepath, label):
     snapshot, filename = get_snapshot_at_scalefactor(basepath, TARGET_A)
     ds = yt.load(filename)
 
@@ -127,7 +127,7 @@ def plot_panel(ax, basepath):
     ruler_y = (centers[idx_y] - 0.43 * size) * unit_convert
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c="w")
     ax.text(ruler_x - 0.5 * ruler, ruler_y, r"%d %s" % (ruler, unit),
-            ha="center", va="bottom", color="w", fontsize=7)
+            ha="center", va="bottom", color="w", fontsize=10)
 
     # redshift label (top-left)
     ax.text(
@@ -137,13 +137,11 @@ def plot_panel(ax, basepath):
         ha="left", va="top", color="w", fontsize=10
     )
 
-    # simulation label (top-right)
-    parts = basepath.rstrip('/').split('/')
-    label = "%s/%s" % (parts[-3], parts[-2])
+    # galaxy label (top-right)
     ax.text(
         (centers[idx_x] + 0.45 * size) * unit_convert,
         (centers[idx_y] + 0.45 * size) * unit_convert,
-        label, ha="right", va="top", color="w", fontsize=6
+        label, ha="right", va="top", color="w", fontsize=10
     )
 
     ax.set_xlim((centers[idx_x] - 0.5 * size) * unit_convert,
@@ -184,9 +182,10 @@ if __name__ == '__main__':
             bottom = (MARGIN + (N_ROWS - 1 - r) * (panel_h + GAP)) / FIG_H
             axs[r, c].set_position([left, bottom, panel_w / FIG_W, panel_h / FIG_H])
 
-    for ax, basepath in zip(axs.flat, basepaths):
+    for i, (ax, basepath) in enumerate(zip(axs.flat, basepaths)):
+        label = chr(ord('a') + i)
         try:
-            plot_panel(ax, basepath)
+            plot_panel(ax, basepath, label)
         except Exception as e:
             print("Skipped %s: %s" % (basepath, e))
             ax.set_visible(False)
