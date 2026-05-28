@@ -15,6 +15,8 @@ matplotlib.use("agg")
 import matplotlib.pyplot as plt
 plt.style.use(os.path.join(os.path.dirname(__file__), "sans.mplstyle"))
 from matplotlib.colors import LogNorm
+from matplotlib.cm import ScalarMappable
+import matplotlib.patheffects as pe
 import yt
 
 from prj import prj
@@ -166,14 +168,17 @@ if __name__ == '__main__':
     output_path = os.path.join(ANALYSIS_PATH, "grid_prj_%s_z%s.png" % (sim_group, z_str))
 
     # --- layout (inches) ---
-    FIG_W  = 10.0  # figure width, inches
-    MARGIN = 0.05  # margin on all four sides, inches
-    GAP    = 0.05  # gap between panels, same horizontally and vertically, inches
+    FIG_W    = 10.0  # figure width, inches
+    MARGIN   = 0.05  # margin on all four sides, inches
+    GAP      = 0.05  # gap between panels, same horizontally and vertically, inches
+    CBAR_W   = 0.15  # colorbar width, inches
+    CBAR_GAP = 0.10  # gap between panels and colorbar, inches
     N_ROWS, N_COLS = 2, 5
 
-    panel_w = (FIG_W - 2*MARGIN - GAP*(N_COLS - 1)) / N_COLS  # inches; panel is square
+    panel_area_w = FIG_W - 2*MARGIN - CBAR_GAP - CBAR_W
+    panel_w = (panel_area_w - GAP*(N_COLS - 1)) / N_COLS  # inches; panel is square
     panel_h = panel_w
-    FIG_H   = 2*MARGIN + N_ROWS*panel_h + GAP*(N_ROWS - 1)    # derived from square constraint
+    FIG_H   = 2*MARGIN + N_ROWS*panel_h + GAP*(N_ROWS - 1)  # derived from square constraint
 
     fig, axs = plt.subplots(N_ROWS, N_COLS, figsize=(FIG_W, FIG_H))
     for r in range(N_ROWS):
@@ -181,6 +186,21 @@ if __name__ == '__main__':
             left   = (MARGIN + c * (panel_w + GAP)) / FIG_W
             bottom = (MARGIN + (N_ROWS - 1 - r) * (panel_h + GAP)) / FIG_H
             axs[r, c].set_position([left, bottom, panel_w / FIG_W, panel_h / FIG_H])
+
+    # colorbar: spans full height of the panel area
+    cbar_left   = (MARGIN + panel_area_w + CBAR_GAP) / FIG_W
+    cbar_bottom = MARGIN / FIG_H
+    cbar_height = (N_ROWS * panel_h + (N_ROWS - 1) * GAP) / FIG_H
+    cbar_ax = fig.add_axes([cbar_left, cbar_bottom, CBAR_W / FIG_W, cbar_height])
+    sm = ScalarMappable(norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP)
+    sm.set_array([])
+    cbar = fig.colorbar(sm, cax=cbar_ax)
+    cbar.ax.text(
+        0.5, 0.5, r"$\rho_{\rm gas}$ [$M_\odot\,{\rm pc}^{-3}$]",
+        transform=cbar.ax.transAxes, ha='center', va='center',
+        color='black', fontsize=10, rotation=90,
+        path_effects=[pe.withStroke(linewidth=2, foreground='white')]
+    )
 
     for i, (ax, basepath) in enumerate(zip(axs.flat, basepaths)):
         label = chr(ord('a') + i)
