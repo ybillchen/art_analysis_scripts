@@ -188,8 +188,8 @@ if __name__ == '__main__':
         try:
             plot_panel(ax, basepath)
         except Exception as e:
-            print("Error for %s: %s" % (basepath, e))
-            ax.set_axis_off()
+            print("Skipped %s: %s" % (basepath, e))
+            ax.set_visible(False)
 
     plt.savefig(output_path, dpi=150)
     plt.close()
