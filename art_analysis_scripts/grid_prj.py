@@ -128,9 +128,9 @@ def plot_panel(ax, basepath, label):
 
     # ruler
     ruler_x = (centers[idx_x] + 0.43 * size) * unit_convert
-    ruler_y = (centers[idx_y] - 0.33 * size) * unit_convert
+    ruler_y = (centers[idx_y] - 0.43 * size) * unit_convert
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c="w")
-    ax.text(ruler_x - 0.5 * ruler, ruler_y, r"%d %s" % (ruler, unit),
+    ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, unit),
             ha="center", va="bottom", color="w", fontsize=10)
 
     # redshift label (top-left)
@@ -171,11 +171,12 @@ if __name__ == '__main__':
 
     # --- layout (inches) ---
     FIG_W    = 10.0  # figure width, inches
-    MARGIN   = 0.05  # margin on left, top, bottom, inches
-    RMARGIN  = 0.50  # right margin — must fit colorbar tick labels, inches
-    GAP      = 0.05  # gap between panels, same horizontally and vertically, inches
-    CBAR_W   = 0.30  # colorbar width, inches
-    CBAR_GAP = 0.10  # gap between panels and colorbar, inches
+    MARGIN      = 0.05  # margin on left, top, bottom, inches
+    RMARGIN     = 0.35  # right margin — must fit colorbar tick labels, inches
+    GAP         = 0.05  # gap between panels, same horizontally and vertically, inches
+    CBAR_W      = 0.30  # colorbar width, inches
+    CBAR_GAP    = 0.10  # gap between panels and colorbar, inches
+    CBAR_INSET  = 0.10  # inset at each end of colorbar so extreme tick labels aren't clipped, inches
     N_ROWS, N_COLS = 2, 5
 
     panel_area_w = FIG_W - MARGIN - RMARGIN - CBAR_GAP - CBAR_W
@@ -190,10 +191,10 @@ if __name__ == '__main__':
             bottom = (MARGIN + (N_ROWS - 1 - r) * (panel_h + GAP)) / FIG_H
             axs[r, c].set_position([left, bottom, panel_w / FIG_W, panel_h / FIG_H])
 
-    # colorbar: spans full height of the panel area
+    # colorbar: inset slightly at each end so extreme tick labels aren't clipped
     cbar_left   = (MARGIN + panel_area_w + CBAR_GAP) / FIG_W
-    cbar_bottom = MARGIN / FIG_H
-    cbar_height = (N_ROWS * panel_h + (N_ROWS - 1) * GAP) / FIG_H
+    cbar_bottom = (MARGIN + CBAR_INSET) / FIG_H
+    cbar_height = (N_ROWS * panel_h + (N_ROWS - 1) * GAP - 2 * CBAR_INSET) / FIG_H
     cbar_ax = fig.add_axes([cbar_left, cbar_bottom, CBAR_W / FIG_W, cbar_height])
     sm = ScalarMappable(norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP)
     sm.set_array([])
@@ -202,10 +203,10 @@ if __name__ == '__main__':
     cbar.ax.yaxis.set_label_position('right')
     cbar.ax.yaxis.set_tick_params(labelsize=10, labelcolor='black')
     cbar.ax.text(
-        0.5, 0.5, r"$\Sigma_{\rm gas}$ [$M_\odot\,{\rm pc}^{-2}$]",
+        0.5, 0.5, r"$\Sigma_{\rm gas}$ ($M_\odot\,{\rm pc}^{-2}$)",
         transform=cbar.ax.transAxes, ha='center', va='center',
         color='black', fontsize=10, rotation=90,
-        path_effects=[pe.withStroke(linewidth=2, foreground='white')]
+        path_effects=[pe.withStroke(linewidth=3, foreground='white')]
     )
 
     for i, (ax, basepath) in enumerate(zip(axs.flat, basepaths)):
