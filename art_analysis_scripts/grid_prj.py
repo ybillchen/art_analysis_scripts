@@ -204,7 +204,7 @@ if __name__ == '__main__':
     # --- layout (inches) ---
     FIG_W    = 10.0  # figure width, inches
     MARGIN      = 0.05  # margin on left, top, bottom, inches
-    RMARGIN     = 0.35  # right margin — must fit colorbar tick labels, inches
+    RMARGIN     = 0.37  # right margin — must fit colorbar tick labels, inches
     GAP         = 0.05  # gap between panels, same horizontally and vertically, inches
     CBAR_W      = 0.30  # colorbar width, inches
     CBAR_GAP    = 0.10  # gap between panels and colorbar, inches
