@@ -122,7 +122,7 @@ def plot_panel(ax, basepath, label):
     )
 
     # ruler
-    ruler_x = (centers[idx_x] + 0.43 * size) * unit_convert
+    ruler_x = (centers[idx_x] + 0.4 * size) * unit_convert
     ruler_y = (centers[idx_y] - 0.43 * size) * unit_convert
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c="w")
     ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, unit),
@@ -140,7 +140,7 @@ def plot_panel(ax, basepath, label):
     ax.text(
         (centers[idx_x] + 0.45 * size) * unit_convert,
         (centers[idx_y] + 0.45 * size) * unit_convert,
-        label, ha="right", va="top", color="w", fontsize=12, fontweight='bold'
+        label, ha="right", va="top", color="w", fontsize=15, fontweight='bold'
     )
 
     ax.set_xlim((centers[idx_x] - 0.5 * size) * unit_convert,
