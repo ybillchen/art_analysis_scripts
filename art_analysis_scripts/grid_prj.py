@@ -126,21 +126,21 @@ def plot_panel(ax, basepath, label):
     ruler_y = (centers[idx_y] - 0.43 * size) * unit_convert
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c="w")
     ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, unit),
-            ha="center", va="bottom", color="w", fontsize=12)
+            ha="center", va="bottom", color="w", fontsize=12, fontweight='bold')
 
     # redshift label (top-left)
     ax.text(
         (centers[idx_x] - 0.45 * size) * unit_convert,
         (centers[idx_y] + 0.45 * size) * unit_convert,
-        r"$z = %.1f$" % (1 / ds.scale_factor - 1),
-        ha="left", va="top", color="w", fontsize=12
+        r"$\boldsymbol{z = %.1f}$" % (1 / ds.scale_factor - 1),
+        ha="left", va="top", color="w", fontsize=12, fontweight='bold'
     )
 
     # galaxy label (top-right)
     ax.text(
         (centers[idx_x] + 0.45 * size) * unit_convert,
         (centers[idx_y] + 0.45 * size) * unit_convert,
-        label, ha="right", va="top", color="w", fontsize=12
+        label, ha="right", va="top", color="w", fontsize=12, fontweight='bold'
     )
 
     ax.set_xlim((centers[idx_x] - 0.5 * size) * unit_convert,
@@ -166,7 +166,7 @@ if __name__ == '__main__':
         WEIGHT     = "column"
         VMIN       = 1e0
         VMAX       = 1e4
-        CBAR_LABEL = r"$\Sigma_{\rm gas}$ ($M_\odot\,{\rm pc}^{-2}$)"
+        CBAR_LABEL = r"$\boldsymbol{\Sigma_{\rm gas}}$ ($\boldsymbol{M_\odot\,{\rm pc}^{-2}}$)"
     elif MODE == "temperature":
         CMAP       = 'inferno'
         FIELD      = "temperature"
@@ -174,7 +174,7 @@ if __name__ == '__main__':
         WEIGHT     = "mass"
         VMIN       = 1e2
         VMAX       = 1e7
-        CBAR_LABEL = r"$T_{\rm mw}$ (K)"
+        CBAR_LABEL = r"$\boldsymbol{T_{\rm mw}}$ (K)"
     else:  # mach
         CMAP       = 'viridis'
         FIELD      = "M"
@@ -182,7 +182,7 @@ if __name__ == '__main__':
         WEIGHT     = "mass"
         VMIN       = 1e-1
         VMAX       = 1e1
-        CBAR_LABEL = r"$\mathcal{M}_{\rm mw}$"
+        CBAR_LABEL = r"$\boldsymbol{\mathcal{M}_{\rm mw}}$"
 
     yt.funcs.mylog.setLevel(50)
 
@@ -231,7 +231,7 @@ if __name__ == '__main__':
     cbar.ax.text(
         0.5, 0.5, CBAR_LABEL,
         transform=cbar.ax.transAxes, ha='center', va='center',
-        color='black', fontsize=12, rotation=90,
+        color='black', fontsize=12, fontweight='bold', rotation=90,
         path_effects=[pe.withStroke(linewidth=3, foreground='white')]
     )
 
