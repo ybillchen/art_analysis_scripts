@@ -108,18 +108,18 @@ def plot_panel(ax, basepath, label):
         ]
     )
 
-    # young stars
-    d = ds.box(region[:3], region[3:])
-    age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
-    mask = age < 750
-    rgba = np.ones((mask.sum(), 4))
-    rgba[:, 3] = np.exp(-age[mask] / 150.0)
-    ax.scatter(
-        d["STAR", "POSITION_%s" % prj_x.upper()][mask].to_value(unit),
-        d["STAR", "POSITION_%s" % prj_y.upper()][mask].to_value(unit),
-        fc=rgba, ec='none', s=d["STAR", "MASS"][mask].to_value("Msun") / 2e6,
-        rasterized=True
-    )
+    if SHOW_STARS:
+        d = ds.box(region[:3], region[3:])
+        age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
+        mask = age < 750
+        rgba = np.ones((mask.sum(), 4))
+        rgba[:, 3] = np.exp(-age[mask] / 150.0)
+        ax.scatter(
+            d["STAR", "POSITION_%s" % prj_x.upper()][mask].to_value(unit),
+            d["STAR", "POSITION_%s" % prj_y.upper()][mask].to_value(unit),
+            fc=rgba, ec='none', s=d["STAR", "MASS"][mask].to_value("Msun") / 2e6,
+            rasterized=True
+        )
 
     # ruler
     ruler_x = (centers[idx_x] + 0.4 * size) * unit_convert
@@ -156,8 +156,11 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='density',
                         choices=['density', 'temperature', 'mach'])
+    parser.add_argument('--no-stars', action='store_true',
+                        help='hide star particles (only applicable in density mode)')
     args = parser.parse_args()
     MODE = args.mode
+    SHOW_STARS = (MODE == 'density') and not args.no_stars
 
     if MODE == "density":
         CMAP       = 'magma'
@@ -166,23 +169,23 @@ if __name__ == '__main__':
         WEIGHT     = "column"
         VMIN       = 1e0
         VMAX       = 1e4
-        CBAR_LABEL = r"$\boldsymbol{\Sigma_{\rm gas}}$ ($\boldsymbol{M_\odot\,{\rm pc}^{-2}}$)"
+        CBAR_LABEL = r"$\boldsymbol{\Sigma_{\rm gas}\ (M_\odot\,{\rm pc}^{-2})}$"
     elif MODE == "temperature":
-        CMAP       = 'inferno'
+        CMAP       = 'coolwarm'
         FIELD      = "temperature"
         FIELD_UNIT = "K"
         WEIGHT     = "mass"
         VMIN       = 1e2
         VMAX       = 1e7
-        CBAR_LABEL = r"$\boldsymbol{T_{\rm mw}}$ (K)"
+        CBAR_LABEL = r"$\boldsymbol{T\ ({\rm K})}$"
     else:  # mach
-        CMAP       = 'viridis'
+        CMAP       = 'RdYlBu'
         FIELD      = "M"
         FIELD_UNIT = "1"
         WEIGHT     = "mass"
         VMIN       = 1e-1
         VMAX       = 1e1
-        CBAR_LABEL = r"$\boldsymbol{\mathcal{M}_{\rm mw}}$"
+        CBAR_LABEL = r"$\boldsymbol{\mathcal{M}}$"
 
     yt.funcs.mylog.setLevel(50)
 
