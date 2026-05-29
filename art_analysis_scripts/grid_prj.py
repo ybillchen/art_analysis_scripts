@@ -28,7 +28,10 @@ from track_tree import smooth_time_series, find_main_mpb
 
 ROOT_PATH     = "/scratch/08199/tg874988/art_simulations/hydro"
 ANALYSIS_PATH = os.path.join(ROOT_PATH, "analysis")
-KM_FOLDERS = ["mh2e12_km", "mh3e12_km", "mh5e12_km"]
+SIM_FOLDERS = {
+    "km":  ["mh2e12_km",  "mh3e12_km",  "mh5e12_km"],
+    "p12": ["mh2e12_p12", "mh3e12_p12", "mh5e12_p12"],
+}
 TARGET_Z = 5.0
 TARGET_A = 1.0 / (1.0 + TARGET_Z)
 
@@ -156,10 +159,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='density',
                         choices=['density', 'temperature', 'mach'])
+    parser.add_argument('--sim-group', default='km', choices=['km', 'p12'])
     parser.add_argument('--no-stars', action='store_true',
                         help='hide star particles (only applicable in density mode)')
     args = parser.parse_args()
     MODE = args.mode
+    sim_group = args.sim_group
     SHOW_STARS = (MODE == 'density') and not args.no_stars
 
     if MODE == "density":
@@ -192,11 +197,9 @@ if __name__ == '__main__':
 
     yt.funcs.mylog.setLevel(50)
 
-    basepaths = collect_basepaths(ROOT_PATH, KM_FOLDERS)
+    basepaths = collect_basepaths(ROOT_PATH, SIM_FOLDERS[sim_group])
     assert len(basepaths) == 10, \
-        "Expected 10 KM simulations, found %d: %s" % (len(basepaths), basepaths)
-
-    sim_group = KM_FOLDERS[0].split('_')[-1]  # "km" or "p12"
+        "Expected 10 simulations, found %d: %s" % (len(basepaths), basepaths)
     z_str = "%g" % TARGET_Z
     os.makedirs(ANALYSIS_PATH, exist_ok=True)
     output_path = os.path.join(ANALYSIS_PATH, "grid_prj_%s_%s_z%s.pdf" % (sim_group, MODE, z_str))
