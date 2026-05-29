@@ -8,7 +8,6 @@ import argparse
 import os
 import sys
 sys.path.append('.')
-from copy import copy
 
 import numpy as np
 import matplotlib
@@ -24,7 +23,7 @@ import yt
 
 from prj import prj
 from datatype import dtype_tree
-from track_tree import smooth_time_series, find_main_mpb
+from track_tree import find_main_mpb
 
 ROOT_PATH     = "/scratch/08199/tg874988/art_simulations/hydro"
 ANALYSIS_PATH = os.path.join(ROOT_PATH, "analysis")
@@ -62,17 +61,8 @@ def get_snapshot_at_scalefactor(basepath, target_a):
     dsnap = int(lastsnap_original - lastsnap_tree)
     filename_list = snap_list['filename'][dsnap:]
 
-    da = 0.0025
-    a_mpb = mpb['scale']
-    x_smooth = smooth_time_series(a_mpb, mpb['x'], da)
-    y_smooth = smooth_time_series(a_mpb, mpb['y'], da)
-    z_smooth = smooth_time_series(a_mpb, mpb['z'], da)
-
-    idx = np.argmin(np.abs(a_mpb - target_a))
-    snapshot = copy(mpb[idx])
-    snapshot['x'] = x_smooth[idx]
-    snapshot['y'] = y_smooth[idx]
-    snapshot['z'] = z_smooth[idx]
+    idx = np.argmin(np.abs(mpb['scale'] - target_a))
+    snapshot = mpb[idx]
     filename = os.path.join(basepath, filename_list[snapshot['Snap_idx']])
     return snapshot, filename
 
