@@ -473,7 +473,7 @@ if __name__ == '__main__':
         help='Scale factor to analyse (default: last snapshot)'
     )
     parser.add_argument(
-        '--format', '-f', choices=['txt', 'hdf5'], default='txt',
+        '--format', '-f', choices=['txt', 'hdf5'], default='hdf5',
         help='Output format for star data (default: txt)'
     )
     args = parser.parse_args()
