@@ -271,40 +271,43 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
 
     d = ds.sphere(center, rvir)
 
-    initial_mass = d[('STAR', 'initial_mass')].to_value('Msun')
-    mass = d[('STAR', 'MASS')].to_value('Msun')
-    f_bound0 = get_fbound0(d)
-    t_form = d[("STAR", "creation_time")].to_value("Myr")
-    t_ave = ave_time(d)
-    t_dur = duration(d)
-    t_spread = age_spread(d)
-    eps_int = get_eps_int(d)
-    x = (d[('STAR', 'POSITION_X')] - center[0]).to_value('kpc')
-    y = (d[('STAR', 'POSITION_Y')] - center[1]).to_value('kpc')
-    z = (d[('STAR', 'POSITION_Z')] - center[2]).to_value('kpc')
-    pid = d[('STAR', 'PID')].astype(np.int64)
+    # Build output columns dynamically; skip any that require missing fields.
+    col_names = []
+    col_arrays = []
+    col_fmts = []
+
+    def try_add(name, fn, fmt_str='%.6e'):
+        try:
+            col_names.append(name)
+            col_arrays.append(fn())
+            col_fmts.append(fmt_str)
+        except Exception:
+            pass
+
+    try_add('initial_mass', lambda: d[('STAR', 'initial_mass')].to_value('Msun'))
+    try_add('mass',         lambda: d[('STAR', 'MASS')].to_value('Msun'))
+    try_add('f_bound0',     lambda: get_fbound0(d))          # needs INITIAL_BOUND_FRACTION
+    try_add('t_form',       lambda: d[("STAR", "creation_time")].to_value("Myr"))
+    try_add('t_ave',        lambda: ave_time(d))              # needs AVERAGE_AGE
+    try_add('t_dur',        lambda: duration(d))              # needs TERMINATION_TIME
+    try_add('t_spread',     lambda: age_spread(d))            # needs AGE_SPREAD
+    try_add('eps_int',      lambda: get_eps_int(d))           # needs INITIAL_BOUND_FRACTION
+    try_add('x',            lambda: (d[('STAR', 'POSITION_X')] - center[0]).to_value('kpc'))
+    try_add('y',            lambda: (d[('STAR', 'POSITION_Y')] - center[1]).to_value('kpc'))
+    try_add('z',            lambda: (d[('STAR', 'POSITION_Z')] - center[2]).to_value('kpc'))
+    try_add('pid',          lambda: d[('STAR', 'PID')].astype(np.int64), '%d')
 
     if fmt == 'hdf5':
         output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.hdf5')
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         with h5py.File(output_path, 'w') as f:
-            f.create_dataset('initial_mass', data=initial_mass)
-            f.create_dataset('mass', data=mass)
-            f.create_dataset('f_bound0', data=f_bound0)
-            f.create_dataset('t_form', data=t_form)
-            f.create_dataset('t_ave', data=t_ave)
-            f.create_dataset('t_dur', data=t_dur)
-            f.create_dataset('t_spread', data=t_spread)
-            f.create_dataset('eps_int', data=eps_int)
-            f.create_dataset('x', data=x)
-            f.create_dataset('y', data=y)
-            f.create_dataset('z', data=z)
-            f.create_dataset('pid', data=pid)
+            for name, arr in zip(col_names, col_arrays):
+                f.create_dataset(name, data=arr)
     else:
-        out = np.column_stack([initial_mass, mass, f_bound0, t_form, t_ave, t_dur, t_spread, eps_int, x, y, z, pid])
+        out = np.column_stack(col_arrays)
         output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.txt')
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        np.savetxt(output_path, out, fmt=['%.6e']*11 + ['%d'])
+        np.savetxt(output_path, out, fmt=col_fmts)
 
 
 def baryon_fraction_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
