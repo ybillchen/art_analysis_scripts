@@ -278,8 +278,8 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
 
     def try_add(name, fn, fmt_str='%.6e'):
         try:
-            col_names.append(name)
             col_arrays.append(fn())
+            col_names.append(name)
             col_fmts.append(fmt_str)
         except Exception:
             pass
