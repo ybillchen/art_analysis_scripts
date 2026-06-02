@@ -115,6 +115,29 @@ def find_main_mpb(tree):
 
     return mpb_main[mpb_main['Snap_idx'].argsort()] # sort by snap number
 
+def find_major_merger_branch(tree):
+    '''
+    Find the secondary progenitor branch with the highest peak virial mass —
+    i.e., the most important merger that contributed to the main halo.
+    Returns None if no secondary branches exist.
+    '''
+    mpb = find_main_mpb(tree)
+    mpb_leafid = mpb['Last_mainleaf_depthfirst_ID'][0]
+
+    non_mpb = tree[tree['Last_mainleaf_depthfirst_ID'] != mpb_leafid]
+    if len(non_mpb) == 0:
+        return None
+
+    branch_ids = np.unique(non_mpb['Last_mainleaf_depthfirst_ID'])
+    peak_mvir = np.array([
+        non_mpb[non_mpb['Last_mainleaf_depthfirst_ID'] == bid]['Mvir'].max()
+        for bid in branch_ids
+    ])
+
+    best_id = branch_ids[np.argmax(peak_mvir)]
+    branch = non_mpb[non_mpb['Last_mainleaf_depthfirst_ID'] == best_id]
+    return branch[branch['Snap_idx'].argsort()]
+
 def save_mpb(mpb):
     np.savetxt(mpb, fmt=fmt_tree)
 
@@ -418,8 +441,12 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     art2skirt(ds, d, center, output_path)
 
-def process_folder(basepath, scalefactor=None):
-    """Process a single simulation folder."""
+def process_folder(basepath, scalefactor=None, branch='mpb'):
+    """Process a single simulation folder.
+
+    branch: 'mpb' for the main progenitor branch, 'merger' for the most
+            important secondary progenitor (highest historical peak mass).
+    """
     try:
         treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
         snap_list = np.loadtxt(
@@ -428,7 +455,13 @@ def process_folder(basepath, scalefactor=None):
         )
 
         tree = np.loadtxt(treepath, skiprows=49, dtype=dtype_tree)
-        mpb_main = find_main_mpb(tree)
+        if branch == 'merger':
+            mpb_main = find_major_merger_branch(tree)
+            if mpb_main is None:
+                print(f"No secondary branch found: {basepath}")
+                return
+        else:
+            mpb_main = find_main_mpb(tree)
 
         # merger tree snap number can differ
         lastsnap_original = snap_list['snap_original'][-1]
@@ -467,20 +500,20 @@ def process_folder(basepath, scalefactor=None):
     except Exception as e:
         print(f"Error processing {basepath}: {e}")
 
-def scan_subfolders(root_path, root_folder, scalefactor=None):
+def scan_subfolders(root_path, root_folder, scalefactor=None, branch='mpb'):
     """Scan and process all subfolders in a root folder."""
     folder_path = os.path.join(root_path, root_folder)
     for entry in sorted(os.listdir(folder_path)):
         subfolder_path = os.path.join(folder_path, entry)
         basepath = os.path.join(subfolder_path, "run")
         if os.path.isdir(basepath):
-            process_folder(basepath, scalefactor=scalefactor)
+            process_folder(basepath, scalefactor=scalefactor, branch=branch)
 
-def process_all_folders(root_path, root_folders, scalefactor=None):
+def process_all_folders(root_path, root_folders, scalefactor=None, branch='mpb'):
     """Process all folders."""
     for root_folder in root_folders:
         print(f"Processing folder: {root_folder}")
-        scan_subfolders(root_path, root_folder, scalefactor=scalefactor)
+        scan_subfolders(root_path, root_folder, scalefactor=scalefactor, branch=branch)
 
 if __name__ == '__main__':
 
@@ -496,11 +529,15 @@ if __name__ == '__main__':
         '--scalefactor', '-a', type=float, default=None,
         help='Scale factor to analyse (default: last snapshot)'
     )
+    parser.add_argument(
+        '--branch', '-b', default='mpb', choices=['mpb', 'merger'],
+        help='Branch to analyse: mpb (main progenitor) or merger (highest-peak-mass secondary)'
+    )
     args = parser.parse_args()
 
     if args.basepath is not None:
         basepath = os.path.dirname(args.basepath) if args.basepath.endswith('.art') else args.basepath
         basepath = os.path.join(basepath, "run") if not basepath.endswith("run") else basepath
-        process_folder(basepath, scalefactor=args.scalefactor)
+        process_folder(basepath, scalefactor=args.scalefactor, branch=args.branch)
     else:
-        process_all_folders(root_path, root_folders, scalefactor=args.scalefactor)
+        process_all_folders(root_path, root_folders, scalefactor=args.scalefactor, branch=args.branch)
