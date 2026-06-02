@@ -278,7 +278,7 @@ def make_prj_along_mpb(
             if len(a_list) == 0:
                 break
 
-def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
+def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None, suffix=''):
     if scalefactor is None:
         idx = -1
     else:
@@ -318,14 +318,14 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None)
     try_add('z',            lambda: (d[('STAR', 'POSITION_Z')] - center[2]).to_value('kpc'))
     try_add('pid',          lambda: d[('STAR', 'PID')].astype(np.int64))
 
-    output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.hdf5')
+    output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with h5py.File(output_path, 'w') as f:
         for name, arr in zip(col_names, col_arrays):
             f.create_dataset(name, data=arr)
 
 
-def halo_evolution(mpb, filename_list_for_tree, basepath):
+def halo_evolution(mpb, filename_list_for_tree, basepath, suffix=''):
     # Load one snapshot just to get cosmological parameters
     snap = mpb['Snap_idx'][-1]
     filename = os.path.join(basepath, filename_list_for_tree[snap])
@@ -346,7 +346,7 @@ def halo_evolution(mpb, filename_list_for_tree, basepath):
     y     = mpb['y']
     z     = mpb['z']
 
-    output_path = os.path.join(basepath, 'analysis/halo_evolution.hdf5')
+    output_path = os.path.join(basepath, 'analysis/halo_evolution%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with h5py.File(output_path, 'w') as f:
         f.create_dataset('scale', data=scale)
@@ -384,7 +384,7 @@ def baryon_fraction_at_scalefactor(mpb, filename_list_for_tree, basepath, scalef
     print(f"{name}  Mstar = {mstar:.3e} Msun  Mhalo = {mhalo:.3e} Msun  fbar = {fbar:.4f}")
 
 
-def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
+def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None, suffix=''):
     if scalefactor is None:
         idx = -1
     else:
@@ -412,7 +412,7 @@ def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
     y = (d[('gas', 'y')] - center[1]).to_value('kpc')
     z = (d[('gas', 'z')] - center[2]).to_value('kpc')
 
-    output_path = filename.replace('out/snap_', 'analysis/gas_at_').replace('.art', '.hdf5')
+    output_path = filename.replace('out/snap_', 'analysis/gas_at_').replace('.art', '%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with h5py.File(output_path, 'w') as f:
         f.create_dataset('density',     data=density)
@@ -470,9 +470,10 @@ def process_folder(basepath, scalefactor=None, branch='mpb'):
 
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
-        halo_evolution(mpb_main, filename_list_for_tree, basepath)
-        # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
-        # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
+        suffix = '_merger' if branch == 'merger' else ''
+        halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix)
+        # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
+        # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         # baryon_fraction_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(
