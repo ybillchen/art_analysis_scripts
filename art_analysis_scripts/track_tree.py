@@ -255,7 +255,7 @@ def make_prj_along_mpb(
             if len(a_list) == 0:
                 break
 
-def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None, fmt='txt'):
+def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
     if scalefactor is None:
         idx = -1
     else:
@@ -271,16 +271,14 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
 
     d = ds.sphere(center, rvir)
 
-    # Build output columns dynamically; skip any that require missing fields.
+    # Build output datasets dynamically; skip any that require missing fields.
     col_names = []
     col_arrays = []
-    col_fmts = []
 
-    def try_add(name, fn, fmt_str='%.6e'):
+    def try_add(name, fn):
         try:
-            col_arrays.append(fn())
             col_names.append(name)
-            col_fmts.append(fmt_str)
+            col_arrays.append(fn())
         except Exception:
             pass
 
@@ -295,19 +293,47 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
     try_add('x',            lambda: (d[('STAR', 'POSITION_X')] - center[0]).to_value('kpc'))
     try_add('y',            lambda: (d[('STAR', 'POSITION_Y')] - center[1]).to_value('kpc'))
     try_add('z',            lambda: (d[('STAR', 'POSITION_Z')] - center[2]).to_value('kpc'))
-    try_add('pid',          lambda: d[('STAR', 'PID')].astype(np.int64), '%d')
+    try_add('pid',          lambda: d[('STAR', 'PID')].astype(np.int64))
 
-    if fmt == 'hdf5':
-        output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.hdf5')
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        with h5py.File(output_path, 'w') as f:
-            for name, arr in zip(col_names, col_arrays):
-                f.create_dataset(name, data=arr)
-    else:
-        out = np.column_stack(col_arrays)
-        output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.txt')
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        np.savetxt(output_path, out, fmt=col_fmts)
+    output_path = filename.replace('out/snap_', 'analysis/star_at_').replace('.art', '.hdf5')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with h5py.File(output_path, 'w') as f:
+        for name, arr in zip(col_names, col_arrays):
+            f.create_dataset(name, data=arr)
+
+
+def halo_evolution(mpb, filename_list_for_tree, basepath):
+    # Load one snapshot just to get cosmological parameters
+    snap = mpb['Snap_idx'][-1]
+    filename = os.path.join(basepath, filename_list_for_tree[snap])
+    ds = yt.load(filename)
+    h = ds.hubble_constant
+
+    cosmo = yt.utilities.cosmology.Cosmology(
+        hubble_constant=h,
+        omega_matter=ds.omega_matter,
+        omega_lambda=ds.omega_lambda,
+    )
+
+    scale = mpb['scale']
+    time  = np.array([cosmo.t_from_z(1.0/a - 1).to_value('Gyr') for a in scale])
+    mvir  = mpb['Mvir'] / h                      # Msun/h  -> Msun
+    rvir  = mpb['Rvir'] * scale / h              # kpccm/h -> kpc (physical)
+    x     = mpb['x']                             # Mpccm/h
+    y     = mpb['y']
+    z     = mpb['z']
+
+    output_path = os.path.join(basepath, 'analysis/halo_evolution.hdf5')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with h5py.File(output_path, 'w') as f:
+        f.create_dataset('scale', data=scale)
+        f.create_dataset('time',  data=time)   # Gyr
+        f.create_dataset('mvir',  data=mvir)   # Msun
+        f.create_dataset('rvir',  data=rvir)   # kpc (physical)
+        f.create_dataset('x',     data=x)      # Mpccm/h
+        f.create_dataset('y',     data=y)
+        f.create_dataset('z',     data=z)
+    print("Saved: %s" % output_path)
 
 
 def baryon_fraction_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
@@ -335,7 +361,7 @@ def baryon_fraction_at_scalefactor(mpb, filename_list_for_tree, basepath, scalef
     print(f"{name}  Mstar = {mstar:.3e} Msun  Mhalo = {mhalo:.3e} Msun  fbar = {fbar:.4f}")
 
 
-def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None, fmt='txt'):
+def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None):
     if scalefactor is None:
         idx = -1
     else:
@@ -363,24 +389,18 @@ def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None, 
     y = (d[('gas', 'y')] - center[1]).to_value('kpc')
     z = (d[('gas', 'z')] - center[2]).to_value('kpc')
 
-    if fmt == 'hdf5':
-        output_path = filename.replace('out/snap_', 'analysis/gas_at_').replace('.art', '.hdf5')
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        with h5py.File(output_path, 'w') as f:
-            f.create_dataset('density', data=density)
-            f.create_dataset('temperature', data=temperature)
-            f.create_dataset('metallicity', data=metallicity)
-            f.create_dataset('size', data=size)
-            f.create_dataset('eturb', data=eturb)
-            f.create_dataset('ether', data=ether)
-            f.create_dataset('x', data=x)
-            f.create_dataset('y', data=y)
-            f.create_dataset('z', data=z)
-    else:
-        out = np.column_stack([density, temperature, metallicity, size, eturb, ether, x, y, z])
-        output_path = filename.replace('out/snap_', 'analysis/gas_at_').replace('.art', '.txt')
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        np.savetxt(output_path, out)
+    output_path = filename.replace('out/snap_', 'analysis/gas_at_').replace('.art', '.hdf5')
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    with h5py.File(output_path, 'w') as f:
+        f.create_dataset('density',     data=density)
+        f.create_dataset('temperature', data=temperature)
+        f.create_dataset('metallicity', data=metallicity)
+        f.create_dataset('size',        data=size)
+        f.create_dataset('eturb',       data=eturb)
+        f.create_dataset('ether',       data=ether)
+        f.create_dataset('x',           data=x)
+        f.create_dataset('y',           data=y)
+        f.create_dataset('z',           data=z)
 
 def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     lastsnapshot = copy(mpb[-1])
@@ -398,7 +418,7 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     art2skirt(ds, d, center, output_path)
 
-def process_folder(basepath, scalefactor=None, fmt='txt'):
+def process_folder(basepath, scalefactor=None):
     """Process a single simulation folder."""
     try:
         treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
@@ -417,8 +437,9 @@ def process_folder(basepath, scalefactor=None, fmt='txt'):
 
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
-        star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, fmt=fmt)
-        gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, fmt=fmt)
+        halo_evolution(mpb_main, filename_list_for_tree, basepath)
+        # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
+        # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # baryon_fraction_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(
@@ -446,20 +467,20 @@ def process_folder(basepath, scalefactor=None, fmt='txt'):
     except Exception as e:
         print(f"Error processing {basepath}: {e}")
 
-def scan_subfolders(root_path, root_folder, scalefactor=None, fmt='txt'):
+def scan_subfolders(root_path, root_folder, scalefactor=None):
     """Scan and process all subfolders in a root folder."""
     folder_path = os.path.join(root_path, root_folder)
     for entry in sorted(os.listdir(folder_path)):
         subfolder_path = os.path.join(folder_path, entry)
         basepath = os.path.join(subfolder_path, "run")
         if os.path.isdir(basepath):
-            process_folder(basepath, scalefactor=scalefactor, fmt=fmt)
+            process_folder(basepath, scalefactor=scalefactor)
 
-def process_all_folders(root_path, root_folders, scalefactor=None, fmt='txt'):
+def process_all_folders(root_path, root_folders, scalefactor=None):
     """Process all folders."""
     for root_folder in root_folders:
         print(f"Processing folder: {root_folder}")
-        scan_subfolders(root_path, root_folder, scalefactor=scalefactor, fmt=fmt)
+        scan_subfolders(root_path, root_folder, scalefactor=scalefactor)
 
 if __name__ == '__main__':
 
@@ -475,15 +496,11 @@ if __name__ == '__main__':
         '--scalefactor', '-a', type=float, default=None,
         help='Scale factor to analyse (default: last snapshot)'
     )
-    parser.add_argument(
-        '--format', '-f', choices=['txt', 'hdf5'], default='hdf5',
-        help='Output format for star data (default: txt)'
-    )
     args = parser.parse_args()
 
     if args.basepath is not None:
         basepath = os.path.dirname(args.basepath) if args.basepath.endswith('.art') else args.basepath
         basepath = os.path.join(basepath, "run") if not basepath.endswith("run") else basepath
-        process_folder(basepath, scalefactor=args.scalefactor, fmt=args.format)
+        process_folder(basepath, scalefactor=args.scalefactor)
     else:
-        process_all_folders(root_path, root_folders, scalefactor=args.scalefactor, fmt=args.format)
+        process_all_folders(root_path, root_folders, scalefactor=args.scalefactor)
