@@ -134,13 +134,7 @@ def find_major_merger_branch(tree):
     if len(same_tree) == 0:
         return None
 
-    branch_ids = np.unique(same_tree['Last_mainleaf_depthfirst_ID'])
-    peak_mvir = np.array([
-        same_tree[same_tree['Last_mainleaf_depthfirst_ID'] == bid]['Mvir'].max()
-        for bid in branch_ids
-    ])
-
-    best_id = branch_ids[np.argmax(peak_mvir)]
+    best_id = same_tree['Last_mainleaf_depthfirst_ID'][np.argmax(same_tree['Mvir'])]
     branch = tree[tree['Last_mainleaf_depthfirst_ID'] == best_id]
     return branch[branch['Snap_idx'].argsort()]
 
