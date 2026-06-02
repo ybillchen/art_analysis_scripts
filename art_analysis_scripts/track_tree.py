@@ -117,26 +117,26 @@ def find_main_mpb(tree):
 
 def find_major_merger_branch(tree):
     '''
-    Find the secondary progenitor branch that merges directly into the MPB and
-    has the highest historical peak virial mass.
+    Find the secondary progenitor branch with the highest historical peak virial
+    mass among all branches belonging to the same merger tree as the MPB.
 
-    Only branches whose tip descends into an MPB halo (mmp?==0, desc_id in MPB)
-    are considered; sub-sub-mergers are excluded.
-    Returns None if no direct secondary branches exist.
+    Branches are scoped to the same tree via Tree_root_ID, then the MPB branch
+    itself is excluded. Returns None if no secondary branches exist.
     '''
     mpb = find_main_mpb(tree)
+    tree_root_id = mpb['Tree_root_ID'][0]
+    mpb_leafid   = mpb['Last_mainleaf_depthfirst_ID'][0]
 
-    # direct secondary progenitors of MPB halos
-    mask = np.isin(tree['desc_id'], mpb['id']) & (tree['mmp?'] == 0)
-    secondary_heads = tree[mask]
+    # all halos in the same tree, excluding the MPB branch
+    same_tree = tree[(tree['Tree_root_ID'] == tree_root_id) &
+                     (tree['Last_mainleaf_depthfirst_ID'] != mpb_leafid)]
 
-    if len(secondary_heads) == 0:
+    if len(same_tree) == 0:
         return None
 
-    # each head's Last_mainleaf_depthfirst_ID identifies its own full branch
-    branch_ids = np.unique(secondary_heads['Last_mainleaf_depthfirst_ID'])
+    branch_ids = np.unique(same_tree['Last_mainleaf_depthfirst_ID'])
     peak_mvir = np.array([
-        tree[tree['Last_mainleaf_depthfirst_ID'] == bid]['Mvir'].max()
+        same_tree[same_tree['Last_mainleaf_depthfirst_ID'] == bid]['Mvir'].max()
         for bid in branch_ids
     ])
 
