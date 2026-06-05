@@ -148,7 +148,7 @@ def plot_panel(ax, basepath, label):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', default='density',
-                        choices=['density', 'temperature', 'mach'])
+                        choices=['density', 'temperature', 'mach', 'metallicity'])
     parser.add_argument('--sim-group', default='km', choices=['km', 'p12'])
     parser.add_argument('--no-stars', action='store_true',
                         help='hide star particles (only applicable in density mode)')
@@ -175,7 +175,7 @@ if __name__ == '__main__':
         VMAX       = 1e7
         CBAR_LABEL = r"$\boldsymbol{T\ ({\rm K})}$"
         TEXT_COLOR = 'k'
-    else:  # mach
+    elif MODE == "mach":
         CMAP       = 'RdYlBu'
         FIELD      = "M"
         FIELD_UNIT = "1"
@@ -183,6 +183,15 @@ if __name__ == '__main__':
         VMIN       = 1e-2
         VMAX       = 1e2
         CBAR_LABEL = r"$\boldsymbol{\mathcal{M}}$"
+        TEXT_COLOR = 'k'
+    else:  # metallicity
+        CMAP       = 'coolwarm'
+        FIELD      = "metallicity"
+        FIELD_UNIT = "1"
+        WEIGHT     = "mass"
+        VMIN       = 1e-5
+        VMAX       = 1e-2
+        CBAR_LABEL = r"$\boldsymbol{Z/Z_\odot}$"
         TEXT_COLOR = 'k'
 
     yt.funcs.mylog.setLevel(50)
