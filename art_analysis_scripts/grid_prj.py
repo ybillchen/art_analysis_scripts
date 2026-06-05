@@ -176,7 +176,7 @@ if __name__ == '__main__':
         CBAR_LABEL = r"$\boldsymbol{T\ ({\rm K})}$"
         TEXT_COLOR = 'k'
     elif MODE == "mach":
-        CMAP       = 'RdYlBu'
+        CMAP       = 'coolwarm_r'
         FIELD      = "M"
         FIELD_UNIT = "1"
         WEIGHT     = "mass"
