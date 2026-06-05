@@ -189,8 +189,8 @@ if __name__ == '__main__':
         FIELD      = "metallicity"
         FIELD_UNIT = "1"
         WEIGHT     = "mass"
-        VMIN       = 1e-5
-        VMAX       = 1e-2
+        VMIN       = 1e-3
+        VMAX       = 1e0
         CBAR_LABEL = r"$\boldsymbol{Z/Z_\odot}$"
         TEXT_COLOR = 'k'
 
