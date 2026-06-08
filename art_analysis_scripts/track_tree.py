@@ -253,7 +253,7 @@ def make_prj_along_mpb(
     mpb, filename_list_for_tree, basepath, scalefactor=None, cmap='magma',
     field="density", field_unit="Msun/pc**3", weight="volume",
     vmin=1e-4, vmax=1e0, scale="linear",
-    output_dir=None, all_snaps=False,
+    output_dir=None, all_snaps=False, skip_existing=False,
 ):
     a_mpb = mpb['scale']
     da = 0.0025
@@ -270,6 +270,14 @@ def make_prj_along_mpb(
             snapshot['y'] = y_smooth[idx]
             snapshot['z'] = z_smooth[idx]
             filename = os.path.join(basepath, filename_list_for_tree[int(snapshot['Snap_idx'])])
+            if output_dir is None:
+                expected_path = filename.replace('out/snap_', f'analysis/prj_mpb/prj_{field}_').replace('.art', '.png')
+            else:
+                snap_tag = os.path.basename(filename).replace('snap_', '').replace('.art', '')
+                expected_path = os.path.join(output_dir, f'prj_{field}_{snap_tag}.png')
+            if skip_existing and os.path.exists(expected_path):
+                frame_paths.append(expected_path)
+                continue
             path = make_prj_single(
                 snapshot, filename, basepath, cmap=cmap,
                 field=field, field_unit=field_unit, weight=weight,
@@ -316,7 +324,7 @@ def make_movie_along_mpb(
         mpb, filename_list_for_tree, basepath, cmap=cmap,
         field=field, field_unit=field_unit, weight=weight,
         vmin=vmin, vmax=vmax, scale=scale,
-        output_dir=temp_dir, all_snaps=True,
+        output_dir=temp_dir, all_snaps=True, skip_existing=True,
     )
 
     # cosmic time for each MPB snapshot
