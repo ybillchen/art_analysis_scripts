@@ -8,6 +8,7 @@ All rights reserved.
 import os
 import sys
 import argparse
+import subprocess
 import h5py
 sys.path.append('.')
 from copy import copy
@@ -143,8 +144,8 @@ def save_mpb(mpb):
 
 def make_prj_single(
     snapshot, filename, basepath, cmap='magma',
-    field="density", field_unit="Msun/pc**3", weight="volume", 
-    vmin=1e-4, vmax=1e0, scale="linear"
+    field="density", field_unit="Msun/pc**3", weight="volume",
+    vmin=1e-4, vmax=1e0, scale="linear", output_dir=None
 ):
 
     ds = yt.load(filename)
@@ -238,45 +239,118 @@ def make_prj_single(
     #     r"$R_{\rm GMC} = %d$ pc"%10, ha="left", va="top", color="w")
 
     # plt.tight_layout()
-    output_path = filename.replace('out/snap_', f'analysis/prj_mpb/prj_{field}_').replace('.art', '.png')
+    if output_dir is None:
+        output_path = filename.replace('out/snap_', f'analysis/prj_mpb/prj_{field}_').replace('.art', '.png')
+    else:
+        snap_tag = os.path.basename(filename).replace('snap_', '').replace('.art', '')
+        output_path = os.path.join(output_dir, f'prj_{field}_{snap_tag}.png')
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     plt.savefig(output_path, pad_inches=0.0, dpi=300)
     plt.close()
+    return output_path
 
 def make_prj_along_mpb(
     mpb, filename_list_for_tree, basepath, scalefactor=None, cmap='magma',
-    field="density", field_unit="Msun/pc**3", weight="volume", 
-    vmin=1e-4, vmax=1e0, scale="linear"
+    field="density", field_unit="Msun/pc**3", weight="volume",
+    vmin=1e-4, vmax=1e0, scale="linear",
+    output_dir=None, all_snaps=False,
 ):
     a_mpb = mpb['scale']
     da = 0.0025
     x_smooth = smooth_time_series(a_mpb, mpb['x'], da)
     y_smooth = smooth_time_series(a_mpb, mpb['y'], da)
     z_smooth = smooth_time_series(a_mpb, mpb['z'], da)
-    if scalefactor is None:
-        a_list = 1 / (1+np.array([12, 10, 8, 6, 5]))
-    else:
-        a_list = np.array([scalefactor])
-    for idx in range(len(mpb)):
-        snapshot = copy(mpb[idx])
-        currentsnap = snapshot['Snap_idx']
-        currenta = snapshot['scale']
-        if currenta >= a_list[0]:
-            a_list = np.delete(a_list, 0)
-            filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
+
+    frame_paths = []
+
+    if all_snaps:
+        for idx in range(len(mpb)):
+            snapshot = copy(mpb[idx])
             snapshot['x'] = x_smooth[idx]
             snapshot['y'] = y_smooth[idx]
             snapshot['z'] = z_smooth[idx]
-            print(idx, currentsnap, currenta, filename)
-            # if idx % 100 == 0:
-            # if idx == len(mpb) - 1:
-            make_prj_single(
+            filename = os.path.join(basepath, filename_list_for_tree[int(snapshot['Snap_idx'])])
+            path = make_prj_single(
                 snapshot, filename, basepath, cmap=cmap,
-                field=field, field_unit=field_unit, weight=weight, 
-                vmin=vmin, vmax=vmax, scale=scale,
+                field=field, field_unit=field_unit, weight=weight,
+                vmin=vmin, vmax=vmax, scale=scale, output_dir=output_dir,
             )
-            if len(a_list) == 0:
-                break
+            frame_paths.append(path)
+    else:
+        if scalefactor is None:
+            a_list = 1 / (1+np.array([12, 10, 8, 6, 5]))
+        else:
+            a_list = np.array([scalefactor])
+        for idx in range(len(mpb)):
+            snapshot = copy(mpb[idx])
+            currentsnap = snapshot['Snap_idx']
+            currenta = snapshot['scale']
+            if currenta >= a_list[0]:
+                a_list = np.delete(a_list, 0)
+                filename = os.path.join(basepath, filename_list_for_tree[currentsnap])
+                snapshot['x'] = x_smooth[idx]
+                snapshot['y'] = y_smooth[idx]
+                snapshot['z'] = z_smooth[idx]
+                print(idx, currentsnap, currenta, filename)
+                path = make_prj_single(
+                    snapshot, filename, basepath, cmap=cmap,
+                    field=field, field_unit=field_unit, weight=weight,
+                    vmin=vmin, vmax=vmax, scale=scale, output_dir=output_dir,
+                )
+                frame_paths.append(path)
+                if len(a_list) == 0:
+                    break
+
+    return frame_paths
+
+def make_movie_along_mpb(
+    mpb, filename_list_for_tree, basepath, cmap='magma',
+    field="density", field_unit="Msun/pc**3", weight="volume",
+    vmin=1e-4, vmax=1e0, scale="linear",
+    gyr_per_second=0.1,
+):
+    temp_dir = os.path.join(basepath, 'analysis/temp')
+    os.makedirs(temp_dir, exist_ok=True)
+
+    frame_paths = make_prj_along_mpb(
+        mpb, filename_list_for_tree, basepath, cmap=cmap,
+        field=field, field_unit=field_unit, weight=weight,
+        vmin=vmin, vmax=vmax, scale=scale,
+        output_dir=temp_dir, all_snaps=True,
+    )
+
+    # cosmic time for each MPB snapshot
+    last_filename = os.path.join(basepath, filename_list_for_tree[int(mpb['Snap_idx'][-1])])
+    ds_cosmo = yt.load(last_filename)
+    h = ds_cosmo.hubble_constant
+    cosmo = yt.utilities.cosmology.Cosmology(
+        hubble_constant=h,
+        omega_matter=ds_cosmo.omega_matter,
+        omega_lambda=ds_cosmo.omega_lambda,
+    )
+    times = np.array([cosmo.t_from_z(1.0/a - 1).to_value('Gyr') for a in mpb['scale']])
+
+    # per-frame durations proportional to cosmic time gaps
+    dt = np.diff(times)
+    dt = np.append(dt, dt[-1])
+    durations = np.maximum(dt / gyr_per_second, 1.0 / 24)
+
+    # write ffmpeg concat file
+    concat_path = os.path.join(temp_dir, 'concat.txt')
+    with open(concat_path, 'w') as f:
+        for path, dur in zip(frame_paths, durations):
+            f.write("file '%s'\n" % path)
+            f.write("duration %.6f\n" % dur)
+        f.write("file '%s'\n" % frame_paths[-1])  # ffmpeg requires last frame repeated
+
+    output_movie = os.path.join(basepath, 'analysis/movie_%s.mp4' % field)
+    subprocess.run([
+        'ffmpeg', '-y', '-f', 'concat', '-safe', '0', '-i', concat_path,
+        '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2',
+        '-c:v', 'libx264', '-pix_fmt', 'yuv420p',
+        output_movie,
+    ], check=True)
+    print("Saved movie: %s" % output_movie)
 
 def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None, suffix=''):
     if scalefactor is None:
@@ -472,8 +546,8 @@ def process_folder(basepath, scalefactor=None, branch='mpb'):
 
         suffix = '_merger' if branch == 'merger' else ''
         # halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix)
-        star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
-        gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
+        # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
+        # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         # baryon_fraction_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
         # skirt_interface_at_last_snapshot(mpb_main, filename_list_for_tree, basepath)
         # make_prj_along_mpb(
@@ -496,6 +570,10 @@ def process_folder(basepath, scalefactor=None, branch='mpb'):
         #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
         #     field="avir", field_unit="1", weight="mass", vmin=1e1, vmax=1e7, scale='log',
         # )
+        make_movie_along_mpb(
+            mpb_main, filename_list_for_tree, basepath, cmap='magma',
+            field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+        )
 
         print(f"Processed: {basepath}")
     except Exception as e:
