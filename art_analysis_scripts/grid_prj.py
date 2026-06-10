@@ -172,7 +172,7 @@ if __name__ == '__main__':
         WEIGHT     = "column"
         VMIN       = 1e0
         VMAX       = 1e4
-        CBAR_LABEL = r"$\boldsymbol{\Sigma_{\rm gas}\ (M_\odot\,{\rm pc}^{-2})}$"
+        CBAR_LABEL = r"Gas column density ($M_\odot\,{\rm pc}^{-2}$)"
         TEXT_COLOR = 'w'
     elif MODE == "temperature":
         CMAP       = 'coolwarm'
@@ -181,7 +181,7 @@ if __name__ == '__main__':
         WEIGHT     = "mass"
         VMIN       = 1e3
         VMAX       = 1e7
-        CBAR_LABEL = r"$\boldsymbol{T\ ({\rm K})}$"
+        CBAR_LABEL = "Temperature (K)"
         TEXT_COLOR = 'k'
     elif MODE == "mach":
         CMAP       = 'coolwarm_r'
@@ -190,7 +190,7 @@ if __name__ == '__main__':
         WEIGHT     = "mass"
         VMIN       = 1e-2
         VMAX       = 1e2
-        CBAR_LABEL = r"$\boldsymbol{\mathcal{M}}$"
+        CBAR_LABEL = "Mach number"
         TEXT_COLOR = 'k'
     else:  # metallicity
         CMAP       = 'coolwarm'
@@ -199,7 +199,7 @@ if __name__ == '__main__':
         WEIGHT     = "mass"
         VMIN       = 1e-3
         VMAX       = 1e-1
-        CBAR_LABEL = r"$\boldsymbol{Z/Z_\odot}$"
+        CBAR_LABEL = r"Metallicity ($Z/Z_\odot$)"
         TEXT_COLOR = 'k'
 
     yt.funcs.mylog.setLevel(50)
