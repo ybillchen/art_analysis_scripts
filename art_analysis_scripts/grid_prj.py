@@ -8,6 +8,7 @@ import argparse
 import os
 import sys
 sys.path.append('.')
+from multiprocessing import Pool
 
 import numpy as np
 import matplotlib
@@ -67,82 +68,83 @@ def get_snapshot_at_scalefactor(basepath, target_a):
     return snapshot, filename
 
 
-def plot_panel(ax, basepath, label):
-    snapshot, filename = get_snapshot_at_scalefactor(basepath, TARGET_A)
-    ds = yt.load(filename)
+def compute_panel(basepath):
+    """Load data and compute projection; returns dict of numpy arrays, or None on failure."""
+    try:
+        snapshot, filename = get_snapshot_at_scalefactor(basepath, TARGET_A)
+        ds = yt.load(filename)
 
-    x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
-    y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
-    z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
-    size = (10.0 * ds.units.kpc).to_value('code_length')
-    level = 10
-    factor = 0.6
-    unit = 'kpc'
-    unit_convert = (1.0 * ds.units.code_length).to_value(unit)
+        x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
+        y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
+        z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
+        size_cl = (10.0 * ds.units.kpc).to_value('code_length')
+        unit_convert = (1.0 * ds.units.code_length).to_value('kpc')
+
+        mesh, region = prj(
+            ds, [x0, y0, z0], size_cl, level=10,
+            prj_x="x", prj_y="y",
+            field=FIELD, unit=FIELD_UNIT, factor=0.6, weight=WEIGHT
+        )
+        mesh += 1e-10
+
+        cx, cy = x0 * unit_convert, y0 * unit_convert
+        size = size_cl * unit_convert
+        extent = [
+            region[0].to_value('kpc'), region[3].to_value('kpc'),
+            region[1].to_value('kpc'), region[4].to_value('kpc'),
+        ]
+
+        stars = None
+        if SHOW_STARS:
+            d = ds.box(region[:3], region[3:])
+            age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
+            mask = age < 750
+            rgba = np.ones((mask.sum(), 4))
+            rgba[:, 3] = np.exp(-age[mask] / 150.0)
+            stars = dict(
+                x=d["STAR", "POSITION_X"][mask].to_value('kpc'),
+                y=d["STAR", "POSITION_Y"][mask].to_value('kpc'),
+                rgba=rgba,
+                s=d["STAR", "MASS"][mask].to_value("Msun") / 2e6,
+            )
+
+        print("Done: %s" % basepath)
+        return dict(mesh=mesh, extent=extent, redshift=1/ds.scale_factor - 1,
+                    cx=cx, cy=cy, size=size, stars=stars)
+    except Exception as e:
+        print("Skipped %s: %s" % (basepath, e))
+        return None
+
+
+def render_panel(ax, data, label):
+    """Draw a pre-computed panel onto ax."""
+    cx, cy, size = data['cx'], data['cy'], data['size']
     ruler = 1.0
 
-    prj_x, prj_y = "x", "y"
-    idx_x, idx_y = 0, 1
-    centers = [x0, y0, z0]
-
-    mesh, region = prj(
-        ds, [x0, y0, z0], size, level=level,
-        prj_x=prj_x, prj_y=prj_y,
-        field=FIELD, unit=FIELD_UNIT, factor=factor, weight=WEIGHT
-    )
-    mesh += 1e-10
-
     ax.imshow(
-        mesh.T, origin="lower", norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP,
-        rasterized=True,
-        extent=[
-            region[idx_x].to_value(unit), region[idx_x + 3].to_value(unit),
-            region[idx_y].to_value(unit), region[idx_y + 3].to_value(unit)
-        ]
+        data['mesh'].T, origin="lower", norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP,
+        rasterized=True, extent=data['extent']
     )
 
-    if SHOW_STARS:
-        d = ds.box(region[:3], region[3:])
-        age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
-        mask = age < 750
-        rgba = np.ones((mask.sum(), 4))
-        rgba[:, 3] = np.exp(-age[mask] / 150.0)
-        ax.scatter(
-            d["STAR", "POSITION_%s" % prj_x.upper()][mask].to_value(unit),
-            d["STAR", "POSITION_%s" % prj_y.upper()][mask].to_value(unit),
-            fc=rgba, ec='none', s=d["STAR", "MASS"][mask].to_value("Msun") / 2e6,
-            rasterized=True
-        )
+    if data['stars'] is not None:
+        s = data['stars']
+        ax.scatter(s['x'], s['y'], fc=s['rgba'], ec='none', s=s['s'], rasterized=True)
 
-    # ruler
-    ruler_x = (centers[idx_x] + 0.4 * size) * unit_convert
-    ruler_y = (centers[idx_y] - 0.43 * size) * unit_convert
+    ruler_x = cx + 0.4 * size
+    ruler_y = cy - 0.43 * size
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c=TEXT_COLOR)
-    ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, unit),
+    ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, 'kpc'),
             ha="center", va="bottom", color=TEXT_COLOR, fontsize=12, fontweight='bold')
 
-    # redshift label (top-left)
-    ax.text(
-        (centers[idx_x] - 0.45 * size) * unit_convert,
-        (centers[idx_y] + 0.45 * size) * unit_convert,
-        r"$\boldsymbol{z = %.1f}$" % (1 / ds.scale_factor - 1),
-        ha="left", va="top", color=TEXT_COLOR, fontsize=12, fontweight='bold'
-    )
+    ax.text(cx - 0.45 * size, cy + 0.45 * size,
+            r"$\boldsymbol{z = %.1f}$" % data['redshift'],
+            ha="left", va="top", color=TEXT_COLOR, fontsize=12, fontweight='bold')
+    ax.text(cx + 0.45 * size, cy + 0.45 * size,
+            label, ha="right", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold')
 
-    # galaxy label (top-right)
-    ax.text(
-        (centers[idx_x] + 0.45 * size) * unit_convert,
-        (centers[idx_y] + 0.45 * size) * unit_convert,
-        label, ha="right", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold'
-    )
-
-    ax.set_xlim((centers[idx_x] - 0.5 * size) * unit_convert,
-                (centers[idx_x] + 0.5 * size) * unit_convert)
-    ax.set_ylim((centers[idx_y] - 0.5 * size) * unit_convert,
-                (centers[idx_y] + 0.5 * size) * unit_convert)
+    ax.set_xlim(cx - 0.5 * size, cx + 0.5 * size)
+    ax.set_ylim(cy - 0.5 * size, cy + 0.5 * size)
     ax.set_axis_off()
-
-    print("Done: %s" % basepath)
 
 
 if __name__ == '__main__':
@@ -152,6 +154,8 @@ if __name__ == '__main__':
     parser.add_argument('--sim-group', default='km', choices=['km', 'p12'])
     parser.add_argument('--no-stars', action='store_true',
                         help='hide star particles (only applicable in density mode)')
+    parser.add_argument('--parallel', type=int, default=1, metavar='N',
+                        help='number of parallel worker processes (default: 1)')
     args = parser.parse_args()
     MODE = args.mode
     sim_group = args.sim_group
@@ -243,13 +247,17 @@ if __name__ == '__main__':
         path_effects=[pe.withStroke(linewidth=3, foreground='white')]
     )
 
-    for i, (ax, basepath) in enumerate(zip(axs.flat, basepaths)):
-        label = chr(ord('a') + i)
-        try:
-            plot_panel(ax, basepath, label)
-        except Exception as e:
-            print("Skipped %s: %s" % (basepath, e))
+    if args.parallel > 1:
+        with Pool(args.parallel) as pool:
+            panel_data = pool.map(compute_panel, basepaths)
+    else:
+        panel_data = [compute_panel(bp) for bp in basepaths]
+
+    for i, (ax, data) in enumerate(zip(axs.flat, panel_data)):
+        if data is None:
             ax.set_visible(False)
+        else:
+            render_panel(ax, data, chr(ord('a') + i))
 
     plt.savefig(output_path, dpi=500)
     plt.close()
