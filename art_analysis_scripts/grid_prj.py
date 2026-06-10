@@ -10,6 +10,10 @@ import sys
 sys.path.append('.')
 from multiprocessing import Pool
 
+MPLCONFIGDIR = os.path.join(os.path.dirname(__file__), ".matplotlib")
+os.environ.setdefault("MPLCONFIGDIR", MPLCONFIGDIR)
+os.makedirs(os.environ["MPLCONFIGDIR"], exist_ok=True)
+
 import numpy as np
 import matplotlib
 matplotlib.use("agg")
