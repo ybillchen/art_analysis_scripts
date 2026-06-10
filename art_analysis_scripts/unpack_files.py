@@ -59,6 +59,8 @@ if __name__ == '__main__':
     parser.add_argument('--max-processes', type=int,
                         default=int(os.environ.get('SLURM_NTASKS_PER_NODE', os.cpu_count())),
                         help='Maximum number of parallel processes')
+    parser.add_argument('--yes', '-y', action='store_true',
+                        help='Extract without prompting for confirmation')
     args = parser.parse_args()
 
     base_dir = os.environ['SCRATCH']
@@ -76,7 +78,10 @@ if __name__ == '__main__':
     if not not_extracted:
         print('Nothing to do.')
     else:
-        answer = input(f'Extract {len(not_extracted)} tar file(s)? [y/N] ').strip().lower()
+        if args.yes:
+            answer = 'y'
+        else:
+            answer = input(f'Extract {len(not_extracted)} tar file(s)? [y/N] ').strip().lower()
         if answer == 'y':
             extract_args = [(i, path, len(not_extracted)) for i, path in enumerate(not_extracted)]
             with Pool(processes=args.max_processes) as pool:
