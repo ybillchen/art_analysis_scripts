@@ -135,8 +135,9 @@ def render_panel(ax, data, label):
     ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, 'kpc'),
             ha="center", va="bottom", color=TEXT_COLOR, fontsize=12, fontweight='bold')
 
+    z_str = f"{data['redshift']:.1f}".rstrip('0').rstrip('.')
     ax.text(cx - 0.45 * size, cy + 0.45 * size,
-            f"$z={data['redshift']}$",
+            f"$z={z_str}$",
             ha="left", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold')
     ax.text(cx + 0.45 * size, cy + 0.45 * size,
             label, ha="right", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold')
