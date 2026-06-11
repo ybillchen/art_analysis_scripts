@@ -127,7 +127,7 @@ def render_panel(ax, data, label):
 
     if data['stars'] is not None:
         s = data['stars']
-        ax.scatter(s['x'], s['y'], color='white', alpha=0.1, ec='none', s=s['s'], rasterized=True)
+        ax.scatter(s['x'], s['y'], color='white', alpha=0.5, ec='none', s=s['s'], rasterized=True)
 
     ruler_x = cx + 0.4 * size
     ruler_y = cy - 0.43 * size
