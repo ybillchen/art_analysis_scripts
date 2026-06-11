@@ -136,7 +136,7 @@ def render_panel(ax, data, label):
             ha="center", va="bottom", color=TEXT_COLOR, fontsize=12, fontweight='bold')
 
     ax.text(cx - 0.45 * size, cy + 0.45 * size,
-            f"$z={data['redshift']:.1f}$",
+            f"$z={data['redshift']}$",
             ha="left", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold')
     ax.text(cx + 0.45 * size, cy + 0.45 * size,
             label, ha="right", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold')
