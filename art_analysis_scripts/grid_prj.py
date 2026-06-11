@@ -101,15 +101,10 @@ def compute_panel(basepath):
         stars = None
         if SHOW_STARS:
             d = ds.box(region[:3], region[3:])
-            age = ds.current_time.to_value("Myr") - d[("STAR", "creation_time")].to_value("Myr")
-            mask = age < 750
-            rgba = np.ones((mask.sum(), 4))
-            rgba[:, 3] = np.exp(-age[mask] / 150.0)
             stars = dict(
-                x=d["STAR", "POSITION_X"][mask].to_value('kpc'),
-                y=d["STAR", "POSITION_Y"][mask].to_value('kpc'),
-                rgba=rgba,
-                s=d["STAR", "MASS"][mask].to_value("Msun") / 2e6,
+                x=d["STAR", "POSITION_X"].to_value('kpc'),
+                y=d["STAR", "POSITION_Y"].to_value('kpc'),
+                s=d["STAR", "MASS"].to_value("Msun") / 1e7,
             )
 
         print("Done: %s" % basepath)
@@ -132,7 +127,7 @@ def render_panel(ax, data, label):
 
     if data['stars'] is not None:
         s = data['stars']
-        ax.scatter(s['x'], s['y'], fc=s['rgba'], ec='none', s=s['s'], rasterized=True)
+        ax.scatter(s['x'], s['y'], color='white', alpha=0.1, ec='none', s=s['s'], rasterized=True)
 
     ruler_x = cx + 0.4 * size
     ruler_y = cy - 0.43 * size
@@ -141,8 +136,8 @@ def render_panel(ax, data, label):
             ha="center", va="bottom", color=TEXT_COLOR, fontsize=12, fontweight='bold')
 
     ax.text(cx - 0.45 * size, cy + 0.45 * size,
-            r"$\boldsymbol{z = %.1f}$" % data['redshift'],
-            ha="left", va="top", color=TEXT_COLOR, fontsize=12, fontweight='bold')
+            f"$z={data['redshift']:.1f}$",
+            ha="left", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold')
     ax.text(cx + 0.45 * size, cy + 0.45 * size,
             label, ha="right", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold')
 
