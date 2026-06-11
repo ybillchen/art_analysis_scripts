@@ -25,7 +25,7 @@ import yt
 
 from prj import prj
 
-BOX_SIZE   = 1.0    # kpc
+BOX_SIZE   = 2.0    # kpc  (-1 to +1)
 LEVEL      = 12
 VMIN, VMAX = 1e0, 1e4
 
@@ -76,11 +76,14 @@ if __name__ == '__main__':
     size = ds.arr(args.size, 'kpc').to_value('code_length')
 
     unit = 'kpc'
-    projections = [('x', 'y', 0, 1), ('x', 'z', 0, 2)]
+    # (prj_x=horiz, prj_y=vert, idx_x, idx_y)  — region indices: x=0, y=1, z=2
+    projections = [
+        ('y', 'x', 1, 0),   # x vs y: y horizontal, x vertical
+        ('z', 'x', 2, 0),   # x vs z: z horizontal, x vertical
+        ('z', 'y', 2, 1),   # y vs z: z horizontal, y vertical
+    ]
 
-    fig, axs = plt.subplots(1, 2, figsize=(6, 3))
-    axs[0].set_position([0.01, 0.02, 0.48, 0.96])
-    axs[1].set_position([0.51, 0.02, 0.48, 0.96])
+    fig, axs = plt.subplots(1, 3, figsize=(9, 3))
 
     for ax, (prj_x, prj_y, idx_x, idx_y) in zip(axs, projections):
         mesh, region = prj(
@@ -95,6 +98,7 @@ if __name__ == '__main__':
             extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
                     region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)],
         )
+        ax.set_aspect('equal')
         ax.set_xlabel('%s (kpc)' % prj_x)
         ax.set_ylabel('%s (kpc)' % prj_y)
 
