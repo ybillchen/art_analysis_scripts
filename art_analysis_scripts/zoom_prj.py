@@ -75,6 +75,13 @@ if __name__ == '__main__':
     z0 = ds.arr(args.z, 'Mpccm/h').to_value('code_length')
     size = ds.arr(args.size, 'kpc').to_value('code_length')
 
+    box = ds.box(
+        ds.arr([x0 - size/2, y0 - size/2, z0 - size/2], 'code_length'),
+        ds.arr([x0 + size/2, y0 + size/2, z0 + size/2], 'code_length'),
+    )
+    min_dx = box[("index", "dx")].min().to("pc")
+    print("Smallest cell size in box: %.4f pc" % float(min_dx))
+
     unit = 'kpc'
     # (prj_x=horiz, prj_y=vert, idx_x, idx_y)  — region indices: x=0, y=1, z=2
     projections = [
