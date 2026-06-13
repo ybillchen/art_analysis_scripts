@@ -24,6 +24,7 @@ print("Font: %s" % fm.findfont(fm.FontProperties(family=matplotlib.rcParams['fon
 from matplotlib.colors import LogNorm
 from matplotlib.cm import ScalarMappable
 import matplotlib.patheffects as pe
+import cmcrameri.cm as cmc
 import yt
 
 from prj import prj
@@ -171,7 +172,7 @@ if __name__ == '__main__':
         CBAR_LABEL = r"Gas column density ($M_\odot\,{\rm pc}^{-2}$)"
         TEXT_COLOR = 'w'
     elif MODE == "temperature":
-        CMAP       = 'coolwarm'
+        CMAP       = cmc.managua_r
         FIELD      = "temperature"
         FIELD_UNIT = "K"
         WEIGHT     = "mass"
@@ -180,7 +181,7 @@ if __name__ == '__main__':
         CBAR_LABEL = "Temperature (K)"
         TEXT_COLOR = 'k'
     elif MODE == "mach":
-        CMAP       = 'coolwarm_r'
+        CMAP       = cmc.managua
         FIELD      = "M"
         FIELD_UNIT = "1"
         WEIGHT     = "mass"
@@ -189,7 +190,7 @@ if __name__ == '__main__':
         CBAR_LABEL = "Mach number"
         TEXT_COLOR = 'k'
     else:  # metallicity
-        CMAP       = 'coolwarm'
+        CMAP       = cmc.managua_r
         FIELD      = "metallicity"
         FIELD_UNIT = "1"
         WEIGHT     = "mass"
