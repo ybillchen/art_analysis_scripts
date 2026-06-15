@@ -27,7 +27,8 @@ from prj import prj
 
 BOX_SIZE      = 4.0    # kpc
 LEVEL         = 12
-VMIN, VMAX    = 1e0, 1e4
+VMIN, VMAX           = 1e0, 1e4
+CORE_VMIN, CORE_VMAX = 1e2, 1e6
 CORE_BOX_SIZE = 0.040  # kpc  (200 pc, -100 to +100 pc)
 CORE_LEVEL    = 18
 EXCLUSION_PC  = 100.0  # minimum separation between cores, pc
@@ -207,7 +208,7 @@ if __name__ == '__main__':
             mesh += 1e-10
             ax.imshow(
                 mesh.T, origin='lower', cmap='magma',
-                norm=LogNorm(vmin=VMIN, vmax=VMAX),
+                norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX),
                 extent=[-half_pc, half_pc, -half_pc, half_pc],
             )
             ax.set_aspect('equal')
