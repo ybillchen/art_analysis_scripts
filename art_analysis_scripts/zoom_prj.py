@@ -165,11 +165,16 @@ if __name__ == '__main__':
         cores = find_dense_cores(ds, box, n_cores=4, exclusion_pc=EXCLUSION_PC)
         for ax, (prj_x, prj_y, _, _) in zip(axs, projections):
             for core in cores:
+                hx = core[prj_x + '_kpc']
+                hy = core[prj_y + '_kpc']
                 circle = plt.Circle(
-                    (core[prj_x + '_kpc'], core[prj_y + '_kpc']), 0.1,
+                    (hx, hy), 0.1,
                     fill=False, edgecolor='white', linewidth=1.0, linestyle='--',
                 )
                 ax.add_patch(circle)
+                ax.text(hx, hy + 0.12, str(core['rank']),
+                        ha='center', va='bottom', color='white',
+                        fontsize=8, fontweight='bold')
 
     out_dir = os.path.join(basepath, 'analysis/zoom')
     os.makedirs(out_dir, exist_ok=True)
@@ -184,6 +189,9 @@ if __name__ == '__main__':
 
         cl_per_kpc = ds.arr(1.0, 'kpc').to_value('code_length')
         core_size  = CORE_BOX_SIZE * cl_per_kpc  # code_length
+
+        half_pc = CORE_BOX_SIZE * 500.0  # half-size in pc (0.2 kpc / 2 * 1000)
+        X_H, m_H_g = 0.76, 1.673e-24   # hydrogen mass fraction, proton mass in g
 
         fig2, axs2 = plt.subplots(2, 2, figsize=(6, 6))
         for ax, core in zip(axs2.flat, cores):
@@ -200,13 +208,15 @@ if __name__ == '__main__':
             ax.imshow(
                 mesh.T, origin='lower', cmap='magma',
                 norm=LogNorm(vmin=VMIN, vmax=VMAX),
-                extent=[region[1].to_value('pc'), region[4].to_value('pc'),
-                        region[0].to_value('pc'), region[3].to_value('pc')],
+                extent=[-half_pc, half_pc, -half_pc, half_pc],
             )
             ax.set_aspect('equal')
-            ax.set_xlabel('y (pc)')
-            ax.set_ylabel('x (pc)')
-            ax.set_title('Core %d' % core['rank'], fontsize=11)
+            ax.set_xlabel(r'$\Delta y$ (pc)')
+            ax.set_ylabel(r'$\Delta x$ (pc)')
+            n_H = core['density'] * X_H / m_H_g
+            ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
+            ax.text(-half_pc * 0.88, half_pc * 0.82, str(core['rank']),
+                    ha='left', va='top', color='white', fontsize=14, fontweight='bold')
 
         plt.tight_layout()
         fname2 = 'zoom_cores_a%.4f_x%.4f_y%.4f_z%.4f.png' % (a_found, args.x, args.y, args.z)
