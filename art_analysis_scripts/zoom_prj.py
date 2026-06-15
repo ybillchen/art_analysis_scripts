@@ -146,18 +146,29 @@ if __name__ == '__main__':
             field='density', unit='Msun/pc**3', factor=0.6, weight='column',
         )
         mesh += 1e-10
+        xmin = region[idx_x].to_value(unit)
+        xmax = region[idx_x+3].to_value(unit)
+        ymin = region[idx_y].to_value(unit)
+        ymax = region[idx_y+3].to_value(unit)
         ax.imshow(
             mesh.T, origin='lower', cmap='magma',
             norm=LogNorm(vmin=VMIN, vmax=VMAX),
-            extent=[region[idx_x].to_value(unit), region[idx_x+3].to_value(unit),
-                    region[idx_y].to_value(unit), region[idx_y+3].to_value(unit)],
+            extent=[xmin, xmax, ymin, ymax],
         )
         ax.set_aspect('equal')
-        ax.set_xlabel('%s (kpc)' % prj_x)
-        ax.set_ylabel('%s (kpc)' % prj_y)
+        ax.set_axis_off()
         if star_pos is not None:
             ax.scatter(star_pos[prj_x], star_pos[prj_y],
                        s=2, color='lime', alpha=0.7, ec='none', rasterized=True)
+        # 1 kpc ruler, lower right
+        w = xmax - xmin
+        h = ymax - ymin
+        rx2 = xmax - 0.05 * w
+        rx1 = rx2 - 1.0
+        ry  = ymin + 0.07 * h
+        ax.plot([rx1, rx2], [ry, ry], lw=1.5, c='white', solid_capstyle='butt')
+        ax.text((rx1 + rx2) / 2, ry + 0.03 * h, '1 kpc',
+                ha='center', va='bottom', color='white', fontsize=8, fontweight='bold')
 
     # --- find cores before saving so circles appear on the main figure ---
     cores = None
@@ -214,6 +225,19 @@ if __name__ == '__main__':
             ax.set_aspect('equal')
             ax.set_xlabel(r'$\Delta y$ (pc)')
             ax.set_ylabel(r'$\Delta x$ (pc)')
+
+            # TEMP: mark level >= 17 cells as red dots
+            cb = ds.box(
+                ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
+                ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
+            )
+            lev = cb[("index", "grid_level")]
+            mask = lev >= 17
+            if mask.any():
+                cell_dy = (cb[("index", "y")].to_value("kpc")[mask] - core['y_kpc']) * 1e3
+                cell_dx = (cb[("index", "x")].to_value("kpc")[mask] - core['x_kpc']) * 1e3
+                ax.scatter(cell_dy, cell_dx, s=1, color='red', alpha=0.6, ec='none', rasterized=True)
+
             n_H = core['density'] * X_H / m_H_g
             ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
             ax.text(-half_pc * 0.88, half_pc * 0.82, str(core['rank']),
