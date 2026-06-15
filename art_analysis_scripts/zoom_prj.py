@@ -144,6 +144,19 @@ if __name__ == '__main__':
         ax.set_xlabel('%s (kpc)' % prj_x)
         ax.set_ylabel('%s (kpc)' % prj_y)
 
+    # --- find cores before saving so circles appear on the main figure ---
+    cores = None
+    if args.cores:
+        print("Finding top 4 dense cores (exclusion radius: %.0f pc)..." % EXCLUSION_PC)
+        cores = find_dense_cores(ds, box, n_cores=4, exclusion_pc=EXCLUSION_PC)
+        for ax, (prj_x, prj_y, _, _) in zip(axs, projections):
+            for core in cores:
+                circle = plt.Circle(
+                    (core[prj_x + '_kpc'], core[prj_y + '_kpc']), 0.1,
+                    fill=False, edgecolor='white', linewidth=1.0, linestyle='--',
+                )
+                ax.add_patch(circle)
+
     out_dir = os.path.join(basepath, 'analysis/zoom')
     os.makedirs(out_dir, exist_ok=True)
     fname = 'zoom_prj_a%.4f_x%.4f_y%.4f_z%.4f.png' % (a_found, args.x, args.y, args.z)
@@ -153,9 +166,7 @@ if __name__ == '__main__':
     print("Saved: %s" % output)
 
     # --- dense core zoom panels ---
-    if args.cores:
-        print("Finding top 4 dense cores (exclusion radius: %.0f pc)..." % EXCLUSION_PC)
-        cores = find_dense_cores(ds, box, n_cores=4, exclusion_pc=EXCLUSION_PC)
+    if cores is not None:
 
         cl_per_kpc = ds.arr(1.0, 'kpc').to_value('code_length')
         core_size  = CORE_BOX_SIZE * cl_per_kpc  # code_length
