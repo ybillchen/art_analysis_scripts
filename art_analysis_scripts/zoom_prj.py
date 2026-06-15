@@ -25,9 +25,12 @@ import yt
 
 from prj import prj
 
-BOX_SIZE   = 2.0    # kpc  (-1 to +1)
-LEVEL      = 12
-VMIN, VMAX = 1e0, 1e4
+BOX_SIZE      = 2.0    # kpc  (-1 to +1)
+LEVEL         = 12
+VMIN, VMAX    = 1e0, 1e4
+CORE_BOX_SIZE = 0.200  # kpc  (200 pc, -100 to +100 pc)
+CORE_LEVEL    = 18
+EXCLUSION_PC  = 100.0  # minimum separation between cores, pc
 
 
 def find_snapshot(basepath, target_a):
@@ -45,6 +48,36 @@ def find_snapshot(basepath, target_a):
     return entries[idx]
 
 
+def find_dense_cores(ds, box, n_cores=4, exclusion_pc=100.0):
+    """Find n_cores densest cells, each separated by at least exclusion_pc (physical pc)."""
+    cx = box[("index", "x")].to_value("kpc")
+    cy = box[("index", "y")].to_value("kpc")
+    cz = box[("index", "z")].to_value("kpc")
+    density = box[("gas", "density")].to_value("g/cm**3")
+
+    excl_kpc = exclusion_pc * 1e-3
+    remaining = np.arange(len(density))
+    cores = []
+
+    for rank in range(1, n_cores + 1):
+        if len(remaining) == 0:
+            break
+        best = remaining[np.argmax(density[remaining])]
+        cores.append(dict(
+            rank=rank,
+            x_kpc=cx[best], y_kpc=cy[best], z_kpc=cz[best],
+            density=density[best],
+        ))
+        print("  Core %d: x=%.4f y=%.4f z=%.4f kpc,  rho=%.3e g/cm^3" % (
+            rank, cx[best], cy[best], cz[best], density[best]))
+        dist2 = ((cx[remaining] - cx[best])**2 +
+                 (cy[remaining] - cy[best])**2 +
+                 (cz[remaining] - cz[best])**2)
+        remaining = remaining[dist2 > excl_kpc**2]
+
+    return cores
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Generate xy/xz projections of a small box around a given location')
@@ -58,6 +91,8 @@ if __name__ == '__main__':
                         help='Box size in kpc (default: %.1f)' % BOX_SIZE)
     parser.add_argument('--level', type=int, default=LEVEL,
                         help='AMR level for projection (default: %d)' % LEVEL)
+    parser.add_argument('--cores', action='store_true',
+                        help='Find top 4 dense cores and plot 200 pc zoom panels at level %d' % CORE_LEVEL)
     args = parser.parse_args()
 
     basepath = args.basepath.rstrip('/')
@@ -116,3 +151,41 @@ if __name__ == '__main__':
     plt.savefig(output, dpi=300, bbox_inches='tight')
     plt.close()
     print("Saved: %s" % output)
+
+    # --- dense core zoom panels ---
+    if args.cores:
+        print("Finding top 4 dense cores (exclusion radius: %.0f pc)..." % EXCLUSION_PC)
+        cores = find_dense_cores(ds, box, n_cores=4, exclusion_pc=EXCLUSION_PC)
+
+        cl_per_kpc = ds.arr(1.0, 'kpc').to_value('code_length')
+        core_size  = CORE_BOX_SIZE * cl_per_kpc  # code_length
+
+        fig2, axs2 = plt.subplots(2, 2, figsize=(6, 6))
+        for ax, core in zip(axs2.flat, cores):
+            cx_cl = core['x_kpc'] * cl_per_kpc
+            cy_cl = core['y_kpc'] * cl_per_kpc
+            cz_cl = core['z_kpc'] * cl_per_kpc
+
+            mesh, region = prj(
+                ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
+                prj_x='y', prj_y='x',
+                field='density', unit='Msun/pc**3', factor=0.6, weight='column',
+            )
+            mesh += 1e-10
+            ax.imshow(
+                mesh.T, origin='lower', cmap='magma',
+                norm=LogNorm(vmin=VMIN, vmax=VMAX),
+                extent=[region[1].to_value('pc'), region[4].to_value('pc'),
+                        region[0].to_value('pc'), region[3].to_value('pc')],
+            )
+            ax.set_aspect('equal')
+            ax.set_xlabel('y (pc)')
+            ax.set_ylabel('x (pc)')
+            ax.set_title('Core %d' % core['rank'], fontsize=11)
+
+        plt.tight_layout()
+        fname2 = 'zoom_cores_a%.4f_x%.4f_y%.4f_z%.4f.png' % (a_found, args.x, args.y, args.z)
+        output2 = os.path.join(out_dir, fname2)
+        plt.savefig(output2, dpi=300, bbox_inches='tight')
+        plt.close()
+        print("Saved: %s" % output2)
