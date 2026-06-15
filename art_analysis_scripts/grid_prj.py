@@ -130,12 +130,13 @@ def render_panel(ax, data, label):
         s = data['stars']
         ax.scatter(s['x'], s['y'], color='white', alpha=0.5, ec='none', s=s['s'], rasterized=True)
 
+    stroke_ruler = [pe.withStroke(linewidth=5, foreground='white')] if TEXT_COLOR != 'w' else []
     stroke = [pe.withStroke(linewidth=3, foreground='white')] if TEXT_COLOR != 'w' else []
 
     ruler_x = cx + 0.4 * size
     ruler_y = cy - 0.43 * size
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c=TEXT_COLOR,
-            path_effects=stroke)
+            path_effects=stroke_ruler)
     ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, 'kpc'),
             ha="center", va="bottom", color=TEXT_COLOR, fontsize=12, fontweight='bold',
             path_effects=stroke)
