@@ -231,7 +231,9 @@ if __name__ == '__main__':
                 ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
                 ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
             )
-            lev = cb[("index", "grid_level")]
+            domain_w = ds.domain_width[0].to_value('code_length')
+            dx = cb[("gas", "dx")].to_value('code_length')
+            lev = np.round(np.log2(domain_w / dx)).astype(int)
             mask = lev >= 17
             if mask.any():
                 cell_dy = (cb[("index", "y")].to_value("kpc")[mask] - core['y_kpc']) * 1e3
