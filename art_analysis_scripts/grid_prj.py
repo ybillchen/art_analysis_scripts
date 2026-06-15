@@ -131,7 +131,6 @@ def render_panel(ax, data, label):
         ax.scatter(s['x'], s['y'], color='white', alpha=0.5, ec='none', s=s['s'], rasterized=True)
 
     stroke = [pe.withStroke(linewidth=3, foreground='white')] if TEXT_COLOR != 'w' else []
-    text_pe = [pe.withStroke(linewidth=2, foreground='white')] if TEXT_COLOR != 'w' else []
 
     ruler_x = cx + 0.4 * size
     ruler_y = cy - 0.43 * size
@@ -139,16 +138,16 @@ def render_panel(ax, data, label):
             path_effects=stroke)
     ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, 'kpc'),
             ha="center", va="bottom", color=TEXT_COLOR, fontsize=12, fontweight='bold',
-            path_effects=text_pe)
+            path_effects=stroke)
 
     z_str = f"{data['redshift']:.1f}".rstrip('0').rstrip('.')
     ax.text(cx - 0.45 * size, cy + 0.45 * size,
             f"$z={z_str}$",
             ha="left", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold',
-            path_effects=text_pe)
+            path_effects=stroke)
     ax.text(cx + 0.45 * size, cy + 0.45 * size,
             label, ha="right", va="top", color=TEXT_COLOR, fontsize=15, fontweight='bold',
-            path_effects=text_pe)
+            path_effects=stroke)
 
     ax.set_xlim(cx - 0.5 * size, cx + 0.5 * size)
     ax.set_ylim(cy - 0.5 * size, cy + 0.5 * size)
