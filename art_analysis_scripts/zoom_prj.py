@@ -236,8 +236,8 @@ if __name__ == '__main__':
             lev = np.round(np.log2(domain_w / dx)).astype(int)
             mask = lev >= 17
             if mask.any():
-                cell_dy = (cb[("index", "y")].to_value("kpc")[mask] - core['y_kpc']) * 1e3
-                cell_dx = (cb[("index", "x")].to_value("kpc")[mask] - core['x_kpc']) * 1e3
+                cell_dy = (cb[("gas", "y")].to_value("kpc")[mask] - core['y_kpc']) * 1e3
+                cell_dx = (cb[("gas", "x")].to_value("kpc")[mask] - core['x_kpc']) * 1e3
                 ax.scatter(cell_dy, cell_dx, s=1, color='red', alpha=0.6, ec='none', rasterized=True)
 
             n_H = core['density'] * X_H / m_H_g
