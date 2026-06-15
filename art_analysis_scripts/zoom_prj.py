@@ -25,7 +25,7 @@ import yt
 
 from prj import prj
 
-BOX_SIZE      = 2.0    # kpc  (-1 to +1)
+BOX_SIZE      = 4.0    # kpc
 LEVEL         = 12
 VMIN, VMAX    = 1e0, 1e4
 CORE_BOX_SIZE = 0.200  # kpc  (200 pc, -100 to +100 pc)
@@ -93,6 +93,8 @@ if __name__ == '__main__':
                         help='AMR level for projection (default: %d)' % LEVEL)
     parser.add_argument('--cores', action='store_true',
                         help='Find top 4 dense cores and plot 200 pc zoom panels at level %d' % CORE_LEVEL)
+    parser.add_argument('--stars', action='store_true',
+                        help='Overlay star particles as green dots')
     args = parser.parse_args()
 
     basepath = args.basepath.rstrip('/')
@@ -116,6 +118,15 @@ if __name__ == '__main__':
     )
     min_dx = box[("index", "dx")].min().to("pc")
     print("Smallest cell size in box: %.4f pc" % float(min_dx))
+
+    star_pos = None
+    if args.stars:
+        star_pos = {
+            'x': box[("STAR", "POSITION_X")].to_value("kpc"),
+            'y': box[("STAR", "POSITION_Y")].to_value("kpc"),
+            'z': box[("STAR", "POSITION_Z")].to_value("kpc"),
+        }
+        print("Star particles in box: %d" % len(star_pos['x']))
 
     unit = 'kpc'
     # (prj_x=horiz, prj_y=vert, idx_x, idx_y)  — region indices: x=0, y=1, z=2
@@ -143,6 +154,9 @@ if __name__ == '__main__':
         ax.set_aspect('equal')
         ax.set_xlabel('%s (kpc)' % prj_x)
         ax.set_ylabel('%s (kpc)' % prj_y)
+        if star_pos is not None:
+            ax.scatter(star_pos[prj_x], star_pos[prj_y],
+                       s=2, color='lime', alpha=0.7, ec='none', rasterized=True)
 
     # --- find cores before saving so circles appear on the main figure ---
     cores = None
