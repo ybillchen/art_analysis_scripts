@@ -238,7 +238,8 @@ if __name__ == '__main__':
             )
             domain_w = ds.domain_width[0].to_value('code_length')
             dx_vals = cb[("gas", "dx")].to_value('code_length')
-            lev = np.round(np.log2(domain_w / dx_vals)).astype(int)
+            lev = np.round(np.log2(domain_w / 256.0 / dx_vals)).astype(int)
+            print("  Core %d levels in box: %s" % (core['rank'], np.unique(lev)))
             cell_y_kpc = cb[("index", "y")].to_value("kpc")
             cell_x_kpc = cb[("index", "x")].to_value("kpc")
             level_colors = {15: 'cyan', 16: 'yellow', 17: 'orange', 18: 'red'}
@@ -247,7 +248,7 @@ if __name__ == '__main__':
                 if mask.any():
                     cell_dy = (cell_y_kpc[mask] - core['y_kpc']) * 1e3
                     cell_dx = (cell_x_kpc[mask] - core['x_kpc']) * 1e3
-                    ax.scatter(cell_dy, cell_dx, s=1, color=color, alpha=0.6,
+                    ax.scatter(cell_dy, cell_dx, s=4, color=color, alpha=0.8,
                                ec='none', rasterized=True, label='L%d' % lvl)
 
             n_H = core['density'] * X_H / m_H_g
