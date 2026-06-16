@@ -231,19 +231,24 @@ if __name__ == '__main__':
             ax.set_xlabel(r'$\Delta y$ (pc)')
             ax.set_ylabel(r'$\Delta x$ (pc)')
 
-            # TEMP: mark level >= 17 cells as red dots
+            # TEMP: mark L15–L18 cells with distinct colors
             cb = ds.box(
                 ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
                 ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
             )
             domain_w = ds.domain_width[0].to_value('code_length')
-            dx = cb[("gas", "dx")].to_value('code_length')
-            lev = np.round(np.log2(domain_w / 256 / dx)).astype(int)
-            mask = lev >= 17
-            if mask.any():
-                cell_dy = (cb[("gas", "y")].to_value("kpc")[mask] - core['y_kpc']) * 1e3
-                cell_dx = (cb[("gas", "x")].to_value("kpc")[mask] - core['x_kpc']) * 1e3
-                ax.scatter(cell_dy, cell_dx, s=1, color='red', alpha=0.6, ec='none', rasterized=True)
+            dx_vals = cb[("gas", "dx")].to_value('code_length')
+            lev = np.round(np.log2(domain_w / dx_vals)).astype(int)
+            cell_y_kpc = cb[("index", "y")].to_value("kpc")
+            cell_x_kpc = cb[("index", "x")].to_value("kpc")
+            level_colors = {15: 'cyan', 16: 'yellow', 17: 'orange', 18: 'red'}
+            for lvl, color in level_colors.items():
+                mask = lev == lvl
+                if mask.any():
+                    cell_dy = (cell_y_kpc[mask] - core['y_kpc']) * 1e3
+                    cell_dx = (cell_x_kpc[mask] - core['x_kpc']) * 1e3
+                    ax.scatter(cell_dy, cell_dx, s=1, color=color, alpha=0.6,
+                               ec='none', rasterized=True, label='L%d' % lvl)
 
             n_H = core['density'] * X_H / m_H_g
             ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
