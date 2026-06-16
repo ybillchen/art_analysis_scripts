@@ -242,7 +242,7 @@ if __name__ == '__main__':
             print("  Core %d levels in box: %s" % (core['rank'], np.unique(lev)))
             cell_y_kpc = cb[("index", "y")].to_value("kpc")
             cell_x_kpc = cb[("index", "x")].to_value("kpc")
-            level_colors = {9: 'blue', 10: 'cyan', 11: 'lime', 12: 'orange'}
+            level_colors = {14: 'blue', 15: 'cyan', 16: 'lime', 17: 'orange', 18: 'red'}
             for lvl, color in level_colors.items():
                 mask = lev == lvl
                 if mask.any():
