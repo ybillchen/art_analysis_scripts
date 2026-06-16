@@ -242,14 +242,14 @@ if __name__ == '__main__':
             print("  Core %d levels in box: %s" % (core['rank'], np.unique(lev)))
             cell_y_kpc = cb[("index", "y")].to_value("kpc")
             cell_x_kpc = cb[("index", "x")].to_value("kpc")
-            levels_present = sorted(np.unique(lev[lev < 13]))
-            cmap_lev = plt.cm.get_cmap('rainbow', max(len(levels_present), 1))
-            for i, lvl in enumerate(levels_present):
+            level_colors = {9: 'blue', 10: 'cyan', 11: 'lime', 12: 'orange'}
+            for lvl, color in level_colors.items():
                 mask = lev == lvl
-                cell_dy = (cell_y_kpc[mask] - core['y_kpc']) * 1e3
-                cell_dx = (cell_x_kpc[mask] - core['x_kpc']) * 1e3
-                ax.scatter(cell_dy, cell_dx, s=4, color=cmap_lev(i), alpha=0.8,
-                           ec='none', rasterized=True, label='L%d' % lvl)
+                if mask.any():
+                    cell_dy = (cell_y_kpc[mask] - core['y_kpc']) * 1e3
+                    cell_dx = (cell_x_kpc[mask] - core['x_kpc']) * 1e3
+                    ax.scatter(cell_dy, cell_dx, s=4, color=color, alpha=0.8,
+                               ec='none', rasterized=True, label='L%d' % lvl)
 
             n_H = core['density'] * X_H / m_H_g
             ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
