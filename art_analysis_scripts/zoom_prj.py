@@ -82,10 +82,15 @@ def find_dense_cores(ds, box, n_cores=4, exclusion_pc=100.0):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Generate xy/xz projections of a small box around a given location')
-    parser.add_argument('basepath', help='Path to simulation run folder')
-    parser.add_argument('x', type=float, help='Center x (Mpccm/h)')
-    parser.add_argument('y', type=float, help='Center y (Mpccm/h)')
-    parser.add_argument('z', type=float, help='Center z (Mpccm/h)')
+    parser.add_argument('basepath', nargs='?',
+                        default='/scratch/08199/tg874988/art_simulations/hydro/mh3e12_km/1116392',
+                        help='Path to simulation run folder')
+    parser.add_argument('x', type=float, nargs='?', default=8.322128272727333,
+                        help='Center x (Mpccm/h)')
+    parser.add_argument('y', type=float, nargs='?', default=8.137985234893238,
+                        help='Center y (Mpccm/h)')
+    parser.add_argument('z', type=float, nargs='?', default=7.7789764703224185,
+                        help='Center z (Mpccm/h)')
     parser.add_argument('--scale-factor', '-a', type=float, required=True,
                         help='Target scale factor')
     parser.add_argument('--size', type=float, default=BOX_SIZE,
