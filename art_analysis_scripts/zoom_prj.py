@@ -83,7 +83,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Generate xy/xz projections of a small box around a given location')
     parser.add_argument('basepath', nargs='?',
-                        default='/scratch/08199/tg874988/art_simulations/hydro/mh3e12_km/1116392',
+                        default='/scratch/08199/tg874988/art_simulations/hydro/zoomcloud/1116392',
                         help='Path to simulation run folder')
     parser.add_argument('x', type=float, nargs='?', default=8.322128272727333,
                         help='Center x (Mpccm/h)')
