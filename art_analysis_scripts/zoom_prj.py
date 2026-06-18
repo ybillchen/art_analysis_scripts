@@ -222,10 +222,15 @@ if __name__ == '__main__':
                 field='density', unit='Msun/pc**3', factor=0.6, weight='column',
             )
             mesh += 1e-10
+            # prj_x='y' → horiz axis is y (idx 1,4); prj_y='x' → vert axis is x (idx 0,3)
+            dy_min = region[1].to_value('pc') - core['y_kpc'] * 1e3
+            dy_max = region[4].to_value('pc') - core['y_kpc'] * 1e3
+            dx_min = region[0].to_value('pc') - core['x_kpc'] * 1e3
+            dx_max = region[3].to_value('pc') - core['x_kpc'] * 1e3
             ax.imshow(
                 mesh.T, origin='lower', cmap='magma',
                 norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX),
-                extent=[-half_pc, half_pc, -half_pc, half_pc],
+                extent=[dy_min, dy_max, dx_min, dx_max],
             )
             ax.set_aspect('equal')
             ax.set_xlabel(r'$\Delta y$ (pc)')
@@ -253,7 +258,8 @@ if __name__ == '__main__':
 
             n_H = core['density'] * X_H / m_H_g
             ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
-            ax.text(-half_pc * 0.88, half_pc * 0.82, str(core['rank']),
+            ax.text(dy_min + 0.05*(dy_max-dy_min), dx_max - 0.05*(dx_max-dx_min),
+                    str(core['rank']),
                     ha='left', va='top', color='white', fontsize=14, fontweight='bold')
 
         plt.tight_layout()
