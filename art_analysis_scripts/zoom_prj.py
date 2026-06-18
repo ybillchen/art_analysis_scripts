@@ -21,6 +21,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+from matplotlib.cm import ScalarMappable
 import cmcrameri.cm as cmc
 import yt
 
@@ -214,28 +215,50 @@ if __name__ == '__main__':
 
         MACH_CMAP = cmc.vik_r
         MACH_VMIN, MACH_VMAX = 1e-2, 1e2
+        TEMP_CMAP = cmc.vik
+        TEMP_VMIN, TEMP_VMAX = 1e3, 1e7
+        DENS_CBAR_LABEL = r"Gas column density ($M_\odot\,{\rm pc}^{-2}$)"
+        TEMP_CBAR_LABEL = "Temperature (K)"
+        MACH_CBAR_LABEL = "Mach number"
+
+        # ruler: largest power-of-10 * {1,2,5} that fits in ~40% of half_pc
+        def _nice_ruler(half):
+            for scale in [500, 200, 100, 50, 20, 10, 5, 2, 1]:
+                if scale <= half * 0.45:
+                    return scale
+            return 1
+
+        def _extent_rel(reg, core):
+            return [reg[1].to_value('pc') - core['y_kpc'] * 1e3,
+                    reg[4].to_value('pc') - core['y_kpc'] * 1e3,
+                    reg[0].to_value('pc') - core['x_kpc'] * 1e3,
+                    reg[3].to_value('pc') - core['x_kpc'] * 1e3]
+
+        ruler = _nice_ruler(half_pc)
+
+        def _finish_ax(ax, row, col, text_color='w'):
+            ax.set_aspect('equal')
+            ax.set_xlim(-half_pc, half_pc)
+            ax.set_ylim(-half_pc, half_pc)
+            if row == 2:
+                ax.set_xlabel(r'$\Delta y$ (pc)')
+            if col == 0:
+                ax.set_ylabel(r'$\Delta x$ (pc)')
+            rx2 = half_pc * 0.88
+            rx1 = rx2 - ruler
+            ry  = -half_pc * 0.82
+            ax.plot([rx1, rx2], [ry, ry], lw=1.5, c=text_color, solid_capstyle='butt')
+            ax.text((rx1+rx2)/2, ry + half_pc*0.05, '%g pc' % ruler,
+                    ha='center', va='bottom', color=text_color, fontsize=8, fontweight='bold')
 
         ncores = len(cores)
-        fig2, axs2 = plt.subplots(2, ncores, figsize=(3 * ncores, 6))
+        fig2, axs2 = plt.subplots(3, ncores, figsize=(3 * ncores, 9),
+                                   sharex=True, sharey=True)
 
         for i, core in enumerate(cores):
             cx_cl = core['x_kpc'] * cl_per_kpc
             cy_cl = core['y_kpc'] * cl_per_kpc
             cz_cl = core['z_kpc'] * cl_per_kpc
-
-            def _extent_rel(reg):
-                return [reg[1].to_value('pc') - core['y_kpc'] * 1e3,
-                        reg[4].to_value('pc') - core['y_kpc'] * 1e3,
-                        reg[0].to_value('pc') - core['x_kpc'] * 1e3,
-                        reg[3].to_value('pc') - core['x_kpc'] * 1e3]
-
-            def _setup_ax(ax):
-                ax.set_aspect('equal')
-                ax.set_xlim(-half_pc, half_pc)
-                ax.set_ylim(-half_pc, half_pc)
-                ax.set_xlabel(r'$\Delta y$ (pc)')
-                if i == 0:
-                    ax.set_ylabel(r'$\Delta x$ (pc)')
 
             # --- row 0: density ---
             ax0 = axs2[0, i]
@@ -247,46 +270,75 @@ if __name__ == '__main__':
             mesh += 1e-10
             ax0.imshow(mesh.T, origin='lower', cmap='magma',
                        norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX),
-                       extent=_extent_rel(region))
-            _setup_ax(ax0)
+                       extent=_extent_rel(region, core))
+            _finish_ax(ax0, row=0, col=i, text_color='w')
             n_H = core['density'] * X_H / m_H_g
             ax0.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
             ax0.text(-half_pc * 0.88, half_pc * 0.82, str(core['rank']),
                      ha='left', va='top', color='white', fontsize=14, fontweight='bold')
 
             if args.level_dots:
-                cb = ds.box(
+                lev_box = ds.box(
                     ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
                     ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
                 )
                 domain_w = ds.domain_width[0].to_value('code_length')
-                dx_vals = cb[("gas", "dx")].to_value('code_length')
+                dx_vals = lev_box[("gas", "dx")].to_value('code_length')
                 lev = np.round(np.log2(domain_w / 256.0 / dx_vals)).astype(int)
                 print("  Core %d levels in box: %s" % (core['rank'], np.unique(lev)))
-                cell_y_kpc = cb[("index", "y")].to_value("kpc")
-                cell_x_kpc = cb[("index", "x")].to_value("kpc")
+                cell_y_kpc = lev_box[("index", "y")].to_value("kpc")
+                cell_x_kpc = lev_box[("index", "x")].to_value("kpc")
                 level_colors = {14: 'blue', 15: 'cyan', 16: 'lime', 17: 'orange', 18: 'red'}
                 for lvl, color in level_colors.items():
                     mask = lev == lvl
                     if mask.any():
                         cell_dy = (cell_y_kpc[mask] - core['y_kpc']) * 1e3
                         cell_dx = (cell_x_kpc[mask] - core['x_kpc']) * 1e3
-                        for ax_dot in (ax0, axs2[1, i]):
+                        for ax_dot in (ax0, axs2[1, i], axs2[2, i]):
                             ax_dot.scatter(cell_dy, cell_dx, s=4, color=color, alpha=0.8,
                                            ec='none', rasterized=True, label='L%d' % lvl)
 
-            # --- row 1: Mach ---
+            # --- row 1: temperature ---
             ax1 = axs2[1, i]
+            mesh_t, region_t = prj(
+                ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
+                prj_x='y', prj_y='x',
+                field='temperature', unit='K', factor=0.6, weight='mass',
+            )
+            mesh_t += 1e-10
+            ax1.imshow(mesh_t.T, origin='lower', cmap=TEMP_CMAP,
+                       norm=LogNorm(vmin=TEMP_VMIN, vmax=TEMP_VMAX),
+                       extent=_extent_rel(region_t, core))
+            _finish_ax(ax1, row=1, col=i, text_color='k')
+
+            # --- row 2: Mach ---
+            ax2 = axs2[2, i]
             mesh_m, region_m = prj(
                 ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
                 prj_x='y', prj_y='x',
                 field='M', unit='1', factor=0.6, weight='mass',
             )
             mesh_m += 1e-10
-            ax1.imshow(mesh_m.T, origin='lower', cmap=MACH_CMAP,
+            ax2.imshow(mesh_m.T, origin='lower', cmap=MACH_CMAP,
                        norm=LogNorm(vmin=MACH_VMIN, vmax=MACH_VMAX),
-                       extent=_extent_rel(region_m))
-            _setup_ax(ax1)
+                       extent=_extent_rel(region_m, core))
+            _finish_ax(ax2, row=2, col=i, text_color='k')
+
+        # colorbars — one per row, spanning all panels
+        sm_dens = ScalarMappable(norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX), cmap='magma')
+        sm_dens.set_array([])
+        cbar0 = fig2.colorbar(sm_dens, ax=axs2[0, :], shrink=0.85, pad=0.02)
+        cbar0.set_label(DENS_CBAR_LABEL, fontsize=10)
+
+        sm_temp = ScalarMappable(norm=LogNorm(vmin=TEMP_VMIN, vmax=TEMP_VMAX), cmap=TEMP_CMAP)
+        sm_temp.set_array([])
+        cbar1 = fig2.colorbar(sm_temp, ax=axs2[1, :], shrink=0.85, pad=0.02)
+        cbar1.set_label(TEMP_CBAR_LABEL, fontsize=10)
+
+        sm_mach = ScalarMappable(norm=LogNorm(vmin=MACH_VMIN, vmax=MACH_VMAX), cmap=MACH_CMAP)
+        sm_mach.set_array([])
+        cbar2 = fig2.colorbar(sm_mach, ax=axs2[2, :], shrink=0.85, pad=0.02)
+        cbar2.set_label(MACH_CBAR_LABEL, fontsize=10)
 
         plt.tight_layout()
         fname2 = 'zoom_cores_a%.4f_x%.4f_y%.4f_z%.4f.png' % (a_found, args.x, args.y, args.z)
