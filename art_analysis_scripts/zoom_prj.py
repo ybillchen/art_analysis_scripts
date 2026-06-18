@@ -214,9 +214,9 @@ if __name__ == '__main__':
         X_H, m_H_g = 0.76, 1.673e-24
 
         MACH_CMAP = cmc.vik_r
-        MACH_VMIN, MACH_VMAX = 1e-2, 1e2
+        MACH_VMIN, MACH_VMAX = 1e-1, 1e1
         TEMP_CMAP = cmc.vik
-        TEMP_VMIN, TEMP_VMAX = 1e3, 1e7
+        TEMP_VMIN, TEMP_VMAX = 1e0, 1e3
         DENS_CBAR_LABEL = r"Gas column density ($M_\odot\,{\rm pc}^{-2}$)"
         TEMP_CBAR_LABEL = "Temperature (K)"
         MACH_CBAR_LABEL = "Mach number"
@@ -234,8 +234,6 @@ if __name__ == '__main__':
                     reg[0].to_value('pc') - core['x_kpc'] * 1e3,
                     reg[3].to_value('pc') - core['x_kpc'] * 1e3]
 
-        ruler = _nice_ruler(half_pc)
-
         def _finish_ax(ax, row, col, text_color='w'):
             ax.set_aspect('equal')
             ax.set_xlim(-half_pc, half_pc)
@@ -244,16 +242,10 @@ if __name__ == '__main__':
                 ax.set_xlabel(r'$\Delta y$ (pc)')
             if col == 0:
                 ax.set_ylabel(r'$\Delta x$ (pc)')
-            rx2 = half_pc * 0.88
-            rx1 = rx2 - ruler
-            ry  = -half_pc * 0.82
-            ax.plot([rx1, rx2], [ry, ry], lw=1.5, c=text_color, solid_capstyle='butt')
-            ax.text((rx1+rx2)/2, ry + half_pc*0.05, '%g pc' % ruler,
-                    ha='center', va='bottom', color=text_color, fontsize=8, fontweight='bold')
 
         ncores = len(cores)
         fig2, axs2 = plt.subplots(3, ncores, figsize=(3 * ncores, 9),
-                                   sharex=True, sharey=True)
+                                   sharex=True, sharey=True, constrained_layout=True)
 
         for i, core in enumerate(cores):
             cx_cl = core['x_kpc'] * cl_per_kpc
@@ -340,7 +332,6 @@ if __name__ == '__main__':
         cbar2 = fig2.colorbar(sm_mach, ax=axs2[2, :], shrink=0.85, pad=0.02)
         cbar2.set_label(MACH_CBAR_LABEL, fontsize=10)
 
-        plt.tight_layout()
         fname2 = 'zoom_cores_a%.4f_x%.4f_y%.4f_z%.4f.png' % (a_found, args.x, args.y, args.z)
         output2 = os.path.join(out_dir, fname2)
         plt.savefig(output2, dpi=300, bbox_inches='tight')
