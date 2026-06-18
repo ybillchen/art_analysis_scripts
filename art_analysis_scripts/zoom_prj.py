@@ -55,7 +55,7 @@ TEMP_VMAX = 1e3
 # Mach number row
 MACH_CMAP = cmc.vik_r
 MACH_VMIN = 1e-1
-MACH_VMAX = 1e1
+MACH_VMAX = 1e0
 
 # AMR level dots  (--level-dots)
 ROOT_GRID    = 256   # root grid cells per side (for level → dx conversion)
