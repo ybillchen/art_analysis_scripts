@@ -29,7 +29,7 @@ BOX_SIZE      = 4.0    # kpc
 LEVEL         = 12
 VMIN, VMAX           = 1e0, 1e4
 CORE_VMIN, CORE_VMAX = 1e2, 1e5
-CORE_BOX_SIZE = 0.010  # kpc  (200 pc, -100 to +100 pc)
+CORE_BOX_SIZE = 1.000  # kpc  (1000 pc, -500 to +500 pc)
 CORE_LEVEL    = 18
 EXCLUSION_PC  = 100.0  # minimum separation between cores, pc
 
