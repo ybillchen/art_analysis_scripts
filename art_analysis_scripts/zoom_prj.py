@@ -21,6 +21,7 @@ import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
 from matplotlib.colors import LogNorm
+import cmcrameri.cm as cmc
 import yt
 
 from prj import prj
@@ -203,42 +204,55 @@ if __name__ == '__main__':
     plt.close()
     print("Saved: %s" % output)
 
-    # --- dense core zoom panels ---
+    # --- dense core zoom panels (density row + Mach row) ---
     if cores is not None:
 
-        cl_per_kpc = ds.arr(1.0, 'kpc').to_value('code_length')
-        core_size  = CORE_BOX_SIZE * cl_per_kpc  # code_length
+        cl_per_kpc  = ds.arr(1.0, 'kpc').to_value('code_length')
+        core_size   = CORE_BOX_SIZE * cl_per_kpc
+        half_pc     = CORE_BOX_SIZE * 500.0
+        X_H, m_H_g = 0.76, 1.673e-24
 
-        half_pc = CORE_BOX_SIZE * 500.0  # half-size in pc (0.2 kpc / 2 * 1000)
-        X_H, m_H_g = 0.76, 1.673e-24   # hydrogen mass fraction, proton mass in g
+        MACH_CMAP = cmc.vik_r
+        MACH_VMIN, MACH_VMAX = 1e-2, 1e2
 
-        fig2, axs2 = plt.subplots(2, 2, figsize=(6, 6))
-        for ax, core in zip(axs2.flat, cores):
+        ncores = len(cores)
+        fig2, axs2 = plt.subplots(2, ncores, figsize=(3 * ncores, 6))
+
+        for i, core in enumerate(cores):
             cx_cl = core['x_kpc'] * cl_per_kpc
             cy_cl = core['y_kpc'] * cl_per_kpc
             cz_cl = core['z_kpc'] * cl_per_kpc
 
+            def _extent_rel(reg):
+                return [reg[1].to_value('pc') - core['y_kpc'] * 1e3,
+                        reg[4].to_value('pc') - core['y_kpc'] * 1e3,
+                        reg[0].to_value('pc') - core['x_kpc'] * 1e3,
+                        reg[3].to_value('pc') - core['x_kpc'] * 1e3]
+
+            def _setup_ax(ax):
+                ax.set_aspect('equal')
+                ax.set_xlim(-half_pc, half_pc)
+                ax.set_ylim(-half_pc, half_pc)
+                ax.set_xlabel(r'$\Delta y$ (pc)')
+                if i == 0:
+                    ax.set_ylabel(r'$\Delta x$ (pc)')
+
+            # --- row 0: density ---
+            ax0 = axs2[0, i]
             mesh, region = prj(
                 ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
                 prj_x='y', prj_y='x',
                 field='density', unit='Msun/pc**3', factor=0.6, weight='column',
             )
             mesh += 1e-10
-            # prj_x='y' → horiz axis is y (idx 1,4); prj_y='x' → vert axis is x (idx 0,3)
-            dy_min = region[1].to_value('pc') - core['y_kpc'] * 1e3
-            dy_max = region[4].to_value('pc') - core['y_kpc'] * 1e3
-            dx_min = region[0].to_value('pc') - core['x_kpc'] * 1e3
-            dx_max = region[3].to_value('pc') - core['x_kpc'] * 1e3
-            ax.imshow(
-                mesh.T, origin='lower', cmap='magma',
-                norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX),
-                extent=[dy_min, dy_max, dx_min, dx_max],
-            )
-            ax.set_aspect('equal')
-            ax.set_xlim(-half_pc, half_pc)
-            ax.set_ylim(-half_pc, half_pc)
-            ax.set_xlabel(r'$\Delta y$ (pc)')
-            ax.set_ylabel(r'$\Delta x$ (pc)')
+            ax0.imshow(mesh.T, origin='lower', cmap='magma',
+                       norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX),
+                       extent=_extent_rel(region))
+            _setup_ax(ax0)
+            n_H = core['density'] * X_H / m_H_g
+            ax0.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
+            ax0.text(-half_pc * 0.88, half_pc * 0.82, str(core['rank']),
+                     ha='left', va='top', color='white', fontsize=14, fontweight='bold')
 
             if args.level_dots:
                 cb = ds.box(
@@ -257,14 +271,22 @@ if __name__ == '__main__':
                     if mask.any():
                         cell_dy = (cell_y_kpc[mask] - core['y_kpc']) * 1e3
                         cell_dx = (cell_x_kpc[mask] - core['x_kpc']) * 1e3
-                        ax.scatter(cell_dy, cell_dx, s=4, color=color, alpha=0.8,
-                                   ec='none', rasterized=True, label='L%d' % lvl)
+                        for ax_dot in (ax0, axs2[1, i]):
+                            ax_dot.scatter(cell_dy, cell_dx, s=4, color=color, alpha=0.8,
+                                           ec='none', rasterized=True, label='L%d' % lvl)
 
-            n_H = core['density'] * X_H / m_H_g
-            ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
-            ax.text(-half_pc * 0.88, half_pc * 0.82,
-                    str(core['rank']),
-                    ha='left', va='top', color='white', fontsize=14, fontweight='bold')
+            # --- row 1: Mach ---
+            ax1 = axs2[1, i]
+            mesh_m, region_m = prj(
+                ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
+                prj_x='y', prj_y='x',
+                field='M', unit='1', factor=0.6, weight='mass',
+            )
+            mesh_m += 1e-10
+            ax1.imshow(mesh_m.T, origin='lower', cmap=MACH_CMAP,
+                       norm=LogNorm(vmin=MACH_VMIN, vmax=MACH_VMAX),
+                       extent=_extent_rel(region_m))
+            _setup_ax(ax1)
 
         plt.tight_layout()
         fname2 = 'zoom_cores_a%.4f_x%.4f_y%.4f_z%.4f.png' % (a_found, args.x, args.y, args.z)
