@@ -101,6 +101,8 @@ if __name__ == '__main__':
                         help='Find top 4 dense cores and plot 200 pc zoom panels at level %d' % CORE_LEVEL)
     parser.add_argument('--stars', action='store_true',
                         help='Overlay star particles as green dots')
+    parser.add_argument('--level-dots', action='store_true',
+                        help='Mark AMR level cells as colored dots in core panels')
     args = parser.parse_args()
 
     basepath = args.basepath.rstrip('/')
@@ -236,25 +238,25 @@ if __name__ == '__main__':
             ax.set_xlabel(r'$\Delta y$ (pc)')
             ax.set_ylabel(r'$\Delta x$ (pc)')
 
-            # TEMP: mark L15–L18 cells with distinct colors
-            cb = ds.box(
-                ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
-                ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
-            )
-            domain_w = ds.domain_width[0].to_value('code_length')
-            dx_vals = cb[("gas", "dx")].to_value('code_length')
-            lev = np.round(np.log2(domain_w / 256.0 / dx_vals)).astype(int)
-            print("  Core %d levels in box: %s" % (core['rank'], np.unique(lev)))
-            cell_y_kpc = cb[("index", "y")].to_value("kpc")
-            cell_x_kpc = cb[("index", "x")].to_value("kpc")
-            level_colors = {14: 'blue', 15: 'cyan', 16: 'lime', 17: 'orange', 18: 'red'}
-            for lvl, color in level_colors.items():
-                mask = lev == lvl
-                if mask.any():
-                    cell_dy = (cell_y_kpc[mask] - core['y_kpc']) * 1e3
-                    cell_dx = (cell_x_kpc[mask] - core['x_kpc']) * 1e3
-                    ax.scatter(cell_dy, cell_dx, s=4, color=color, alpha=0.8,
-                               ec='none', rasterized=True, label='L%d' % lvl)
+            if args.level_dots:
+                cb = ds.box(
+                    ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
+                    ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
+                )
+                domain_w = ds.domain_width[0].to_value('code_length')
+                dx_vals = cb[("gas", "dx")].to_value('code_length')
+                lev = np.round(np.log2(domain_w / 256.0 / dx_vals)).astype(int)
+                print("  Core %d levels in box: %s" % (core['rank'], np.unique(lev)))
+                cell_y_kpc = cb[("index", "y")].to_value("kpc")
+                cell_x_kpc = cb[("index", "x")].to_value("kpc")
+                level_colors = {14: 'blue', 15: 'cyan', 16: 'lime', 17: 'orange', 18: 'red'}
+                for lvl, color in level_colors.items():
+                    mask = lev == lvl
+                    if mask.any():
+                        cell_dy = (cell_y_kpc[mask] - core['y_kpc']) * 1e3
+                        cell_dx = (cell_x_kpc[mask] - core['x_kpc']) * 1e3
+                        ax.scatter(cell_dy, cell_dx, s=4, color=color, alpha=0.8,
+                                   ec='none', rasterized=True, label='L%d' % lvl)
 
             n_H = core['density'] * X_H / m_H_g
             ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
