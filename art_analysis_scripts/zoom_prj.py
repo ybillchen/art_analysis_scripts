@@ -28,8 +28,8 @@ from prj import prj
 BOX_SIZE      = 4.0    # kpc
 LEVEL         = 12
 VMIN, VMAX           = 1e0, 1e4
-CORE_VMIN, CORE_VMAX = 1e2, 1e5
-CORE_BOX_SIZE = 0.050  # kpc  (1000 pc, -500 to +500 pc)
+CORE_VMIN, CORE_VMAX = 1e0, 1e4
+CORE_BOX_SIZE = 0.050  # kpc 
 CORE_LEVEL    = 18
 EXCLUSION_PC  = 100.0  # minimum separation between cores, pc
 
