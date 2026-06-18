@@ -29,7 +29,7 @@ BOX_SIZE      = 4.0    # kpc
 LEVEL         = 12
 VMIN, VMAX           = 1e0, 1e4
 CORE_VMIN, CORE_VMAX = 1e0, 1e4
-CORE_BOX_SIZE = 0.050  # kpc 
+CORE_BOX_SIZE = 0.200  # kpc 
 CORE_LEVEL    = 18
 EXCLUSION_PC  = 100.0  # minimum separation between cores, pc
 
@@ -235,6 +235,8 @@ if __name__ == '__main__':
                 extent=[dy_min, dy_max, dx_min, dx_max],
             )
             ax.set_aspect('equal')
+            ax.set_xlim(-half_pc, half_pc)
+            ax.set_ylim(-half_pc, half_pc)
             ax.set_xlabel(r'$\Delta y$ (pc)')
             ax.set_ylabel(r'$\Delta x$ (pc)')
 
@@ -260,7 +262,7 @@ if __name__ == '__main__':
 
             n_H = core['density'] * X_H / m_H_g
             ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H, fontsize=10)
-            ax.text(dy_min + 0.05*(dy_max-dy_min), dx_max - 0.05*(dx_max-dx_min),
+            ax.text(-half_pc * 0.88, half_pc * 0.82,
                     str(core['rank']),
                     ha='left', va='top', color='white', fontsize=14, fontweight='bold')
 
