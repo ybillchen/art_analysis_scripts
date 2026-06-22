@@ -417,17 +417,18 @@ if __name__ == '__main__':
 
                 for row, (values, (ylabel,)) in enumerate(zip(field_vals, prof_rows)):
                     ax = axs3[row, i]
-                    means = np.full(PROFILE_N_BINS, np.nan)
-                    stds  = np.full(PROFILE_N_BINS, np.nan)
+                    log_means = np.full(PROFILE_N_BINS, np.nan)
+                    log_stds  = np.full(PROFILE_N_BINS, np.nan)
                     for j in range(PROFILE_N_BINS):
                         mask = (r_pc >= r_edges[j]) & (r_pc < r_edges[j+1])
                         if mask.any():
-                            means[j], stds[j] = _wstats(values[mask], mass_cell[mask])
-                    valid = np.isfinite(means) & (means > 0)
-                    lo = np.maximum(means[valid] - stds[valid], means[valid] * 1e-6)
-                    hi = means[valid] + stds[valid]
+                            log_vals = np.log10(np.maximum(values[mask], 1e-300))
+                            log_means[j], log_stds[j] = _wstats(log_vals, mass_cell[mask])
+                    valid = np.isfinite(log_means)
+                    lo = 10**(log_means[valid] - log_stds[valid])
+                    hi = 10**(log_means[valid] + log_stds[valid])
                     ax.fill_between(r_centers[valid], lo, hi, alpha=0.3, color='C0')
-                    ax.plot(r_centers[valid], means[valid], lw=1.5, color='C0')
+                    ax.plot(r_centers[valid], 10**log_means[valid], lw=1.5, color='C0')
                     ax.set_xscale('log')
                     ax.set_yscale('log')
                     ax.set_xlim(0.1, half_pc)
