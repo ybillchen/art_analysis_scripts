@@ -268,7 +268,8 @@ if __name__ == '__main__':
             if col == 0:
                 ax.set_ylabel(r'$\Delta x$ (pc)')
 
-        domain_w = ds.domain_width[0].to_value('code_length')  # for level-dot calculation
+        domain_w    = ds.domain_width[0].to_value('code_length')  # for level-dot calculation
+        profile_axs = []   # collect row-1 axes for shared y-range
 
         for i, core in enumerate(cores):
             cx_cl = core['x_kpc'] * cl_per_kpc
@@ -302,26 +303,29 @@ if __name__ == '__main__':
             cell_x_pc = core_box[("index", "x")].to_value("pc")
             cell_y_pc = core_box[("index", "y")].to_value("pc")
             cell_z_pc = core_box[("index", "z")].to_value("pc")
-            dx_pc     = core_box[("gas", "dx")].to_value("pc")
-            rho_msun  = core_box[("gas", "density")].to_value("Msun/pc**3")
+            dx_cm     = core_box[("gas", "dx")].to_value("cm")
+            rho_gcc   = core_box[("gas", "density")].to_value("g/cm**3")
             cx_pc, cy_pc, cz_pc = core['x_kpc'] * 1e3, core['y_kpc'] * 1e3, core['z_kpc'] * 1e3
             r_pc = np.sqrt((cell_x_pc - cx_pc)**2 + (cell_y_pc - cy_pc)**2 + (cell_z_pc - cz_pc)**2)
-            mass_cell = rho_msun * dx_pc**3   # Msun per cell
+            mass_cell = rho_gcc * dx_cm**3    # grams per cell
             r_edges   = np.logspace(np.log10(0.1), np.log10(100.0), PROFILE_N_BINS + 1)
             r_centers = np.sqrt(r_edges[:-1] * r_edges[1:])   # geometric mean
+            pc_to_cm  = 3.0857e18
+            r_edges_cm = r_edges * pc_to_cm
             mass_bins = np.array([mass_cell[(r_pc >= r_edges[j]) & (r_pc < r_edges[j+1])].sum()
                                   for j in range(PROFILE_N_BINS)])
-            vol_shells  = (4.0 * np.pi / 3.0) * (r_edges[1:]**3 - r_edges[:-1]**3)
-            dens_prof   = mass_bins / vol_shells   # Msun/pc^3
-            valid = dens_prof > 0
-            ax1.plot(r_centers[valid], dens_prof[valid], lw=1.5, color='C0')
+            vol_shells  = (4.0 * np.pi / 3.0) * (r_edges_cm[1:]**3 - r_edges_cm[:-1]**3)
+            nH_prof     = (mass_bins / vol_shells) * X_H / m_H_g   # cm^-3
+            valid = nH_prof > 0
+            ax1.plot(r_centers[valid], nH_prof[valid], lw=1.5, color='C0')
             ax1.set_xscale('log')
             ax1.set_yscale('log')
             ax1.set_xlim(0.1, 100.0)
             ax1.set_xlabel('r (pc)', fontsize=9)
             if i == 0:
-                ax1.set_ylabel(r'$\rho$ ($M_\odot\,{\rm pc}^{-3}$)', fontsize=9)
+                ax1.set_ylabel(r'$n_{\rm H}$ (cm$^{-3}$)', fontsize=9)
             ax1.tick_params(labelsize=8)
+            profile_axs.append(ax1)
 
             # row 2: temperature projection
             ax2 = axs2[2, i]
@@ -363,6 +367,12 @@ if __name__ == '__main__':
                             ax_dot.scatter(dy, dx, s=4, color=color, alpha=0.8,
                                            ec='none', rasterized=True, label='L%d' % lvl)
 
+        # shared y-range for all profile panels
+        y_lo = min(ax.get_ylim()[0] for ax in profile_axs)
+        y_hi = max(ax.get_ylim()[1] for ax in profile_axs)
+        for ax in profile_axs:
+            ax.set_ylim(y_lo, y_hi)
+
         # colorbars — one per image row (no colorbar for profile row)
         for sm, ax_row, label in [
             (ScalarMappable(norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX), cmap='magma'),
@@ -373,7 +383,7 @@ if __name__ == '__main__':
              axs2[3, :], "Mach number"),
         ]:
             sm.set_array([])
-            fig2.colorbar(sm, ax=ax_row, shrink=0.85, pad=0.02).set_label(label, fontsize=10)
+            fig2.colorbar(sm, ax=ax_row, shrink=0.5, pad=0.02).set_label(label, fontsize=10)
 
         plt.savefig(os.path.join(out_dir, 'zoom_cores_%s.png' % tag), dpi=300, bbox_inches='tight')
         plt.close()
