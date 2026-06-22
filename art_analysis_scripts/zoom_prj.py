@@ -40,12 +40,12 @@ VMAX     = 1e4
 # ---------------------------------------------------------------------------
 N_CORES       = 4      # number of dense cores to find
 EXCLUSION_PC  = 100.0  # minimum separation between cores, pc
-CORE_BOX_SIZE = 0.200  # kpc — full width of each core panel
+CORE_BOX_SIZE = 0.100  # kpc — full width of each core panel
 CORE_LEVEL    = 18     # AMR level for core projections
 
 # density row
 CORE_VMIN = 1e0    # Msun/pc^2
-CORE_VMAX = 1e4
+CORE_VMAX = 1e5
 
 # temperature row
 TEMP_CMAP = cmc.vik
@@ -55,7 +55,7 @@ TEMP_VMAX = 1e3
 # Mach number row
 MACH_CMAP = cmc.vik_r
 MACH_VMIN = 1e0
-MACH_VMAX = 1e1
+MACH_VMAX = 1e2
 
 # Radial density profile row
 PROFILE_N_BINS = 40   # number of radial bins (linear, 0 → half CORE_BOX_SIZE)
@@ -307,16 +307,17 @@ if __name__ == '__main__':
             cx_pc, cy_pc, cz_pc = core['x_kpc'] * 1e3, core['y_kpc'] * 1e3, core['z_kpc'] * 1e3
             r_pc = np.sqrt((cell_x_pc - cx_pc)**2 + (cell_y_pc - cy_pc)**2 + (cell_z_pc - cz_pc)**2)
             mass_cell = rho_msun * dx_pc**3   # Msun per cell
-            r_edges   = np.linspace(0, half_pc, PROFILE_N_BINS + 1)
-            r_centers = 0.5 * (r_edges[:-1] + r_edges[1:])
+            r_edges   = np.logspace(np.log10(0.1), np.log10(100.0), PROFILE_N_BINS + 1)
+            r_centers = np.sqrt(r_edges[:-1] * r_edges[1:])   # geometric mean
             mass_bins = np.array([mass_cell[(r_pc >= r_edges[j]) & (r_pc < r_edges[j+1])].sum()
                                   for j in range(PROFILE_N_BINS)])
             vol_shells  = (4.0 * np.pi / 3.0) * (r_edges[1:]**3 - r_edges[:-1]**3)
             dens_prof   = mass_bins / vol_shells   # Msun/pc^3
             valid = dens_prof > 0
             ax1.plot(r_centers[valid], dens_prof[valid], lw=1.5, color='C0')
+            ax1.set_xscale('log')
             ax1.set_yscale('log')
-            ax1.set_xlim(0, half_pc)
+            ax1.set_xlim(0.1, 100.0)
             ax1.set_xlabel('r (pc)', fontsize=9)
             if i == 0:
                 ax1.set_ylabel(r'$\rho$ ($M_\odot\,{\rm pc}^{-3}$)', fontsize=9)
