@@ -40,7 +40,7 @@ VMAX     = 1e4
 # ---------------------------------------------------------------------------
 N_CORES       = 4      # number of dense cores to find
 EXCLUSION_PC  = 100.0  # minimum separation between cores, pc
-CORE_BOX_SIZE = 0.010  # kpc — full width of each core panel
+CORE_BOX_SIZE = 0.100  # kpc — full width of each core panel
 CORE_LEVEL    = 18     # AMR level for core projections
 
 # density row
