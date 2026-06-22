@@ -57,6 +57,9 @@ MACH_CMAP = cmc.vik_r
 MACH_VMIN = 1e0
 MACH_VMAX = 1e1
 
+# Radial density profile row
+PROFILE_N_BINS = 40   # number of radial bins (linear, 0 → half CORE_BOX_SIZE)
+
 # AMR level dots  (--level-dots)
 ROOT_GRID    = 256   # root grid cells per side (for level → dx conversion)
 LEVEL_COLORS = {14: 'blue', 15: 'cyan', 16: 'lime', 17: 'orange', 18: 'red'}
@@ -242,7 +245,7 @@ if __name__ == '__main__':
     plt.close()
     print("Saved: zoom_prj_%s.png" % tag)
 
-    # ---- per-core panels: density / temperature / Mach ----
+    # ---- per-core panels: density / radial profile / temperature / Mach ----
     if cores is not None:
         cl_per_kpc = ds.arr(1.0, 'kpc').to_value('code_length')
         core_size  = CORE_BOX_SIZE * cl_per_kpc
@@ -250,14 +253,17 @@ if __name__ == '__main__':
         X_H, m_H_g = 0.76, 1.673e-24        # hydrogen fraction, proton mass (g)
 
         ncores = len(cores)
-        fig2, axs2 = plt.subplots(3, ncores, figsize=(3 * ncores, 9),
-                                   sharex=True, sharey=True, constrained_layout=True)
+        fig2, axs2 = plt.subplots(4, ncores,
+                                   figsize=(3 * ncores, 13),
+                                   gridspec_kw={'height_ratios': [3, 2, 3, 3]},
+                                   constrained_layout=True)
 
         def _setup_ax(ax, row, col):
+            """Configure an image panel (rows 0, 2, 3)."""
             ax.set_aspect('equal')
             ax.set_xlim(-half_pc, half_pc)
             ax.set_ylim(-half_pc, half_pc)
-            if row == 2:
+            if row == 3:
                 ax.set_xlabel(r'$\Delta y$ (pc)')
             if col == 0:
                 ax.set_ylabel(r'$\Delta x$ (pc)')
@@ -268,9 +274,14 @@ if __name__ == '__main__':
             cx_cl = core['x_kpc'] * cl_per_kpc
             cy_cl = core['y_kpc'] * cl_per_kpc
             cz_cl = core['z_kpc'] * cl_per_kpc
-            ext   = None  # computed per projection below
 
-            # row 0: density
+            # Query 3D box once — reused for profile and level dots
+            core_box = ds.box(
+                ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
+                ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
+            )
+
+            # row 0: density projection
             ax0 = axs2[0, i]
             mesh, region = prj(
                 ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
@@ -286,58 +297,79 @@ if __name__ == '__main__':
             ax0.text(-half_pc * 0.88, half_pc * 0.82, str(core['rank']),
                      ha='left', va='top', color='white', fontsize=14, fontweight='bold')
 
-            # row 1: temperature
+            # row 1: radial 3D density profile
             ax1 = axs2[1, i]
+            cell_x_pc = core_box[("index", "x")].to_value("pc")
+            cell_y_pc = core_box[("index", "y")].to_value("pc")
+            cell_z_pc = core_box[("index", "z")].to_value("pc")
+            dx_pc     = core_box[("gas", "dx")].to_value("pc")
+            rho_msun  = core_box[("gas", "density")].to_value("Msun/pc**3")
+            cx_pc, cy_pc, cz_pc = core['x_kpc'] * 1e3, core['y_kpc'] * 1e3, core['z_kpc'] * 1e3
+            r_pc = np.sqrt((cell_x_pc - cx_pc)**2 + (cell_y_pc - cy_pc)**2 + (cell_z_pc - cz_pc)**2)
+            mass_cell = rho_msun * dx_pc**3   # Msun per cell
+            r_edges   = np.linspace(0, half_pc, PROFILE_N_BINS + 1)
+            r_centers = 0.5 * (r_edges[:-1] + r_edges[1:])
+            mass_bins = np.array([mass_cell[(r_pc >= r_edges[j]) & (r_pc < r_edges[j+1])].sum()
+                                  for j in range(PROFILE_N_BINS)])
+            vol_shells  = (4.0 * np.pi / 3.0) * (r_edges[1:]**3 - r_edges[:-1]**3)
+            dens_prof   = mass_bins / vol_shells   # Msun/pc^3
+            valid = dens_prof > 0
+            ax1.plot(r_centers[valid], dens_prof[valid], lw=1.5, color='C0')
+            ax1.set_yscale('log')
+            ax1.set_xlim(0, half_pc)
+            ax1.set_xlabel('r (pc)', fontsize=9)
+            if i == 0:
+                ax1.set_ylabel(r'$\rho$ ($M_\odot\,{\rm pc}^{-3}$)', fontsize=9)
+            ax1.tick_params(labelsize=8)
+
+            # row 2: temperature projection
+            ax2 = axs2[2, i]
             mesh_t, region_t = prj(
                 ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
                 prj_x='y', prj_y='x',
                 field='temperature', unit='K', factor=0.6, weight='mass',
             )
-            ax1.imshow(mesh_t.T + 1e-10, origin='lower', cmap=TEMP_CMAP,
+            ax2.imshow(mesh_t.T + 1e-10, origin='lower', cmap=TEMP_CMAP,
                        norm=LogNorm(vmin=TEMP_VMIN, vmax=TEMP_VMAX),
                        extent=extent_rel(region_t, core['y_kpc'], core['x_kpc']))
-            _setup_ax(ax1, row=1, col=i)
+            _setup_ax(ax2, row=2, col=i)
 
-            # row 2: Mach number
-            ax2 = axs2[2, i]
+            # row 3: Mach number projection
+            ax3 = axs2[3, i]
             mesh_m, region_m = prj(
                 ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
                 prj_x='y', prj_y='x',
                 field='M', unit='1', factor=0.6, weight='mass',
             )
-            ax2.imshow(mesh_m.T + 1e-10, origin='lower', cmap=MACH_CMAP,
+            ax3.imshow(mesh_m.T + 1e-10, origin='lower', cmap=MACH_CMAP,
                        norm=LogNorm(vmin=MACH_VMIN, vmax=MACH_VMAX),
                        extent=extent_rel(region_m, core['y_kpc'], core['x_kpc']))
-            _setup_ax(ax2, row=2, col=i)
+            _setup_ax(ax3, row=3, col=i)
 
-            # AMR level dots (optional)
+            # AMR level dots (optional) — image rows only
             if args.level_dots:
-                lev_box = ds.box(
-                    ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
-                    ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
-                )
-                dx_vals   = lev_box[("gas", "dx")].to_value('code_length')
-                lev       = np.round(np.log2(domain_w / ROOT_GRID / dx_vals)).astype(int)
-                cell_y    = lev_box[("index", "y")].to_value("kpc")
-                cell_x    = lev_box[("index", "x")].to_value("kpc")
+                dx_vals = core_box[("gas", "dx")].to_value('code_length')
+                lev     = np.round(np.log2(domain_w / ROOT_GRID / dx_vals)).astype(int)
+                cell_y  = core_box[("index", "y")].to_value("kpc")
+                cell_x  = core_box[("index", "x")].to_value("kpc")
                 print("  Core %d levels present: %s" % (core['rank'], np.unique(lev)))
                 for lvl, color in LEVEL_COLORS.items():
                     mask = lev == lvl
                     if mask.any():
                         dy = (cell_y[mask] - core['y_kpc']) * 1e3
                         dx = (cell_x[mask] - core['x_kpc']) * 1e3
-                        for ax_dot in (ax0, ax1, ax2):
+                        for ax_dot in (ax0, ax2, ax3):
                             ax_dot.scatter(dy, dx, s=4, color=color, alpha=0.8,
                                            ec='none', rasterized=True, label='L%d' % lvl)
 
-        # colorbars — one per row
+        # colorbars — one per image row (no colorbar for profile row)
         for sm, ax_row, label in [
             (ScalarMappable(norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX), cmap='magma'),
              axs2[0, :], r"Gas column density ($M_\odot\,{\rm pc}^{-2}$)"),
             (ScalarMappable(norm=LogNorm(vmin=TEMP_VMIN, vmax=TEMP_VMAX), cmap=TEMP_CMAP),
-             axs2[1, :], "Temperature (K)"),
+             axs2[2, :], "Temperature (K)"),
             (ScalarMappable(norm=LogNorm(vmin=MACH_VMIN, vmax=MACH_VMAX), cmap=MACH_CMAP),
-             axs2[2, :], "Mach number"),
+             axs2[3, :], "Mach number"),
         ]:
             sm.set_array([])
             fig2.colorbar(sm, ax=ax_row, shrink=0.85, pad=0.02).set_label(label, fontsize=10)
