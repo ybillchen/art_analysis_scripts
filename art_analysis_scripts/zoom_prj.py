@@ -422,8 +422,11 @@ if __name__ == '__main__':
                     for j in range(PROFILE_N_BINS):
                         mask = (r_pc >= r_edges[j]) & (r_pc < r_edges[j+1])
                         if mask.any():
-                            log_vals = np.log10(np.maximum(values[mask], 1e-300))
-                            log_means[j], log_stds[j] = _wstats(log_vals, mass_cell[mask])
+                            v = values[mask]
+                            w = mass_cell[mask]
+                            good = np.isfinite(v) & (v > 0) & np.isfinite(w)
+                            if good.any():
+                                log_means[j], log_stds[j] = _wstats(np.log10(v[good]), w[good])
                     valid = np.isfinite(log_means)
                     lo = 10**(log_means[valid] - log_stds[valid])
                     hi = 10**(log_means[valid] + log_stds[valid])
