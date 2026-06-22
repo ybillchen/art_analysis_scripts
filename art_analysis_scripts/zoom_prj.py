@@ -149,6 +149,8 @@ if __name__ == '__main__':
                         help='Find top N dense cores and plot per-core panels')
     parser.add_argument('--n-cores', type=int, default=N_CORES,
                         help='Number of dense cores to find (default: %d)' % N_CORES)
+    parser.add_argument('--profiles', action='store_true',
+                        help='Generate a separate radial-profile figure for each core (requires --cores)')
     parser.add_argument('--stars', action='store_true',
                         help='Overlay star particles as green dots on main plot')
     parser.add_argument('--level-dots', action='store_true',
@@ -247,7 +249,7 @@ if __name__ == '__main__':
     plt.close()
     print("Saved: zoom_prj_%s.png" % tag)
 
-    # ---- per-core panels: density / radial profile / temperature / Mach ----
+    # ---- per-core panels: density / temperature / Mach ----
     if cores is not None:
         cl_per_kpc = ds.arr(1.0, 'kpc').to_value('code_length')
         core_size  = CORE_BOX_SIZE * cl_per_kpc
@@ -255,30 +257,26 @@ if __name__ == '__main__':
         X_H, m_H_g = 0.76, 1.673e-24        # hydrogen fraction, proton mass (g)
 
         ncores = len(cores)
-        fig2, axs2 = plt.subplots(4, ncores,
-                                   figsize=(3 * ncores, 13),
-                                   gridspec_kw={'height_ratios': [3, 2, 3, 3]},
-                                   constrained_layout=True)
+        fig2, axs2 = plt.subplots(3, ncores,
+                                   figsize=(3 * ncores, 9),
+                                   constrained_layout=True, squeeze=False)
 
         def _setup_ax(ax, row, col):
-            """Configure an image panel (rows 0, 2, 3)."""
             ax.set_aspect('equal')
             ax.set_xlim(-half_pc, half_pc)
             ax.set_ylim(-half_pc, half_pc)
-            if row == 3:
+            if row == 2:
                 ax.set_xlabel(r'$\Delta y$ (pc)')
             if col == 0:
                 ax.set_ylabel(r'$\Delta x$ (pc)')
 
-        domain_w    = ds.domain_width[0].to_value('code_length')  # for level-dot calculation
-        profile_axs = []   # collect row-1 axes for shared y-range
+        domain_w = ds.domain_width[0].to_value('code_length')
 
         for i, core in enumerate(cores):
             cx_cl = core['x_kpc'] * cl_per_kpc
             cy_cl = core['y_kpc'] * cl_per_kpc
             cz_cl = core['z_kpc'] * cl_per_kpc
 
-            # Query 3D box once — reused for profile and level dots
             core_box = ds.box(
                 ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
                 ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
@@ -300,60 +298,31 @@ if __name__ == '__main__':
             ax0.text(-half_pc * 0.88, half_pc * 0.82, str(core['rank']),
                      ha='left', va='top', color='white', fontsize=14, fontweight='bold')
 
-            # row 1: radial 3D density profile
+            # row 1: temperature projection
             ax1 = axs2[1, i]
-            cell_x_pc = core_box[("index", "x")].to_value("pc")
-            cell_y_pc = core_box[("index", "y")].to_value("pc")
-            cell_z_pc = core_box[("index", "z")].to_value("pc")
-            dx_cm     = core_box[("gas", "dx")].to_value("cm")
-            rho_gcc   = core_box[("gas", "density")].to_value("g/cm**3")
-            cx_pc, cy_pc, cz_pc = core['x_kpc'] * 1e3, core['y_kpc'] * 1e3, core['z_kpc'] * 1e3
-            r_pc = np.sqrt((cell_x_pc - cx_pc)**2 + (cell_y_pc - cy_pc)**2 + (cell_z_pc - cz_pc)**2)
-            mass_cell = rho_gcc * dx_cm**3    # grams per cell
-            r_edges   = np.logspace(np.log10(0.1), np.log10(half_pc), PROFILE_N_BINS + 1)
-            r_centers = np.sqrt(r_edges[:-1] * r_edges[1:])   # geometric mean
-            pc_to_cm  = 3.0857e18
-            r_edges_cm = r_edges * pc_to_cm
-            mass_bins = np.array([mass_cell[(r_pc >= r_edges[j]) & (r_pc < r_edges[j+1])].sum()
-                                  for j in range(PROFILE_N_BINS)])
-            vol_shells  = (4.0 * np.pi / 3.0) * (r_edges_cm[1:]**3 - r_edges_cm[:-1]**3)
-            nH_prof     = (mass_bins / vol_shells) * X_H / m_H_g   # cm^-3
-            valid = nH_prof > 0
-            ax1.plot(r_centers[valid], nH_prof[valid], lw=1.5, color='C0')
-            ax1.set_xscale('log')
-            ax1.set_yscale('log')
-            ax1.set_xlim(0.1, half_pc)
-            ax1.set_xlabel('r (pc)', fontsize=9)
-            if i == 0:
-                ax1.set_ylabel(r'$n_{\rm H}$ (cm$^{-3}$)', fontsize=9)
-            ax1.tick_params(labelsize=8)
-            profile_axs.append(ax1)
-
-            # row 2: temperature projection
-            ax2 = axs2[2, i]
             mesh_t, region_t = prj(
                 ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
                 prj_x='y', prj_y='x',
                 field='temperature', unit='K', factor=0.6, weight='mass',
             )
-            ax2.imshow(mesh_t.T + 1e-10, origin='lower', cmap=TEMP_CMAP,
+            ax1.imshow(mesh_t.T + 1e-10, origin='lower', cmap=TEMP_CMAP,
                        norm=LogNorm(vmin=TEMP_VMIN, vmax=TEMP_VMAX),
                        extent=extent_rel(region_t, core['y_kpc'], core['x_kpc']))
-            _setup_ax(ax2, row=2, col=i)
+            _setup_ax(ax1, row=1, col=i)
 
-            # row 3: Mach number projection
-            ax3 = axs2[3, i]
+            # row 2: Mach number projection
+            ax2 = axs2[2, i]
             mesh_m, region_m = prj(
                 ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
                 prj_x='y', prj_y='x',
                 field='M', unit='1', factor=0.6, weight='mass',
             )
-            ax3.imshow(mesh_m.T + 1e-10, origin='lower', cmap=MACH_CMAP,
+            ax2.imshow(mesh_m.T + 1e-10, origin='lower', cmap=MACH_CMAP,
                        norm=LogNorm(vmin=MACH_VMIN, vmax=MACH_VMAX),
                        extent=extent_rel(region_m, core['y_kpc'], core['x_kpc']))
-            _setup_ax(ax3, row=3, col=i)
+            _setup_ax(ax2, row=2, col=i)
 
-            # AMR level dots (optional) — image rows only
+            # AMR level dots (optional)
             if args.level_dots:
                 dx_vals = core_box[("gas", "dx")].to_value('code_length')
                 lev     = np.round(np.log2(domain_w / ROOT_GRID / dx_vals)).astype(int)
@@ -365,24 +334,18 @@ if __name__ == '__main__':
                     if mask.any():
                         dy = (cell_y[mask] - core['y_kpc']) * 1e3
                         dx = (cell_x[mask] - core['x_kpc']) * 1e3
-                        for ax_dot in (ax0, ax2, ax3):
+                        for ax_dot in (ax0, ax1, ax2):
                             ax_dot.scatter(dy, dx, s=4, color=color, alpha=0.8,
                                            ec='none', rasterized=True, label='L%d' % lvl)
 
-        # shared y-range for all profile panels
-        y_lo = min(ax.get_ylim()[0] for ax in profile_axs)
-        y_hi = max(ax.get_ylim()[1] for ax in profile_axs)
-        for ax in profile_axs:
-            ax.set_ylim(y_lo, y_hi)
-
-        # colorbars — one per image row (no colorbar for profile row)
+        # colorbars — one per row
         for sm, ax_row, label in [
             (ScalarMappable(norm=LogNorm(vmin=CORE_VMIN, vmax=CORE_VMAX), cmap='magma'),
              axs2[0, :], r"Gas column density ($M_\odot\,{\rm pc}^{-2}$)"),
             (ScalarMappable(norm=LogNorm(vmin=TEMP_VMIN, vmax=TEMP_VMAX), cmap=TEMP_CMAP),
-             axs2[2, :], "Temperature (K)"),
+             axs2[1, :], "Temperature (K)"),
             (ScalarMappable(norm=LogNorm(vmin=MACH_VMIN, vmax=MACH_VMAX), cmap=MACH_CMAP),
-             axs2[3, :], "Mach number"),
+             axs2[2, :], "Mach number"),
         ]:
             sm.set_array([])
             fig2.colorbar(sm, ax=ax_row, shrink=0.5, pad=0.02).set_label(label, fontsize=10)
@@ -390,3 +353,98 @@ if __name__ == '__main__':
         plt.savefig(os.path.join(out_dir, 'zoom_cores_%s.png' % tag), dpi=300, bbox_inches='tight')
         plt.close()
         print("Saved: zoom_cores_%s.png" % tag)
+
+        # ---- radial profile figure (--profiles) ----
+        if args.profiles:
+            def _wstats(values, weights):
+                """Mass-weighted mean and std; returns (nan, nan) for empty/zero-weight bin."""
+                w = weights.sum()
+                if w == 0:
+                    return np.nan, np.nan
+                mean = np.dot(weights, values) / w
+                var  = np.dot(weights, (values - mean)**2) / w
+                return mean, np.sqrt(var)
+
+            r_edges   = np.logspace(np.log10(0.1), np.log10(half_pc), PROFILE_N_BINS + 1)
+            r_centers = np.sqrt(r_edges[:-1] * r_edges[1:])   # geometric mean
+
+            fig3, axs3 = plt.subplots(3, ncores,
+                                       figsize=(3 * ncores, 9),
+                                       constrained_layout=True, squeeze=False)
+
+            row_axs = [[], [], []]   # collect per-row axes for shared y-range
+
+            prof_rows = [
+                (r'$n_{\rm H}$ (cm$^{-3}$)', ),
+                ('Temperature (K)',           ),
+                ('Mach number',               ),
+            ]
+
+            for i, core in enumerate(cores):
+                cx_cl = core['x_kpc'] * cl_per_kpc
+                cy_cl = core['y_kpc'] * cl_per_kpc
+                cz_cl = core['z_kpc'] * cl_per_kpc
+
+                pbox = ds.box(
+                    ds.arr([cx_cl - core_size/2, cy_cl - core_size/2, cz_cl - core_size/2], 'code_length'),
+                    ds.arr([cx_cl + core_size/2, cy_cl + core_size/2, cz_cl + core_size/2], 'code_length'),
+                )
+
+                cell_x_pc = pbox[("index", "x")].to_value("pc")
+                cell_y_pc = pbox[("index", "y")].to_value("pc")
+                cell_z_pc = pbox[("index", "z")].to_value("pc")
+                dx_cm     = pbox[("gas", "dx")].to_value("cm")
+                rho_gcc   = pbox[("gas", "density")].to_value("g/cm**3")
+                cx_pc = core['x_kpc'] * 1e3
+                cy_pc = core['y_kpc'] * 1e3
+                cz_pc = core['z_kpc'] * 1e3
+                r_pc      = np.sqrt((cell_x_pc - cx_pc)**2 +
+                                    (cell_y_pc - cy_pc)**2 +
+                                    (cell_z_pc - cz_pc)**2)
+                mass_cell = rho_gcc * dx_cm**3   # grams per cell
+
+                field_vals = [
+                    rho_gcc * X_H / m_H_g,
+                    pbox[("gas", "temperature")].to_value("K"),
+                    pbox[("gas", "M")].to_value("1"),
+                ]
+
+                for row, (values, (ylabel,)) in enumerate(zip(field_vals, prof_rows)):
+                    ax = axs3[row, i]
+                    means = np.full(PROFILE_N_BINS, np.nan)
+                    stds  = np.full(PROFILE_N_BINS, np.nan)
+                    for j in range(PROFILE_N_BINS):
+                        mask = (r_pc >= r_edges[j]) & (r_pc < r_edges[j+1])
+                        if mask.any():
+                            means[j], stds[j] = _wstats(values[mask], mass_cell[mask])
+                    valid = np.isfinite(means) & (means > 0)
+                    lo = np.maximum(means[valid] - stds[valid], means[valid] * 1e-6)
+                    hi = means[valid] + stds[valid]
+                    ax.fill_between(r_centers[valid], lo, hi, alpha=0.3, color='C0')
+                    ax.plot(r_centers[valid], means[valid], lw=1.5, color='C0')
+                    ax.set_xscale('log')
+                    ax.set_yscale('log')
+                    ax.set_xlim(0.1, half_pc)
+                    if row == 2:
+                        ax.set_xlabel('r (pc)', fontsize=9)
+                    if i == 0:
+                        ax.set_ylabel(ylabel, fontsize=9)
+                    ax.tick_params(labelsize=8)
+                    if row == 0:
+                        n_H_peak = core['density'] * X_H / m_H_g
+                        ax.set_title(r'$n_{\rm H} = %.1e\ {\rm cm}^{-3}$' % n_H_peak, fontsize=10)
+                        ax.text(0.05, 0.95, str(core['rank']),
+                                transform=ax.transAxes, ha='left', va='top',
+                                fontsize=14, fontweight='bold')
+                    row_axs[row].append(ax)
+
+            # shared y-range per row
+            for axlist in row_axs:
+                y_lo = min(ax.get_ylim()[0] for ax in axlist)
+                y_hi = max(ax.get_ylim()[1] for ax in axlist)
+                for ax in axlist:
+                    ax.set_ylim(y_lo, y_hi)
+
+            plt.savefig(os.path.join(out_dir, 'zoom_profiles_%s.png' % tag), dpi=300, bbox_inches='tight')
+            plt.close()
+            print("Saved: zoom_profiles_%s.png" % tag)
