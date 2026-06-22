@@ -45,7 +45,7 @@ CORE_LEVEL    = 18     # AMR level for core projections
 
 # density row
 CORE_VMIN = 1e0    # Msun/pc^2
-CORE_VMAX = 1e5
+CORE_VMAX = 1e6
 
 # temperature row
 TEMP_CMAP = cmc.vik
