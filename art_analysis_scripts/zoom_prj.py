@@ -403,10 +403,16 @@ if __name__ == '__main__':
                                     (cell_z_pc - cz_pc)**2)
                 mass_cell = rho_gcc * dx_cm**3   # grams per cell
 
+                gamma_v = pbox[("artio", "HVAR_GAMMA")].to_value("1")
+                eturb_v = pbox[("artio", "HVAR_GAS_TURBULENT_ENERGY")].to_value("1")
+                ether_v = pbox[("artio", "HVAR_INTERNAL_ENERGY")].to_value(
+                    "code_mass*code_velocity**2/code_length**3")
+                mach_v  = np.sqrt(2.0 * eturb_v / (gamma_v * (gamma_v - 1.0) * ether_v))
+
                 field_vals = [
                     rho_gcc * X_H / m_H_g,
                     pbox[("gas", "temperature")].to_value("K"),
-                    pbox[("gas", "M")].to_value("1"),
+                    mach_v,
                 ]
 
                 for row, (values, (ylabel,)) in enumerate(zip(field_vals, prof_rows)):
