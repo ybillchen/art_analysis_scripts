@@ -40,7 +40,7 @@ VMAX     = 1e4
 # ---------------------------------------------------------------------------
 N_CORES       = 4      # number of dense cores to find
 EXCLUSION_PC  = 100.0  # minimum separation between cores, pc
-CORE_BOX_SIZE = 0.020  # kpc — full width of each core panel
+CORE_BOX_SIZE = 0.010  # kpc — full width of each core panel
 CORE_LEVEL    = 18     # AMR level for core projections
 
 # density row
@@ -146,7 +146,9 @@ if __name__ == '__main__':
     parser.add_argument('--level', type=int, default=LEVEL,
                         help='AMR level for main projection (default: %d)' % LEVEL)
     parser.add_argument('--cores', action='store_true',
-                        help='Find top %d dense cores and plot per-core panels' % N_CORES)
+                        help='Find top N dense cores and plot per-core panels')
+    parser.add_argument('--n-cores', type=int, default=N_CORES,
+                        help='Number of dense cores to find (default: %d)' % N_CORES)
     parser.add_argument('--stars', action='store_true',
                         help='Overlay star particles as green dots on main plot')
     parser.add_argument('--level-dots', action='store_true',
@@ -226,8 +228,8 @@ if __name__ == '__main__':
     # ---- core circles on main plot ----
     cores = None
     if args.cores:
-        print("Finding top %d dense cores (exclusion: %.0f pc)..." % (N_CORES, EXCLUSION_PC))
-        cores = find_dense_cores(box, n_cores=N_CORES, exclusion_pc=EXCLUSION_PC)
+        print("Finding top %d dense cores (exclusion: %.0f pc)..." % (args.n_cores, EXCLUSION_PC))
+        cores = find_dense_cores(box, n_cores=args.n_cores, exclusion_pc=EXCLUSION_PC)
         for ax, (prj_x, prj_y, _, _) in zip(axs, projections):
             for core in cores:
                 hx, hy = core[prj_x + '_kpc'], core[prj_y + '_kpc']
