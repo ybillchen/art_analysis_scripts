@@ -20,7 +20,7 @@ import numpy as np
 import matplotlib
 matplotlib.use('agg')
 import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
+from matplotlib.colors import LogNorm, BoundaryNorm, ListedColormap
 from matplotlib.cm import ScalarMappable
 import cmcrameri.cm as cmc
 import yt
@@ -59,6 +59,13 @@ MACH_VMAX = 1e2
 
 # Radial density profile row
 PROFILE_N_BINS = 40   # number of radial bins (linear, 0 → half CORE_BOX_SIZE)
+
+# Grid level row (max-level projection)
+GRID_LEVEL_MIN = 12
+GRID_LEVEL_MAX = 18
+_n_lev = GRID_LEVEL_MAX - GRID_LEVEL_MIN + 1
+GRID_LEVEL_CMAP = ListedColormap(plt.get_cmap('tab10').colors[:_n_lev])
+GRID_LEVEL_NORM = BoundaryNorm(np.arange(GRID_LEVEL_MIN - 0.5, GRID_LEVEL_MAX + 1.5, 1), _n_lev)
 
 # AMR level dots  (--level-dots)
 ROOT_GRID    = 256   # root grid cells per side (for level → dx conversion)
@@ -121,6 +128,59 @@ def extent_rel(region, core_y_kpc, core_x_kpc):
             region[4].to_value('pc') - core_y_kpc * 1e3,
             region[0].to_value('pc') - core_x_kpc * 1e3,
             region[3].to_value('pc') - core_x_kpc * 1e3]
+
+
+def prj_max_level(ds, center, size, level, prj_x='y', prj_y='x', factor=0.6):
+    """Project the maximum AMR refinement level along the LOS onto a 2D grid.
+    Returns (mesh, region) with the same grid layout as prj()."""
+    dx_level = 2**-level
+    N0, N1 = {}, {}
+    for axis, idx in (('x', 0), ('y', 1), ('z', 2)):
+        N0[axis] = np.floor((center[idx] - factor * size) / dx_level)
+        N1[axis] = np.ceil((center[idx] + factor * size) / dx_level)
+    N = int(max(N1[a] - N0[a] for a in ('x', 'y', 'z')))
+    for a in ('x', 'y', 'z'):
+        N1[a] = N0[a] + N
+
+    region = [
+        N0['x'] * dx_level * ds.units.code_length,
+        N0['y'] * dx_level * ds.units.code_length,
+        N0['z'] * dx_level * ds.units.code_length,
+        N1['x'] * dx_level * ds.units.code_length,
+        N1['y'] * dx_level * ds.units.code_length,
+        N1['z'] * dx_level * ds.units.code_length,
+    ]
+
+    d = ds.box(region[:3], region[3:])
+    x  = d["gas", prj_x].to_value("code_length")
+    y  = d["gas", prj_y].to_value("code_length")
+    dx = d["gas", "dx"].to_value("code_length")
+    domain_w = ds.domain_width[0].to_value('code_length')
+    lev = np.round(np.log2(domain_w / ROOT_GRID / dx)).astype(int)
+
+    mesh = np.full((N, N), 0, dtype=int)
+
+    # small cells (dx <= pixel): vectorised single-pixel assignment
+    small = dx <= dx_level
+    if small.any():
+        ix_s = np.floor(x[small] / dx_level - N0[prj_x]).astype(int)
+        iy_s = np.floor(y[small] / dx_level - N0[prj_y]).astype(int)
+        ok = (ix_s >= 0) & (ix_s < N) & (iy_s >= 0) & (iy_s < N)
+        np.maximum.at(mesh, (ix_s[ok], iy_s[ok]), lev[small][ok])
+
+    # large cells (dx > pixel): fill pixel block
+    big = ~small
+    for k in np.where(big)[0]:
+        ix0 = int(np.rint((x[k] - dx[k] / 2) / dx_level - N0[prj_x]))
+        iy0 = int(np.rint((y[k] - dx[k] / 2) / dx_level - N0[prj_y]))
+        ix1 = int(np.rint((x[k] + dx[k] / 2) / dx_level - N0[prj_x]))
+        iy1 = int(np.rint((y[k] + dx[k] / 2) / dx_level - N0[prj_y]))
+        ix0, iy0 = max(0, ix0), max(0, iy0)
+        ix1, iy1 = min(N, ix1), min(N, iy1)
+        sub = mesh[ix0:ix1, iy0:iy1]
+        mesh[ix0:ix1, iy0:iy1] = np.where(sub < lev[k], lev[k], sub)
+
+    return mesh, region
 
 
 # ---------------------------------------------------------------------------
@@ -249,7 +309,7 @@ if __name__ == '__main__':
     plt.close()
     print("Saved: zoom_prj_%s.png" % tag)
 
-    # ---- per-core panels: density / temperature / Mach ----
+    # ---- per-core panels: density / temperature / Mach / grid level ----
     if cores is not None:
         cl_per_kpc = ds.arr(1.0, 'kpc').to_value('code_length')
         core_size  = CORE_BOX_SIZE * cl_per_kpc
@@ -257,15 +317,15 @@ if __name__ == '__main__':
         X_H, m_H_g = 0.76, 1.673e-24        # hydrogen fraction, proton mass (g)
 
         ncores = len(cores)
-        fig2, axs2 = plt.subplots(3, ncores,
-                                   figsize=(3 * ncores, 9),
+        fig2, axs2 = plt.subplots(4, ncores,
+                                   figsize=(3 * ncores, 12),
                                    constrained_layout=True, squeeze=False)
 
         def _setup_ax(ax, row, col):
             ax.set_aspect('equal')
             ax.set_xlim(-half_pc, half_pc)
             ax.set_ylim(-half_pc, half_pc)
-            if row == 2:
+            if row == 3:
                 ax.set_xlabel(r'$\Delta y$ (pc)')
             if col == 0:
                 ax.set_ylabel(r'$\Delta x$ (pc)')
@@ -322,7 +382,19 @@ if __name__ == '__main__':
                        extent=extent_rel(region_m, core['y_kpc'], core['x_kpc']))
             _setup_ax(ax2, row=2, col=i)
 
-            # AMR level dots (optional)
+            # row 3: grid level (max-level projection)
+            ax3 = axs2[3, i]
+            mesh_lv, region_lv = prj_max_level(
+                ds, [cx_cl, cy_cl, cz_cl], core_size, level=CORE_LEVEL,
+                prj_x='y', prj_y='x', factor=0.6,
+            )
+            ax3.imshow(mesh_lv.T, origin='lower',
+                       cmap=GRID_LEVEL_CMAP, norm=GRID_LEVEL_NORM,
+                       extent=extent_rel(region_lv, core['y_kpc'], core['x_kpc']),
+                       interpolation='nearest')
+            _setup_ax(ax3, row=3, col=i)
+
+            # AMR level dots (optional) — image rows 0–2 only
             if args.level_dots:
                 dx_vals = core_box[("gas", "dx")].to_value('code_length')
                 lev     = np.round(np.log2(domain_w / ROOT_GRID / dx_vals)).astype(int)
@@ -350,6 +422,13 @@ if __name__ == '__main__':
             sm.set_array([])
             fig2.colorbar(sm, ax=ax_row, shrink=0.5, pad=0.02).set_label(label, fontsize=10)
 
+        # discrete colorbar for grid level row
+        sm_lv = ScalarMappable(norm=GRID_LEVEL_NORM, cmap=GRID_LEVEL_CMAP)
+        sm_lv.set_array([])
+        cbar_lv = fig2.colorbar(sm_lv, ax=axs2[3, :], shrink=0.5, pad=0.02,
+                                ticks=np.arange(GRID_LEVEL_MIN, GRID_LEVEL_MAX + 1))
+        cbar_lv.set_label("Grid level", fontsize=10)
+
         plt.savefig(os.path.join(out_dir, 'zoom_cores_%s.png' % tag), dpi=300, bbox_inches='tight')
         plt.close()
         print("Saved: zoom_cores_%s.png" % tag)
@@ -368,11 +447,11 @@ if __name__ == '__main__':
             r_edges   = np.logspace(np.log10(0.1), np.log10(half_pc), PROFILE_N_BINS + 1)
             r_centers = np.sqrt(r_edges[:-1] * r_edges[1:])   # geometric mean
 
-            fig3, axs3 = plt.subplots(3, ncores,
-                                       figsize=(3 * ncores, 9),
+            fig3, axs3 = plt.subplots(4, ncores,
+                                       figsize=(3 * ncores, 12),
                                        constrained_layout=True, squeeze=False)
 
-            row_axs = [[], [], []]   # collect per-row axes for shared y-range
+            row_axs = [[], [], [], []]   # collect per-row axes for shared y-range
 
             prof_rows = [
                 (r'$n_{\rm H}$ (cm$^{-3}$)', ),
@@ -435,8 +514,6 @@ if __name__ == '__main__':
                     ax.set_xscale('log')
                     ax.set_yscale('log')
                     ax.set_xlim(0.1, half_pc)
-                    if row == 2:
-                        ax.set_xlabel('r (pc)', fontsize=9)
                     if i == 0:
                         ax.set_ylabel(ylabel, fontsize=9)
                     ax.tick_params(labelsize=8)
@@ -447,6 +524,35 @@ if __name__ == '__main__':
                                 transform=ax.transAxes, ha='left', va='top',
                                 fontsize=14, fontweight='bold')
                     row_axs[row].append(ax)
+
+                # row 3: grid level profile (linear-space stats)
+                ax_lv = axs3[3, i]
+                dx_cl = pbox[("gas", "dx")].to_value("code_length")
+                lev_vals = np.round(np.log2(domain_w / ROOT_GRID / dx_cl)).astype(float)
+                lv_means = np.full(PROFILE_N_BINS, np.nan)
+                lv_stds  = np.full(PROFILE_N_BINS, np.nan)
+                for j in range(PROFILE_N_BINS):
+                    mask = (r_pc >= r_edges[j]) & (r_pc < r_edges[j+1])
+                    if mask.any():
+                        v = lev_vals[mask]
+                        w = mass_cell[mask]
+                        good = np.isfinite(v) & np.isfinite(w)
+                        if good.any():
+                            lv_means[j], lv_stds[j] = _wstats(v[good], w[good])
+                valid = np.isfinite(lv_means)
+                lo = lv_means[valid] - lv_stds[valid]
+                hi = lv_means[valid] + lv_stds[valid]
+                ax_lv.fill_between(r_centers[valid], lo, hi, alpha=0.3, color='C0')
+                ax_lv.plot(r_centers[valid], lv_means[valid], lw=1.5, color='C0')
+                ax_lv.set_xscale('log')
+                ax_lv.set_xlim(0.1, half_pc)
+                ax_lv.set_ylim(GRID_LEVEL_MIN - 0.5, GRID_LEVEL_MAX + 0.5)
+                ax_lv.set_xlabel('r (pc)', fontsize=9)
+                if i == 0:
+                    ax_lv.set_ylabel('Grid level', fontsize=9)
+                ax_lv.tick_params(labelsize=8)
+                ax_lv.yaxis.set_major_locator(plt.MaxNLocator(integer=True))
+                row_axs[3].append(ax_lv)
 
             # shared y-range per row
             for axlist in row_axs:
