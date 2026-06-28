@@ -37,6 +37,7 @@ import yt
 
 from prj import prj
 from grid_prj import get_snapshot_at_scalefactor
+from galaxy_names import get_label, resolve_galaxy
 
 # ---------------------------------------------------------------------------
 # Column definitions — add/remove/reorder entries to change the grid columns
@@ -71,11 +72,12 @@ SHOW_STARS = True
 # ---------------------------------------------------------------------------
 # Layout (inches)
 # ---------------------------------------------------------------------------
-FIG_W    = 10.0
-MARGIN   = 0.05   # left / top / right margin
-BMARGIN  = 0.55   # bottom margin (colorbar + labels)
-GAP      = 0.05   # gap between panels
-CBAR_H   = 0.12   # colorbar strip height
+FIG_W      = 10.0
+MARGIN     = 0.05   # left / top / right margin
+BMARGIN    = 0.35   # bottom margin (colorbar + tick labels)
+GAP        = 0.05   # gap between panels
+CBAR_H     = 0.15   # colorbar strip height
+CBAR_INSET = 0.15   # inset at each end so tick labels don't overlap
 
 
 # ---------------------------------------------------------------------------
@@ -191,8 +193,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description='Multi-galaxy × multi-field projection comparison grid')
     parser.add_argument('galaxies', nargs='*',
-                        default=['mh3e12_km/1116392', 'mh3e12_km/1118550'],
-                        help='galaxy folder paths relative to --root (default: mh3e12_km/1116392 mh3e12_km/1118550)')
+                        default=['f', 'h'],
+                        help='galaxy labels or folder paths relative to --root (default: f h)')
     parser.add_argument('--root', default=ROOT_PATH,
                         help='root simulation directory')
     parser.add_argument('-a', '--scale-factor', type=float, default=None,
@@ -224,11 +226,15 @@ if __name__ == '__main__':
 
     yt.funcs.mylog.setLevel(50)
 
-    basepaths = [os.path.join(args.root, g, 'run') for g in args.galaxies]
+    galaxies = [resolve_galaxy(g) for g in args.galaxies]
+    basepaths = [os.path.join(args.root, g, 'run') for g in galaxies]
     N = len(basepaths)   # rows (galaxies)
     M = len(COLUMNS)     # columns (fields)
 
-    labels = args.labels if args.labels is not None else [chr(ord('a') + i) for i in range(N)]
+    if args.labels is not None:
+        labels = args.labels
+    else:
+        labels = [get_label(bp) or chr(ord('a') + i) for i, bp in enumerate(basepaths)]
 
     # --- compute all panels ---
     if args.parallel > 1:
@@ -266,16 +272,22 @@ if __name__ == '__main__':
                 show_z=(c == 0),
             )
 
-    # --- horizontal colorbars (bottom row) ---
+    # --- horizontal colorbars (bottom row, text-inside-bar like grid_prj) ---
     for c, col in enumerate(COLUMNS):
-        left = (MARGIN + c * (panel_w + GAP)) / FIG_W
-        cbar_bottom = 0.25 / FIG_H
-        cbar_ax = fig.add_axes([left, cbar_bottom, panel_w / FIG_W, CBAR_H / FIG_H])
+        cbar_left = (MARGIN + c * (panel_w + GAP) + CBAR_INSET) / FIG_W
+        cbar_w    = (panel_w - 2 * CBAR_INSET) / FIG_W
+        cbar_bottom = MARGIN / FIG_H
+        cbar_ax = fig.add_axes([cbar_left, cbar_bottom, cbar_w, CBAR_H / FIG_H])
         sm = ScalarMappable(norm=LogNorm(vmin=col['vmin'], vmax=col['vmax']), cmap=col['cmap'])
         sm.set_array([])
         cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
         cbar.ax.tick_params(labelsize=9)
-        cbar.set_label(col['label'], fontsize=9)
+        cbar.ax.text(
+            0.5, 0.5, col['label'],
+            transform=cbar.ax.transAxes, ha='center', va='center',
+            color='black', fontsize=9, fontweight='bold',
+            path_effects=[pe.withStroke(linewidth=3, foreground='white')]
+        )
 
     # --- save ---
     z_str = "%g" % (1.0 / TARGET_A - 1)

@@ -30,6 +30,7 @@ import yt
 from prj import prj
 from datatype import dtype_tree
 from track_tree import find_main_mpb
+from galaxy_names import get_label
 
 ROOT_PATH     = "/scratch/08199/tg874988/art_simulations/hydro"
 ANALYSIS_PATH = os.path.join(ROOT_PATH, "analysis")
@@ -265,7 +266,7 @@ if __name__ == '__main__':
         if data is None:
             ax.set_visible(False)
         else:
-            render_panel(ax, data, chr(ord('a') + i))
+            render_panel(ax, data, get_label(basepaths[i]) or chr(ord('a') + i))
 
     plt.savefig(output_path, dpi=500)
     plt.close()
