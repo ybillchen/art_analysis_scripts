@@ -32,6 +32,7 @@ print("Font: %s" % fm.findfont(fm.FontProperties(family=matplotlib.rcParams['fon
 from matplotlib.colors import LogNorm
 from matplotlib.cm import ScalarMappable
 import matplotlib.patheffects as pe
+import matplotlib.ticker as ticker
 import cmcrameri.cm as cmc
 import yt
 
@@ -45,13 +46,13 @@ from galaxy_names import get_label, resolve_galaxy
 COLUMNS = [
     dict(name='density',     field='density',     unit='Msun/pc**3', weight='column',
          cmap='magma',       vmin=1e0,  vmax=1e4,
-         label=r"Gas column density ($M_\odot\,{\rm pc}^{-2}$)", text_color='w',
+         label=r"Column density ($M_\odot\,{\rm pc}^{-2}$)", text_color='w',
          show_stars=True),
     dict(name='temperature', field='temperature', unit='K',          weight='mass',
          cmap=cmc.vik,       vmin=1e3,  vmax=1e7,
          label="Temperature (K)",                                    text_color='k'),
     dict(name='mach',        field='M',           unit='1',          weight='mass',
-         cmap=cmc.vik_r,     vmin=1e-2, vmax=1e2,
+         cmap=cmc.vik,       vmin=1e-2, vmax=1e2,
          label="Mach number",                                        text_color='k'),
     dict(name='metallicity', field='metallicity', unit='1',          weight='mass',
          cmap=cmc.vik,       vmin=1e-3, vmax=1e-1,
@@ -276,11 +277,14 @@ if __name__ == '__main__':
     for c, col in enumerate(COLUMNS):
         cbar_left = (MARGIN + c * (panel_w + GAP) + CBAR_INSET) / FIG_W
         cbar_w    = (panel_w - 2 * CBAR_INSET) / FIG_W
-        cbar_bottom = (BMARGIN - CBAR_H - 0.05) / FIG_H
+        cbar_bottom = (BMARGIN - CBAR_H - 0.20) / FIG_H
         cbar_ax = fig.add_axes([cbar_left, cbar_bottom, cbar_w, CBAR_H / FIG_H])
         sm = ScalarMappable(norm=LogNorm(vmin=col['vmin'], vmax=col['vmax']), cmap=col['cmap'])
         sm.set_array([])
         cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
+        cbar.ax.xaxis.set_major_locator(ticker.LogLocator(base=10, numticks=20))
+        cbar.ax.xaxis.set_minor_locator(ticker.LogLocator(base=10, subs='auto', numticks=100))
+        cbar.ax.xaxis.set_minor_formatter(ticker.NullFormatter())
         cbar.ax.tick_params(labelsize=12, labelcolor='black')
         cbar.ax.text(
             0.5, 0.5, col['label'],
