@@ -74,9 +74,9 @@ SHOW_STARS = True
 # ---------------------------------------------------------------------------
 FIG_W      = 10.0
 MARGIN     = 0.05   # left / top / right margin
-BMARGIN    = 0.35   # bottom margin (colorbar + tick labels)
+BMARGIN    = 0.60   # bottom margin (colorbar + tick labels)
 GAP        = 0.05   # gap between panels
-CBAR_H     = 0.15   # colorbar strip height
+CBAR_H     = 0.30   # colorbar strip height
 CBAR_INSET = 0.15   # inset at each end so tick labels don't overlap
 
 
@@ -205,8 +205,8 @@ if __name__ == '__main__':
                         help='projection box size in kpc (default: %.1f)' % BOX_SIZE)
     parser.add_argument('--level', type=int, default=LEVEL,
                         help='AMR projection level (default: %d)' % LEVEL)
-    parser.add_argument('--no-stars', action='store_true',
-                        help='hide star particles (only applicable in density mode)')
+    parser.add_argument('--show-stars', action='store_true',
+                        help='show star particles (only applicable in density mode)')
     parser.add_argument('--parallel', type=int, default=1, metavar='N',
                         help='number of parallel worker processes (default: 1)')
     parser.add_argument('--labels', nargs='+', default=None,
@@ -222,7 +222,7 @@ if __name__ == '__main__':
         TARGET_A = 1.0 / (1.0 + args.redshift)
     BOX_SIZE   = args.size
     LEVEL      = args.level
-    SHOW_STARS = not args.no_stars
+    SHOW_STARS = args.show_stars
 
     yt.funcs.mylog.setLevel(50)
 
