@@ -74,7 +74,7 @@ SHOW_STARS = True
 # ---------------------------------------------------------------------------
 FIG_W      = 10.0
 MARGIN     = 0.05   # left / top / right margin
-BMARGIN    = 0.60   # bottom margin (colorbar + tick labels)
+BMARGIN    = 0.75   # bottom margin (colorbar + tick labels)
 GAP        = 0.05   # gap between panels
 CBAR_H     = 0.30   # colorbar strip height
 CBAR_INSET = 0.15   # inset at each end so tick labels don't overlap
@@ -276,16 +276,16 @@ if __name__ == '__main__':
     for c, col in enumerate(COLUMNS):
         cbar_left = (MARGIN + c * (panel_w + GAP) + CBAR_INSET) / FIG_W
         cbar_w    = (panel_w - 2 * CBAR_INSET) / FIG_W
-        cbar_bottom = MARGIN / FIG_H
+        cbar_bottom = (BMARGIN - CBAR_H - 0.05) / FIG_H
         cbar_ax = fig.add_axes([cbar_left, cbar_bottom, cbar_w, CBAR_H / FIG_H])
         sm = ScalarMappable(norm=LogNorm(vmin=col['vmin'], vmax=col['vmax']), cmap=col['cmap'])
         sm.set_array([])
         cbar = fig.colorbar(sm, cax=cbar_ax, orientation='horizontal')
-        cbar.ax.tick_params(labelsize=9)
+        cbar.ax.tick_params(labelsize=12, labelcolor='black')
         cbar.ax.text(
             0.5, 0.5, col['label'],
             transform=cbar.ax.transAxes, ha='center', va='center',
-            color='black', fontsize=9, fontweight='bold',
+            color='black', fontsize=12, fontweight='bold',
             path_effects=[pe.withStroke(linewidth=3, foreground='white')]
         )
 
