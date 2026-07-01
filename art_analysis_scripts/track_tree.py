@@ -412,15 +412,17 @@ def _mstar_one(args):
     """Worker: compute stellar mass within Rvir for one snapshot. Returns (i, mstar)."""
     i, snap_file, x, y, z, rvir = args
     yt.funcs.mylog.setLevel(50)
+    ds_i = yt.load(snap_file)
+    center = ds_i.arr([x, y, z], 'Mpccm/h')
+    rvir_i = ds_i.arr(rvir, 'kpccm/h')
     try:
-        ds_i = yt.load(snap_file)
-        center = ds_i.arr([x, y, z], 'Mpccm/h')
-        rvir_i = ds_i.arr(rvir, 'kpccm/h')
         sp = ds_i.sphere(center, rvir_i)
         return i, sp[("STAR", "MASS")].sum().to_value("Msun")
     except Exception as e:
-        tqdm.write("  snap index %d: skipped — %s" % (i, e))
-        return i, 0.0
+        if 'code_length' in str(e):
+            tqdm.write("  snap index %d: skipped — %s" % (i, e))
+            return i, 0.0
+        raise
 
 
 def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
