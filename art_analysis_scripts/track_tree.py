@@ -408,7 +408,22 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
             f.create_dataset(name, data=arr)
 
 
-def halo_evolution(mpb, filename_list_for_tree, basepath, suffix=''):
+def _mstar_one(args):
+    """Worker: compute stellar mass within Rvir for one snapshot. Returns (i, mstar)."""
+    i, snap_file, x, y, z, rvir = args
+    yt.funcs.mylog.setLevel(50)
+    try:
+        ds_i = yt.load(snap_file)
+        center = ds_i.arr([x, y, z], 'Mpccm/h')
+        rvir_i = ds_i.arr(rvir, 'kpccm/h')
+        sp = ds_i.sphere(center, rvir_i)
+        return i, sp[("STAR", "MASS")].sum().to_value("Msun")
+    except Exception as e:
+        tqdm.write("  snap index %d: skipped — %s" % (i, e))
+        return i, 0.0
+
+
+def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
     # Load one snapshot just to get cosmological parameters
     snap = mpb['Snap_idx'][-1]
     filename = os.path.join(basepath, filename_list_for_tree[snap])
@@ -431,17 +446,22 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix=''):
 
     # Stellar mass within virial radius at each snapshot
     yt.funcs.mylog.setLevel(50)
+    worker_args = [
+        (i, os.path.join(basepath, filename_list_for_tree[entry['Snap_idx']]),
+         entry['x'], entry['y'], entry['z'], entry['Rvir'])
+        for i, entry in enumerate(mpb)
+    ]
     mstar = np.zeros(len(mpb))
-    for i, entry in enumerate(tqdm(mpb, desc='mstar')):
-        snap_file = os.path.join(basepath, filename_list_for_tree[entry['Snap_idx']])
-        try:
-            ds_i = yt.load(snap_file)
-            center = ds_i.arr([entry['x'], entry['y'], entry['z']], 'Mpccm/h')
-            rvir_i = ds_i.arr(entry['Rvir'], 'kpccm/h')
-            sp = ds_i.sphere(center, rvir_i)
-            mstar[i] = sp[("STAR", "MASS")].sum().to_value("Msun")
-        except Exception as e:
-            tqdm.write("  snap %d (a=%.4f): skipped — %s" % (entry['Snap_idx'], entry['scale'], e))
+    if nproc > 1:
+        from multiprocessing import Pool
+        with Pool(nproc) as pool:
+            for i, m in tqdm(pool.imap_unordered(_mstar_one, worker_args),
+                             total=len(mpb), desc='mstar'):
+                mstar[i] = m
+    else:
+        for args in tqdm(worker_args, desc='mstar'):
+            i, m = _mstar_one(args)
+            mstar[i] = m
 
     output_path = os.path.join(basepath, 'analysis/halo_evolution%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -539,7 +559,7 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     art2skirt(ds, d, center, output_path)
 
-def process_folder(basepath, scalefactor=None, branch='mpb'):
+def process_folder(basepath, scalefactor=None, branch='mpb', nproc=1):
     """Process a single simulation folder.
 
     branch: 'mpb' for the main progenitor branch, 'merger' for the most
@@ -569,7 +589,7 @@ def process_folder(basepath, scalefactor=None, branch='mpb'):
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
         suffix = '_merger' if branch == 'merger' else ''
-        halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix)
+        halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix, nproc=nproc)
         # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         # baryon_fraction_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
@@ -603,20 +623,20 @@ def process_folder(basepath, scalefactor=None, branch='mpb'):
     except Exception as e:
         print(f"Error processing {basepath}: {e}")
 
-def scan_subfolders(root_path, root_folder, scalefactor=None, branch='mpb'):
+def scan_subfolders(root_path, root_folder, scalefactor=None, branch='mpb', nproc=1):
     """Scan and process all subfolders in a root folder."""
     folder_path = os.path.join(root_path, root_folder)
     for entry in sorted(os.listdir(folder_path)):
         subfolder_path = os.path.join(folder_path, entry)
         basepath = os.path.join(subfolder_path, "run")
         if os.path.isdir(basepath):
-            process_folder(basepath, scalefactor=scalefactor, branch=branch)
+            process_folder(basepath, scalefactor=scalefactor, branch=branch, nproc=nproc)
 
-def process_all_folders(root_path, root_folders, scalefactor=None, branch='mpb'):
+def process_all_folders(root_path, root_folders, scalefactor=None, branch='mpb', nproc=1):
     """Process all folders."""
     for root_folder in root_folders:
         print(f"Processing folder: {root_folder}")
-        scan_subfolders(root_path, root_folder, scalefactor=scalefactor, branch=branch)
+        scan_subfolders(root_path, root_folder, scalefactor=scalefactor, branch=branch, nproc=nproc)
 
 if __name__ == '__main__':
 
@@ -636,11 +656,15 @@ if __name__ == '__main__':
         '--branch', '-b', default='mpb', choices=['mpb', 'merger'],
         help='Branch to analyse: mpb (main progenitor) or merger (highest-peak-mass secondary)'
     )
+    parser.add_argument(
+        '--nproc', '-n', type=int, default=1,
+        help='number of parallel worker processes for mstar calculation (default: 1)'
+    )
     args = parser.parse_args()
 
     if args.basepath is not None:
         basepath = os.path.dirname(args.basepath) if args.basepath.endswith('.art') else args.basepath
         basepath = os.path.join(basepath, "run") if not basepath.endswith("run") else basepath
-        process_folder(basepath, scalefactor=args.scalefactor, branch=args.branch)
+        process_folder(basepath, scalefactor=args.scalefactor, branch=args.branch, nproc=args.nproc)
     else:
-        process_all_folders(root_path, root_folders, scalefactor=args.scalefactor, branch=args.branch)
+        process_all_folders(root_path, root_folders, scalefactor=args.scalefactor, branch=args.branch, nproc=args.nproc)
