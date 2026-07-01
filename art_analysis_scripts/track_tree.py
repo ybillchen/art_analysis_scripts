@@ -428,6 +428,17 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix=''):
     y     = mpb['y']
     z     = mpb['z']
 
+    # Stellar mass within virial radius at each snapshot
+    mstar = np.zeros(len(mpb))
+    for i, entry in enumerate(mpb):
+        snap_file = os.path.join(basepath, filename_list_for_tree[entry['Snap_idx']])
+        ds_i = yt.load(snap_file)
+        center = ds_i.arr([entry['x'], entry['y'], entry['z']], 'Mpccm/h')
+        rvir_i = ds_i.arr(entry['Rvir'], 'kpccm/h')
+        sp = ds_i.sphere(center, rvir_i)
+        mstar[i] = sp[("STAR", "MASS")].sum().to_value("Msun")
+        print("  [%d/%d] a=%.4f  Mstar=%.3e Msun" % (i + 1, len(mpb), entry['scale'], mstar[i]))
+
     output_path = os.path.join(basepath, 'analysis/halo_evolution%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with h5py.File(output_path, 'w') as f:
@@ -438,6 +449,7 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix=''):
         f.create_dataset('x',     data=x)      # Mpccm/h
         f.create_dataset('y',     data=y)
         f.create_dataset('z',     data=z)
+        f.create_dataset('mstar', data=mstar)  # Msun (within Rvir)
     print("Saved: %s" % output_path)
 
 
@@ -553,7 +565,7 @@ def process_folder(basepath, scalefactor=None, branch='mpb'):
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
         suffix = '_merger' if branch == 'merger' else ''
-        # halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix)
+        halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix)
         # star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         # gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         # baryon_fraction_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
@@ -578,10 +590,10 @@ def process_folder(basepath, scalefactor=None, branch='mpb'):
         #     mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, cmap='coolwarm',
         #     field="avir", field_unit="1", weight="mass", vmin=1e1, vmax=1e7, scale='log',
         # )
-        make_movie_along_mpb(
-            mpb_main, filename_list_for_tree, basepath, cmap='magma',
-            field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
-        )
+        # make_movie_along_mpb(
+        #     mpb_main, filename_list_for_tree, basepath, cmap='magma',
+        #     field="density", field_unit="Msun/pc**3", weight="volume", vmin=1e-4, vmax=1e0
+        # )
 
         print(f"Processed: {basepath}")
     except Exception as e:
