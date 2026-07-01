@@ -10,6 +10,7 @@ import sys
 import argparse
 import subprocess
 import h5py
+from tqdm import tqdm
 sys.path.append('.')
 from copy import copy
 
@@ -430,14 +431,13 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix=''):
 
     # Stellar mass within virial radius at each snapshot
     mstar = np.zeros(len(mpb))
-    for i, entry in enumerate(mpb):
+    for i, entry in enumerate(tqdm(mpb, desc='mstar')):
         snap_file = os.path.join(basepath, filename_list_for_tree[entry['Snap_idx']])
         ds_i = yt.load(snap_file)
         center = ds_i.arr([entry['x'], entry['y'], entry['z']], 'Mpccm/h')
         rvir_i = ds_i.arr(entry['Rvir'], 'kpccm/h')
         sp = ds_i.sphere(center, rvir_i)
         mstar[i] = sp[("STAR", "MASS")].sum().to_value("Msun")
-        print("  [%d/%d] a=%.4f  Mstar=%.3e Msun" % (i + 1, len(mpb), entry['scale'], mstar[i]))
 
     output_path = os.path.join(basepath, 'analysis/halo_evolution%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
