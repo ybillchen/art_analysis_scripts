@@ -383,8 +383,9 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
 
     def try_add(name, fn):
         try:
+            arr = fn()
             col_names.append(name)
-            col_arrays.append(fn())
+            col_arrays.append(arr)
         except Exception:
             pass
 
