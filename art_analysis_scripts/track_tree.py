@@ -591,7 +591,7 @@ def process_folder(basepath, scalefactor=None, branch='mpb', nproc=1):
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
         suffix = '_merger' if branch == 'merger' else ''
-        halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix, nproc=nproc)
+        # halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix, nproc=nproc)
         star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         # baryon_fraction_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
