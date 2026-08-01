@@ -201,7 +201,11 @@ class TarFileComparator:
         print(f"  {len(self.missing_on_remote):4d}  only on local (will be uploaded)")
         print(f"  {len(self.missing_on_local):4d}  only on remote (will be preserved)")
         print(f"  {len(self.both_intact):4d}  size mismatch, both intact [SYNC BLOCKED]")
+        for e in self.both_intact:
+            print(f"          {e['rel_path']}  (local {e['local_size']:,}  remote {e['remote_size']:,})")
         print(f"  {len(self.larger_remote_ok):4d}  local > remote, only remote intact [SYNC BLOCKED]")
+        for e in self.larger_remote_ok:
+            print(f"          {e['rel_path']}  (local {e['local_size']:,}  remote {e['remote_size']:,})")
         print(f"  {len(self.larger_remote_broken):4d}  local > remote, only remote broken [re-sync will fix]")
         print(f"  {len(self.smaller_ok):4d}  local < remote, only local intact [re-sync will fix]")
         print(f"  {len(self.smaller_broken):4d}  local < remote, only local broken [offer delete]")
