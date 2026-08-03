@@ -58,7 +58,7 @@ def get_snapshot_at_scalefactor(basepath, target_a):
     treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
     snap_list = np.loadtxt(
         os.path.join(basepath, 'rockstar_halos/datasets.txt'),
-        dtype={'names': ('filename', 'snap_original'), 'formats': ('U20', int)}
+        dtype={'names': ('filename', 'snap_original'), 'formats': ('U256', int)}
     )
     tree = np.loadtxt(treepath, skiprows=49, dtype=dtype_tree)
     mpb = find_main_mpb(tree)

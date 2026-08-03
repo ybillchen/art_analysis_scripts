@@ -104,6 +104,9 @@ def main():
                  % (args.galaxy, ', '.join(sorted(GALAXY_PATHS)), basepath))
 
     snapshot, filename = get_snapshot_at_scalefactor(basepath, target_a)
+    if not os.path.exists(filename):
+        sys.exit("Snapshot not found: %s" % filename)
+    print("Snapshot: %s (a=%.6f)" % (filename, snapshot['scale']))
     ds = yt.load(filename)
 
     x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
