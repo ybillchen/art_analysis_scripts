@@ -30,7 +30,7 @@ import yt
 
 from prj import prj
 from grid_prj import get_snapshot_at_scalefactor
-from galaxy_names import resolve_galaxy
+from galaxy_names import resolve_galaxy, GALAXY_PATHS
 
 # ---------------------------------------------------------------------------
 # Defaults
@@ -94,8 +94,14 @@ def main():
     target_a = args.scale_factor if args.scale_factor is not None \
         else 1.0 / (1.0 + args.redshift)
 
+    # 'f' and friends are nicknames — resolve to the real folder path
     galaxy = resolve_galaxy(args.galaxy)
     basepath = os.path.join(args.root, galaxy, 'run')
+    if galaxy != args.galaxy:
+        print("Galaxy '%s' -> %s" % (args.galaxy, galaxy))
+    elif not os.path.isdir(basepath):
+        sys.exit("Unknown galaxy '%s': not a nickname (%s) and %s does not exist"
+                 % (args.galaxy, ', '.join(sorted(GALAXY_PATHS)), basepath))
 
     snapshot, filename = get_snapshot_at_scalefactor(basepath, target_a)
     ds = yt.load(filename)
