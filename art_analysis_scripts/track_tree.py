@@ -423,6 +423,10 @@ RHALF_SMOOTH_WINDOW = 0.1
 NH_SF = 1e2   # hydrogen number density threshold, cm^-3
 T_SF  = 1e2   # temperature ceiling, K
 
+# Aperture for the star-forming gas mass, as a multiple of the smoothed
+# stellar half-mass radius.
+SFGAS_APERTURE = 2.0
+
 
 def _star_props_one(args):
     """Worker: stellar mass within Rvir and the half-mass radius of the central
@@ -547,12 +551,13 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
             time[valid], rhalf[valid], 0.5 * RHALF_SMOOTH_WINDOW, kernel='boxcar'
         )
 
-    # Star-forming gas mass inside the smoothed half-mass radius. This needs a
-    # second pass because the smoothing depends on every snapshot, but the
-    # spheres are small so it reads far less than the Rvir pass above.
+    # Star-forming gas mass inside SFGAS_APERTURE * the smoothed half-mass
+    # radius. This needs a second pass because the smoothing depends on every
+    # snapshot, but the spheres are small so it reads far less than the Rvir
+    # pass above.
     sfgas_args = [
         (i, os.path.join(basepath, filename_list_for_tree[entry['Snap_idx']]),
-         entry['x'], entry['y'], entry['z'], rhalf_smooth[i])
+         entry['x'], entry['y'], entry['z'], SFGAS_APERTURE * rhalf_smooth[i])
         for i, entry in enumerate(mpb)
     ]
     (msfgas,) = _run_workers(_sfgas_one, sfgas_args, nproc, 'sfgas', 1)
@@ -570,7 +575,7 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
         f.create_dataset('mstar', data=mstar)  # Msun (within Rvir)
         f.create_dataset('rhalf', data=rhalf)  # kpc, physical (within RHALF_APERTURE*Rvir)
         f.create_dataset('rhalf_smooth', data=rhalf_smooth)  # kpc, physical (RHALF_SMOOTH_WINDOW average)
-        f.create_dataset('msfgas', data=msfgas)  # Msun (n_H>NH_SF, T<T_SF, within rhalf_smooth)
+        f.create_dataset('msfgas', data=msfgas)  # Msun (n_H>NH_SF, T<T_SF, within SFGAS_APERTURE*rhalf_smooth)
     print("Saved: %s" % output_path)
 
 
