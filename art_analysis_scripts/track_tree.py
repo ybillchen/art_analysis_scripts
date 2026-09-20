@@ -414,6 +414,15 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
 # the *central* galaxy needs a tighter aperture than the one used for mstar.
 RHALF_APERTURE = 0.1
 
+# Full width of the running window used to smooth rhalf before it is used as
+# the star-forming gas aperture (Gyr). smooth_time_series' boxcar kernel keeps
+# |dt| <= tau, so tau is half of this.
+RHALF_SMOOTH_WINDOW = 0.1
+
+# Star-forming gas: dense and cold.
+NH_SF = 1e2   # hydrogen number density threshold, cm^-3
+T_SF  = 1e2   # temperature ceiling, K
+
 
 def _star_props_one(args):
     """Worker: stellar mass within Rvir and the half-mass radius of the central
@@ -453,6 +462,51 @@ def _star_props_one(args):
         raise
 
 
+def _sfgas_one(args):
+    """Worker: total mass of star-forming gas (n_H > NH_SF and T < T_SF) inside
+    a given physical radius for one snapshot.
+
+    Returns (i, msfgas [Msun]).
+    """
+    i, snap_file, x, y, z, radius_kpc = args
+    yt.funcs.mylog.setLevel(50)
+    if not np.isfinite(radius_kpc) or radius_kpc <= 0.0:
+        return i, 0.0
+    ds_i = yt.load(snap_file)
+    center = ds_i.arr([x, y, z], 'Mpccm/h')
+    try:
+        sp = ds_i.sphere(center, ds_i.quan(radius_kpc, 'kpc'))
+        nh = (sp[('gas', 'H_density')] / ds_i.units.proton_mass).to_value('cm**-3')
+        temperature = sp[('gas', 'temperature')].to_value('K')
+        mass = sp[('gas', 'cell_mass')].to_value('Msun')
+        sf = (nh > NH_SF) & (temperature < T_SF)
+        return i, float(mass[sf].sum())
+    except Exception as e:
+        if 'code_length' in str(e):
+            tqdm.write("  snap index %d: sf-gas skipped — %s" % (i, e))
+            return i, 0.0
+        raise
+
+
+def _run_workers(worker, args_list, nproc, desc, n_out):
+    """Map worker over args_list, scattering each returned tuple (i, v1, v2, ...)
+    into n_out arrays indexed by i. Returns the list of arrays."""
+    out = [np.zeros(len(args_list)) for _ in range(n_out)]
+    if nproc > 1:
+        from multiprocessing import Pool
+        with Pool(nproc) as pool:
+            results = pool.imap_unordered(worker, args_list)
+            for res in tqdm(results, total=len(args_list), desc=desc):
+                for k, v in enumerate(res[1:]):
+                    out[k][res[0]] = v
+    else:
+        for a in tqdm(args_list, desc=desc):
+            res = worker(a)
+            for k, v in enumerate(res[1:]):
+                out[k][res[0]] = v
+    return out
+
+
 def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
     # Load one snapshot just to get cosmological parameters
     snap = mpb['Snap_idx'][-1]
@@ -481,20 +535,27 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
          entry['x'], entry['y'], entry['z'], entry['Rvir'])
         for i, entry in enumerate(mpb)
     ]
-    mstar = np.zeros(len(mpb))
-    rhalf = np.zeros(len(mpb))
-    if nproc > 1:
-        from multiprocessing import Pool
-        with Pool(nproc) as pool:
-            for i, m, rh in tqdm(pool.imap_unordered(_star_props_one, worker_args),
-                                 total=len(mpb), desc='star'):
-                mstar[i] = m
-                rhalf[i] = rh
-    else:
-        for args in tqdm(worker_args, desc='star'):
-            i, m, rh = _star_props_one(args)
-            mstar[i] = m
-            rhalf[i] = rh
+    mstar, rhalf = _run_workers(_star_props_one, worker_args, nproc, 'star', 2)
+
+    # Running average of rhalf over RHALF_SMOOTH_WINDOW. Snapshots with no
+    # measurement (rhalf == 0) are excluded so their zeros cannot drag the
+    # average down; they keep a smoothed radius of 0 and are skipped below.
+    rhalf_smooth = np.zeros(len(mpb))
+    valid = rhalf > 0
+    if valid.any():
+        rhalf_smooth[valid] = smooth_time_series(
+            time[valid], rhalf[valid], 0.5 * RHALF_SMOOTH_WINDOW, kernel='boxcar'
+        )
+
+    # Star-forming gas mass inside the smoothed half-mass radius. This needs a
+    # second pass because the smoothing depends on every snapshot, but the
+    # spheres are small so it reads far less than the Rvir pass above.
+    sfgas_args = [
+        (i, os.path.join(basepath, filename_list_for_tree[entry['Snap_idx']]),
+         entry['x'], entry['y'], entry['z'], rhalf_smooth[i])
+        for i, entry in enumerate(mpb)
+    ]
+    (msfgas,) = _run_workers(_sfgas_one, sfgas_args, nproc, 'sfgas', 1)
 
     output_path = os.path.join(basepath, 'analysis/halo_evolution%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -508,6 +569,8 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
         f.create_dataset('z',     data=z)
         f.create_dataset('mstar', data=mstar)  # Msun (within Rvir)
         f.create_dataset('rhalf', data=rhalf)  # kpc, physical (within RHALF_APERTURE*Rvir)
+        f.create_dataset('rhalf_smooth', data=rhalf_smooth)  # kpc, physical (RHALF_SMOOTH_WINDOW average)
+        f.create_dataset('msfgas', data=msfgas)  # Msun (n_H>NH_SF, T<T_SF, within rhalf_smooth)
     print("Saved: %s" % output_path)
 
 
