@@ -419,9 +419,8 @@ RHALF_APERTURE = 0.1
 # |dt| <= tau, so tau is half of this.
 RHALF_SMOOTH_WINDOW = 0.1
 
-# Star-forming gas: dense and cold.
+# Star-forming gas: dense.
 NH_SF = 1e2   # hydrogen number density threshold, cm^-3
-T_SF  = 1e2   # temperature ceiling, K
 
 # Aperture for the star-forming gas mass, as a multiple of the smoothed
 # stellar half-mass radius.
@@ -467,8 +466,8 @@ def _star_props_one(args):
 
 
 def _sfgas_one(args):
-    """Worker: total mass of star-forming gas (n_H > NH_SF and T < T_SF) inside
-    a given physical radius for one snapshot.
+    """Worker: total mass of star-forming gas (n_H > NH_SF) inside a given
+    physical radius for one snapshot.
 
     Returns (i, msfgas [Msun]).
     """
@@ -481,10 +480,8 @@ def _sfgas_one(args):
     try:
         sp = ds_i.sphere(center, ds_i.quan(radius_kpc, 'kpc'))
         nh = (sp[('gas', 'H_density')] / ds_i.units.proton_mass).to_value('cm**-3')
-        temperature = sp[('gas', 'temperature')].to_value('K')
         mass = sp[('gas', 'cell_mass')].to_value('Msun')
-        sf = (nh > NH_SF) & (temperature < T_SF)
-        return i, float(mass[sf].sum())
+        return i, float(mass[nh > NH_SF].sum())
     except Exception as e:
         if 'code_length' in str(e):
             tqdm.write("  snap index %d: sf-gas skipped — %s" % (i, e))
@@ -575,7 +572,7 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
         f.create_dataset('mstar', data=mstar)  # Msun (within Rvir)
         f.create_dataset('rhalf', data=rhalf)  # kpc, physical (within RHALF_APERTURE*Rvir)
         f.create_dataset('rhalf_smooth', data=rhalf_smooth)  # kpc, physical (RHALF_SMOOTH_WINDOW average)
-        f.create_dataset('msfgas', data=msfgas)  # Msun (n_H>NH_SF, T<T_SF, within SFGAS_APERTURE*rhalf_smooth)
+        f.create_dataset('msfgas', data=msfgas)  # Msun (n_H>NH_SF, within SFGAS_APERTURE*rhalf_smooth)
     print("Saved: %s" % output_path)
 
 
