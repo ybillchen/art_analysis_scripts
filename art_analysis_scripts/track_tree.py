@@ -409,8 +409,18 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
             f.create_dataset(name, data=arr)
 
 
-def _mstar_one(args):
-    """Worker: compute stellar mass within Rvir for one snapshot. Returns (i, mstar)."""
+# Aperture for the stellar half-mass radius, as a fraction of Rvir. Rvir
+# encloses satellites and the diffuse stellar halo, so the half-mass radius of
+# the *central* galaxy needs a tighter aperture than the one used for mstar.
+RHALF_APERTURE = 0.1
+
+
+def _star_props_one(args):
+    """Worker: stellar mass within Rvir and the half-mass radius of the central
+    galaxy (within RHALF_APERTURE * Rvir) for one snapshot.
+
+    Returns (i, mstar [Msun], rhalf [kpc, physical]).
+    """
     i, snap_file, x, y, z, rvir = args
     yt.funcs.mylog.setLevel(50)
     ds_i = yt.load(snap_file)
@@ -418,11 +428,28 @@ def _mstar_one(args):
     rvir_i = ds_i.arr(rvir, 'kpccm/h')
     try:
         sp = ds_i.sphere(center, rvir_i)
-        return i, sp[("STAR", "MASS")].sum().to_value("Msun")
+        m = sp[("STAR", "MASS")].to_value("Msun")
+        if m.size == 0:
+            return i, 0.0, 0.0
+        mstar = m.sum()
+
+        dx = (sp[("STAR", "POSITION_X")] - center[0]).to_value("kpc")
+        dy = (sp[("STAR", "POSITION_Y")] - center[1]).to_value("kpc")
+        dz = (sp[("STAR", "POSITION_Z")] - center[2]).to_value("kpc")
+        r = np.sqrt(dx**2 + dy**2 + dz**2)
+
+        inside = r <= RHALF_APERTURE * rvir_i.to_value("kpc")
+        if not inside.any():
+            return i, mstar, 0.0
+        order = np.argsort(r[inside])
+        r_sorted = r[inside][order]
+        m_cum = np.cumsum(m[inside][order])
+        rhalf = float(np.interp(0.5 * m_cum[-1], m_cum, r_sorted))
+        return i, mstar, rhalf
     except Exception as e:
         if 'code_length' in str(e):
             tqdm.write("  snap index %d: skipped — %s" % (i, e))
-            return i, 0.0
+            return i, 0.0, 0.0
         raise
 
 
@@ -447,7 +474,7 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
     y     = mpb['y']
     z     = mpb['z']
 
-    # Stellar mass within virial radius at each snapshot
+    # Stellar mass within Rvir and stellar half-mass radius at each snapshot
     yt.funcs.mylog.setLevel(50)
     worker_args = [
         (i, os.path.join(basepath, filename_list_for_tree[entry['Snap_idx']]),
@@ -455,16 +482,19 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
         for i, entry in enumerate(mpb)
     ]
     mstar = np.zeros(len(mpb))
+    rhalf = np.zeros(len(mpb))
     if nproc > 1:
         from multiprocessing import Pool
         with Pool(nproc) as pool:
-            for i, m in tqdm(pool.imap_unordered(_mstar_one, worker_args),
-                             total=len(mpb), desc='mstar'):
+            for i, m, rh in tqdm(pool.imap_unordered(_star_props_one, worker_args),
+                                 total=len(mpb), desc='star'):
                 mstar[i] = m
+                rhalf[i] = rh
     else:
-        for args in tqdm(worker_args, desc='mstar'):
-            i, m = _mstar_one(args)
+        for args in tqdm(worker_args, desc='star'):
+            i, m, rh = _star_props_one(args)
             mstar[i] = m
+            rhalf[i] = rh
 
     output_path = os.path.join(basepath, 'analysis/halo_evolution%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -477,6 +507,7 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
         f.create_dataset('y',     data=y)
         f.create_dataset('z',     data=z)
         f.create_dataset('mstar', data=mstar)  # Msun (within Rvir)
+        f.create_dataset('rhalf', data=rhalf)  # kpc, physical (within RHALF_APERTURE*Rvir)
     print("Saved: %s" % output_path)
 
 
@@ -572,7 +603,7 @@ def process_folder(basepath, scalefactor=None, branch='mpb', nproc=1):
         treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
         snap_list = np.loadtxt(
             os.path.join(basepath, 'rockstar_halos/datasets.txt'),
-            dtype={'names': ('filename', 'snap_original'), 'formats': ('U20', int)}
+            dtype={'names': ('filename', 'snap_original'), 'formats': ('U256', int)}
         )
 
         tree = np.loadtxt(treepath, skiprows=49, dtype=dtype_tree)
@@ -592,7 +623,7 @@ def process_folder(basepath, scalefactor=None, branch='mpb', nproc=1):
         filename_list_for_tree = snap_list['filename'][dsnap:]
 
         suffix = '_merger' if branch == 'merger' else ''
-        # halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix, nproc=nproc)
+        halo_evolution(mpb_main, filename_list_for_tree, basepath, suffix=suffix, nproc=nproc)
         star_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         gas_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor, suffix=suffix)
         # baryon_fraction_at_scalefactor(mpb_main, filename_list_for_tree, basepath, scalefactor=scalefactor)
