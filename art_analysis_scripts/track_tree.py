@@ -419,12 +419,13 @@ RHALF_APERTURE = 0.1
 # |dt| <= tau, so tau is half of this.
 RHALF_SMOOTH_WINDOW = 0.1
 
-# Star-forming gas: dense.
-NH_SF = 1e2   # hydrogen number density threshold, cm^-3
+# Hydrogen number density thresholds (cm^-3). Each one yields a gas mass
+# measurement saved as rgas_n<threshold>.
+NH_THRESHOLDS = [1e2, 1e1, 1e0]
 
-# Aperture for the star-forming gas mass, as a multiple of the smoothed
-# stellar half-mass radius.
-SFGAS_APERTURE = 2.0
+# Aperture for those gas masses, as a multiple of the smoothed stellar
+# half-mass radius.
+GAS_APERTURE = 2.0
 
 
 def _star_props_one(args):
@@ -465,27 +466,28 @@ def _star_props_one(args):
         raise
 
 
-def _sfgas_one(args):
-    """Worker: total mass of star-forming gas (n_H > NH_SF) inside a given
-    physical radius for one snapshot.
+def _gas_mass_one(args):
+    """Worker: gas mass above each NH_THRESHOLDS entry inside a given physical
+    radius for one snapshot.
 
-    Returns (i, msfgas [Msun]).
+    Returns (i, m_0, m_1, ...) in Msun, one per threshold.
     """
     i, snap_file, x, y, z, radius_kpc = args
     yt.funcs.mylog.setLevel(50)
+    zeros = (i,) + (0.0,) * len(NH_THRESHOLDS)
     if not np.isfinite(radius_kpc) or radius_kpc <= 0.0:
-        return i, 0.0
+        return zeros
     ds_i = yt.load(snap_file)
     center = ds_i.arr([x, y, z], 'Mpccm/h')
     try:
         sp = ds_i.sphere(center, ds_i.quan(radius_kpc, 'kpc'))
         nh = (sp[('gas', 'H_density')] / ds_i.units.proton_mass).to_value('cm**-3')
         mass = sp[('gas', 'cell_mass')].to_value('Msun')
-        return i, float(mass[nh > NH_SF].sum())
+        return (i,) + tuple(float(mass[nh > thr].sum()) for thr in NH_THRESHOLDS)
     except Exception as e:
         if 'code_length' in str(e):
-            tqdm.write("  snap index %d: sf-gas skipped — %s" % (i, e))
-            return i, 0.0
+            tqdm.write("  snap index %d: gas skipped — %s" % (i, e))
+            return zeros
         raise
 
 
@@ -548,16 +550,15 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
             time[valid], rhalf[valid], 0.5 * RHALF_SMOOTH_WINDOW, kernel='boxcar'
         )
 
-    # Star-forming gas mass inside SFGAS_APERTURE * the smoothed half-mass
-    # radius. This needs a second pass because the smoothing depends on every
-    # snapshot, but the spheres are small so it reads far less than the Rvir
-    # pass above.
-    sfgas_args = [
+    # Gas masses inside GAS_APERTURE * the smoothed half-mass radius. This needs
+    # a second pass because the smoothing depends on every snapshot, but the
+    # spheres are small so it reads far less than the Rvir pass above.
+    gas_args = [
         (i, os.path.join(basepath, filename_list_for_tree[entry['Snap_idx']]),
-         entry['x'], entry['y'], entry['z'], SFGAS_APERTURE * rhalf_smooth[i])
+         entry['x'], entry['y'], entry['z'], GAS_APERTURE * rhalf_smooth[i])
         for i, entry in enumerate(mpb)
     ]
-    (msfgas,) = _run_workers(_sfgas_one, sfgas_args, nproc, 'sfgas', 1)
+    rgas = _run_workers(_gas_mass_one, gas_args, nproc, 'gas', len(NH_THRESHOLDS))
 
     output_path = os.path.join(basepath, 'analysis/halo_evolution%s.hdf5' % suffix)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -572,7 +573,9 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
         f.create_dataset('mstar', data=mstar)  # Msun (within Rvir)
         f.create_dataset('rhalf', data=rhalf)  # kpc, physical (within RHALF_APERTURE*Rvir)
         f.create_dataset('rhalf_smooth', data=rhalf_smooth)  # kpc, physical (RHALF_SMOOTH_WINDOW average)
-        f.create_dataset('msfgas', data=msfgas)  # Msun (n_H>NH_SF, within SFGAS_APERTURE*rhalf_smooth)
+        # Msun, gas above each threshold within GAS_APERTURE*rhalf_smooth
+        for thr, arr in zip(NH_THRESHOLDS, rgas):
+            f.create_dataset('rgas_n%g' % thr, data=arr)
     print("Saved: %s" % output_path)
 
 
