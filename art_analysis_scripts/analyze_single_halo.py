@@ -10,6 +10,8 @@ matplotlib.use("agg")
 import matplotlib.pyplot as plt
 
 import yt
+
+from art_io import load_art
 yt.enable_parallelism()
 import ytree
 
@@ -19,7 +21,7 @@ if __name__ == "__main__":
     # assume that this script is executed in run/
     a_target = 0.2501
 
-    snap_last = yt.load("out/snap_a%.4f.art"%a_target)
+    snap_last = load_art("out/snap_a%.4f.art"%a_target)
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])
 

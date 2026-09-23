@@ -20,7 +20,7 @@ matplotlib.use("agg")
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import yt
-
+from art_io import load_art
 from prj import prj
 from age_spreads import *
 from utils import *
@@ -48,7 +48,7 @@ def get_cutouts(ds, halocat, mhmin=1e10):
 
 def analyse(simpath, halocatpath, savebase, all_data=False):
 
-    ds = yt.load(simpath)
+    ds = load_art(simpath)
     halocat = np.loadtxt(halocatpath)
 
     if all_data:
@@ -149,7 +149,7 @@ def make_prj_single(
     vmin=1e-4, vmax=1e0, scale="linear", output_dir=None
 ):
 
-    ds = yt.load(filename)
+    ds = load_art(filename)
 
     x0 = (snapshot['x']*ds.units.Mpccm/ds.units.h).to_value('code_length')
     y0 = (snapshot['y']*ds.units.Mpccm/ds.units.h).to_value('code_length')
@@ -330,7 +330,7 @@ def make_movie_along_mpb(
 
     # cosmic time for each MPB snapshot
     last_filename = os.path.join(basepath, filename_list_for_tree[int(mpb['Snap_idx'][-1])])
-    ds_cosmo = yt.load(last_filename)
+    ds_cosmo = load_art(last_filename)
     h = ds_cosmo.hubble_constant
     cosmo = yt.utilities.cosmology.Cosmology(
         hubble_constant=h,
@@ -370,7 +370,7 @@ def star_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None,
     snap = snapshot['Snap_idx']
     filename = os.path.join(basepath, filename_list_for_tree[snap])
 
-    ds = yt.load(filename)
+    ds = load_art(filename)
 
     center = ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h')
     rvir = ds.arr(snapshot['Rvir'], 'kpccm/h')
@@ -436,7 +436,7 @@ def _star_props_one(args):
     """
     i, snap_file, x, y, z, rvir = args
     yt.funcs.mylog.setLevel(50)
-    ds_i = yt.load(snap_file)
+    ds_i = load_art(snap_file)
     center = ds_i.arr([x, y, z], 'Mpccm/h')
     rvir_i = ds_i.arr(rvir, 'kpccm/h')
     try:
@@ -477,7 +477,7 @@ def _gas_mass_one(args):
     zeros = (i,) + (0.0,) * len(NH_THRESHOLDS)
     if not np.isfinite(radius_kpc) or radius_kpc <= 0.0:
         return zeros
-    ds_i = yt.load(snap_file)
+    ds_i = load_art(snap_file)
     center = ds_i.arr([x, y, z], 'Mpccm/h')
     try:
         sp = ds_i.sphere(center, ds_i.quan(radius_kpc, 'kpc'))
@@ -514,7 +514,7 @@ def halo_evolution(mpb, filename_list_for_tree, basepath, suffix='', nproc=1):
     # Load one snapshot just to get cosmological parameters
     snap = mpb['Snap_idx'][-1]
     filename = os.path.join(basepath, filename_list_for_tree[snap])
-    ds = yt.load(filename)
+    ds = load_art(filename)
     h = ds.hubble_constant
 
     cosmo = yt.utilities.cosmology.Cosmology(
@@ -588,7 +588,7 @@ def baryon_fraction_at_scalefactor(mpb, filename_list_for_tree, basepath, scalef
     snap = snapshot['Snap_idx']
     filename = os.path.join(basepath, filename_list_for_tree[snap])
 
-    ds = yt.load(filename)
+    ds = load_art(filename)
     fb = 0.04897 / ds.omega_matter
 
     center = ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h')
@@ -613,7 +613,7 @@ def gas_at_scalefactor(mpb, filename_list_for_tree, basepath, scalefactor=None, 
     snap = snapshot['Snap_idx']
     filename = os.path.join(basepath, filename_list_for_tree[snap])
 
-    ds = yt.load(filename)
+    ds = load_art(filename)
 
     center = ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h')
     rvir = ds.arr(snapshot['Rvir'], 'kpccm/h')
@@ -650,7 +650,7 @@ def skirt_interface_at_last_snapshot(mpb, filename_list_for_tree, basepath):
     lastsnap = lastsnapshot['Snap_idx']
     filename = os.path.join(basepath, filename_list_for_tree[lastsnap])
 
-    ds = yt.load(filename)
+    ds = load_art(filename)
 
     center = ds.arr([lastsnapshot['x'],lastsnapshot['y'],lastsnapshot['z']], 'Mpccm/h')
     rvir = ds.arr(lastsnapshot['Rvir'], 'kpccm/h')

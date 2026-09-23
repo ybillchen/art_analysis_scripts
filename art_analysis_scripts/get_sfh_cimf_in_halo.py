@@ -8,6 +8,8 @@ import sys
 sys.path.append('.')
 
 import yt
+
+from art_io import load_art
 import numpy as np
 
 from age_spreads import *
@@ -34,7 +36,7 @@ def get_cutouts(ds, halocat, mhmin=1e10):
 
 def analyse(simpath, halocatpath, savebase, all_data=False):
 
-    ds = yt.load(simpath)
+    ds = load_art(simpath)
     halocat = np.loadtxt(halocatpath)
 
     if all_data:

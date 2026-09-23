@@ -15,7 +15,7 @@ matplotlib.use("agg")
 from matplotlib.colors import LogNorm
 import matplotlib.pyplot as plt
 import yt
-
+from art_io import load_art
 def prj(
     ds, center, size, level=10, prj_x="x", prj_y="y", 
     field="density", unit="Msun/pc**3", factor=0.5, weight="volume", scale="linear"
@@ -125,7 +125,7 @@ def prj(
 
 def make_plot(basepath, a, two_axes=True):
 
-    ds = yt.load(os.path.join(basepath, "run/out/snap_a%.4f.art"%a))
+    ds = load_art(os.path.join(basepath, "run/out/snap_a%.4f.art"%a))
     d = ds.all_data()
     # x0 = np.median(d["N-BODY_0", "POSITION_X"].to_value("code_length"))
     # y0 = np.median(d["N-BODY_0", "POSITION_Y"].to_value("code_length"))

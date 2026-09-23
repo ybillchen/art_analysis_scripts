@@ -35,7 +35,7 @@ import matplotlib.patheffects as pe
 import matplotlib.ticker as ticker
 import cmcrameri.cm as cmc
 import yt
-
+from art_io import load_art
 from prj import prj
 from grid_prj import get_snapshot_at_scalefactor
 from galaxy_names import get_label, resolve_galaxy
@@ -135,7 +135,7 @@ def compute_row(basepath):
     """Load one galaxy and compute projections for all columns. Returns list of dicts or None."""
     try:
         snapshot, filename = get_snapshot_at_scalefactor(basepath, TARGET_A)
-        ds = yt.load(filename)
+        ds = load_art(filename)
 
         x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
         y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')

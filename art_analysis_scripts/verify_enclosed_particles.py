@@ -7,12 +7,14 @@ All rights reserved.
 import numpy as np
 
 import yt
+
+from art_io import load_art
 # yt.enable_parallelism()
 import ytree
 
 def verify_enclosed_from_z3(factor=1):
-    snap = yt.load("out/snap_a0.2510.art")
-    # snap_first = yt.load("out/snap_a0.0100.art").all_data()
+    snap = load_art("out/snap_a0.2510.art")
+    # snap_first = load_art("out/snap_a0.0100.art").all_data()
     # pids_first = snap_first[("N-BODY", "PID")].astype(int)
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
     trees = list(a[:])

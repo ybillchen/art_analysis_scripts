@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 plt.style.use(os.path.join(os.path.dirname(__file__), "sans.mplstyle"))
 from matplotlib.colors import LogNorm
 import yt
-
+from art_io import load_art
 from prj import prj
 from grid_prj import get_snapshot_at_scalefactor
 from galaxy_names import resolve_galaxy, GALAXY_PATHS
@@ -104,10 +104,9 @@ def main():
                  % (args.galaxy, ', '.join(sorted(GALAXY_PATHS)), basepath))
 
     snapshot, filename = get_snapshot_at_scalefactor(basepath, target_a)
-    if not os.path.exists(filename):
-        sys.exit("Snapshot not found: %s" % filename)
     print("Snapshot: %s (a=%.6f)" % (filename, snapshot['scale']))
-    ds = yt.load(filename)
+    # load_art extracts the snapshot's tar if the .art is not unpacked yet
+    ds = load_art(filename)
 
     x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
     y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')

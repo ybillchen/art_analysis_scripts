@@ -8,7 +8,7 @@ import numpy as np
 from scipy import special
 
 import yt
-
+from art_io import load_art
 def f_bound(eps_int):
     # Li et al 2019: https://ui.adsabs.harvard.edu/abs/2019MNRAS.487..364L/abstract
     # equation 17
@@ -87,7 +87,7 @@ def get_sfr(region, eps_ff):
 if __name__ == '__main__':
     
     a = 0.1135
-    ds = yt.load('/scratch/08199/tg874988/art_simulations/hydro/test_epsff/R20_dx1.5_KM_peakonly/run/out/snap_a%.4f.art'%a)
+    ds = load_art('/scratch/08199/tg874988/art_simulations/hydro/test_epsff/R20_dx1.5_KM_peakonly/run/out/snap_a%.4f.art'%a)
     d = ds.all_data()
     epsff = get_eps_ff_km(d)
     nh = (d[('gas', 'H_density')] / ds.units.proton_mass).to('cm**-3').value
@@ -101,7 +101,7 @@ if __name__ == '__main__':
     a = 0.1108
     Rgmc = 10
     suffix = 'KM'
-    ds = yt.load('/scratch/08199/tg874988/art_simulations/hydro/test_epsff/R%g_dx1.5_%s/run/out/snap_a%.4f.art'%(Rgmc,suffix,a))
+    ds = load_art('/scratch/08199/tg874988/art_simulations/hydro/test_epsff/R%g_dx1.5_%s/run/out/snap_a%.4f.art'%(Rgmc,suffix,a))
     d = ds.all_data()
     initial_mass = d[('STAR', 'initial_mass')].to('Msun').value
     f_bound0 = get_fbound0(d)

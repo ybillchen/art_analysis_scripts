@@ -10,12 +10,14 @@ import sys
 import numpy as np
 
 import yt
+
+from art_io import load_art
 # yt.enable_parallelism()
 import ytree
 
 def zoom_particles_from_a(hid, a_target, factor=4):
-    snap = yt.load("out/snap_a%.4f.art"%a_target)
-    ds_first = yt.load("out/snap_a0.0100.art")
+    snap = load_art("out/snap_a%.4f.art"%a_target)
+    ds_first = load_art("out/snap_a0.0100.art")
     snap_first = ds_first.all_data()
     pids_first = snap_first[("N-BODY", "PID")].astype(int)
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")

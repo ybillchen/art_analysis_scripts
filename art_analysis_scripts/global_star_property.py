@@ -9,7 +9,7 @@ import sys
 
 import numpy as np
 import yt
-
+from art_io import load_art
 from age_spreads import time_units, duration, ave_time, age_spread
 from utils import f_bound, get_fbound0, get_eps_int
 
@@ -17,7 +17,7 @@ def load_ds(basepath, a_target):
     filename = os.path.join(basepath, "run/out/snap_a%.4f.art"%a_target)
     is_under_run = os.path.isfile(filename)
     filename = filename if is_under_run else os.path.join(basepath, "out/snap_a%.4f.art"%a_target)
-    return yt.load(filename), is_under_run
+    return load_art(filename), is_under_run
 
 def log_init_mass(region):
     return np.log10(region[("STAR", "INITIAL_MASS")].to_value("Msun"))

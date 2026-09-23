@@ -6,7 +6,7 @@ All rights reserved.
 
 import numpy as np
 import yt
-
+from art_io import load_art
 import yt
 # yt.enable_parallelism()
 import ytree
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # assume that this script is executed in run/
     scale_a = 0.1708
 
-    ds = yt.load("out/snap_a%.4f.art"%scale_a)
+    ds = load_art("out/snap_a%.4f.art"%scale_a)
     a = ytree.load("rockstar_halos/trees/arbor/arbor.h5")
 
     tree = a[0] # a[0] should be the most massive 

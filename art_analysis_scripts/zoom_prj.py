@@ -24,7 +24,7 @@ from matplotlib.colors import LogNorm, BoundaryNorm, ListedColormap
 from matplotlib.cm import ScalarMappable
 import cmcrameri.cm as cmc
 import yt
-
+from art_io import load_art
 from prj import prj
 
 # ---------------------------------------------------------------------------
@@ -225,7 +225,7 @@ if __name__ == '__main__':
     print("Snapshot: %s  (a=%.4f)" % (snap_file, a_found))
 
     yt.funcs.mylog.setLevel(50)
-    ds = yt.load(snap_file)
+    ds = load_art(snap_file)
 
     x0   = ds.arr(args.x,    'Mpccm/h').to_value('code_length')
     y0   = ds.arr(args.y,    'Mpccm/h').to_value('code_length')
