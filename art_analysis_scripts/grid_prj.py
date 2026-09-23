@@ -46,6 +46,13 @@ TARGET_A = 1.0 / (1.0 + TARGET_Z)
 BOX_SIZE_KPC = {"km": 2.0, "p12": 10.0}   # projection box, kpc
 RULER_KPC    = {"km": 0.5, "p12": 1.0}    # scale bar drawn on each panel, kpc
 
+def ruler_label(ruler_kpc):
+    """Scale-bar text: sub-kpc rulers read better in pc (0.5 -> '500 pc')."""
+    if ruler_kpc < 1.0:
+        return r"%g pc" % (ruler_kpc * 1e3)
+    return r"%g kpc" % ruler_kpc
+
+
 def collect_basepaths(root_path, km_folders):
     basepaths = []
     for folder in km_folders:
@@ -88,6 +95,19 @@ def compute_panel(basepath):
         x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
         y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
         z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
+
+        if CENTER_MAX_DENSITY:
+            # Densest gas cell anywhere inside Rvir -- note this can land in a
+            # satellite rather than the central galaxy.
+            sp = ds.sphere(
+                ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h'),
+                ds.arr(snapshot['Rvir'], 'kpccm/h')
+            )
+            imax = int(np.argmax(sp['gas', 'density']))
+            x0 = sp['gas', 'x'][imax].to_value('code_length')
+            y0 = sp['gas', 'y'][imax].to_value('code_length')
+            z0 = sp['gas', 'z'][imax].to_value('code_length')
+
         size_cl = (BOX_SIZE * ds.units.kpc).to_value('code_length')
         unit_convert = (1.0 * ds.units.code_length).to_value('kpc')
 
@@ -143,7 +163,7 @@ def render_panel(ax, data, label):
     ruler_y = cy - 0.43 * size
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c=TEXT_COLOR,
             path_effects=stroke_ruler)
-    ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.03 * size, r"%g %s" % (ruler, 'kpc'),
+    ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.03 * size, ruler_label(ruler),
             ha="center", va="bottom", color=TEXT_COLOR, fontsize=12, fontweight='bold',
             path_effects=stroke)
 
@@ -168,6 +188,8 @@ if __name__ == '__main__':
     parser.add_argument('--sim-group', default='km', choices=['km', 'p12'])
     parser.add_argument('-z', '--redshift', type=float, default=TARGET_Z,
                         help='target redshift (default: %.1f)' % TARGET_Z)
+    parser.add_argument('--center-max-density', action='store_true',
+                        help='center on the densest gas cell within Rvir (default: halo center)')
     parser.add_argument('--no-stars', action='store_true',
                         help='hide star particles (only applicable in density mode)')
     parser.add_argument('--parallel', type=int, default=1, metavar='N',
@@ -178,6 +200,7 @@ if __name__ == '__main__':
     SHOW_STARS = (MODE == 'density') and not args.no_stars
     TARGET_Z = args.redshift
     TARGET_A = 1.0 / (1.0 + TARGET_Z)
+    CENTER_MAX_DENSITY = args.center_max_density
     BOX_SIZE = BOX_SIZE_KPC[sim_group]
     RULER    = RULER_KPC[sim_group]
     print("Projection box: %g kpc (%s), z=%g" % (BOX_SIZE, sim_group, TARGET_Z))
@@ -226,7 +249,9 @@ if __name__ == '__main__':
         "Expected 10 simulations, found %d: %s" % (len(basepaths), basepaths)
     z_str = "%g" % TARGET_Z
     os.makedirs(ANALYSIS_PATH, exist_ok=True)
-    output_path = os.path.join(ANALYSIS_PATH, "grid_prj_%s_%s_z%s.pdf" % (sim_group, MODE, z_str))
+    center_tag = "_maxdens" if CENTER_MAX_DENSITY else ""
+    output_path = os.path.join(
+        ANALYSIS_PATH, "grid_prj_%s_%s_z%s%s.pdf" % (sim_group, MODE, z_str, center_tag))
 
     # --- layout (inches) ---
     FIG_W    = 10.0  # figure width, inches
