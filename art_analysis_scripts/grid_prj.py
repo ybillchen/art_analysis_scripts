@@ -26,7 +26,7 @@ from matplotlib.cm import ScalarMappable
 import matplotlib.patheffects as pe
 import cmcrameri.cm as cmc
 import yt
-
+from art_io import load_art
 from prj import prj
 from datatype import dtype_tree
 from track_tree import find_main_mpb
@@ -40,6 +40,11 @@ SIM_FOLDERS = {
 }
 TARGET_Z = 5.0
 TARGET_A = 1.0 / (1.0 + TARGET_Z)
+
+# TEMPORARY: zoom the KM runs into the inner 2 kpc. Revert both dicts to 10.0 /
+# 1.0 to restore the standard 10 kpc panels.
+BOX_SIZE_KPC = {"km": 2.0, "p12": 10.0}   # projection box, kpc
+RULER_KPC    = {"km": 0.5, "p12": 1.0}    # scale bar drawn on each panel, kpc
 
 def collect_basepaths(root_path, km_folders):
     basepaths = []
@@ -78,12 +83,12 @@ def compute_panel(basepath):
     """Load data and compute projection; returns dict of numpy arrays, or None on failure."""
     try:
         snapshot, filename = get_snapshot_at_scalefactor(basepath, TARGET_A)
-        ds = yt.load(filename)
+        ds = load_art(filename)
 
         x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
         y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
         z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
-        size_cl = (10.0 * ds.units.kpc).to_value('code_length')
+        size_cl = (BOX_SIZE * ds.units.kpc).to_value('code_length')
         unit_convert = (1.0 * ds.units.code_length).to_value('kpc')
 
         mesh, region = prj(
@@ -120,7 +125,7 @@ def compute_panel(basepath):
 def render_panel(ax, data, label):
     """Draw a pre-computed panel onto ax."""
     cx, cy, size = data['cx'], data['cy'], data['size']
-    ruler = 1.0
+    ruler = RULER
 
     ax.imshow(
         data['mesh'].T, origin="lower", norm=LogNorm(vmin=VMIN, vmax=VMAX), cmap=CMAP,
@@ -138,7 +143,7 @@ def render_panel(ax, data, label):
     ruler_y = cy - 0.43 * size
     ax.plot([ruler_x - ruler, ruler_x], [ruler_y, ruler_y], lw=1.5, c=TEXT_COLOR,
             path_effects=stroke_ruler)
-    ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.3, r"%d %s" % (ruler, 'kpc'),
+    ax.text(ruler_x - 0.5 * ruler, ruler_y + 0.03 * size, r"%g %s" % (ruler, 'kpc'),
             ha="center", va="bottom", color=TEXT_COLOR, fontsize=12, fontweight='bold',
             path_effects=stroke)
 
@@ -161,6 +166,8 @@ if __name__ == '__main__':
     parser.add_argument('--mode', default='density',
                         choices=['density', 'temperature', 'mach', 'metallicity'])
     parser.add_argument('--sim-group', default='km', choices=['km', 'p12'])
+    parser.add_argument('-z', '--redshift', type=float, default=TARGET_Z,
+                        help='target redshift (default: %.1f)' % TARGET_Z)
     parser.add_argument('--no-stars', action='store_true',
                         help='hide star particles (only applicable in density mode)')
     parser.add_argument('--parallel', type=int, default=1, metavar='N',
@@ -169,6 +176,11 @@ if __name__ == '__main__':
     MODE = args.mode
     sim_group = args.sim_group
     SHOW_STARS = (MODE == 'density') and not args.no_stars
+    TARGET_Z = args.redshift
+    TARGET_A = 1.0 / (1.0 + TARGET_Z)
+    BOX_SIZE = BOX_SIZE_KPC[sim_group]
+    RULER    = RULER_KPC[sim_group]
+    print("Projection box: %g kpc (%s), z=%g" % (BOX_SIZE, sim_group, TARGET_Z))
 
     if MODE == "density":
         CMAP       = 'magma'
