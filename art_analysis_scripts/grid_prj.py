@@ -46,6 +46,10 @@ TARGET_A = 1.0 / (1.0 + TARGET_Z)
 BOX_SIZE_KPC = {"km": 2.0, "p12": 10.0}   # projection box, kpc
 RULER_KPC    = {"km": 0.5, "p12": 1.0}    # scale bar drawn on each panel, kpc
 
+# Young massive clusters, selected by --ymc-only
+YMC_AGE_MAX  = 10.0   # Myr
+YMC_MASS_MIN = 1e5    # Msun
+
 def weighted_median(values, weights):
     """Coordinate at which the cumulative weight first reaches half the total.
 
@@ -57,6 +61,16 @@ def weighted_median(values, weights):
     if cw[-1] <= 0:
         raise ValueError("total weight is zero")
     return float(values[order][np.searchsorted(cw, 0.5 * cw[-1])])
+
+
+def star_mass(region):
+    """Current bound stellar mass in Msun: MASS * BOUND_FRACTION.
+
+    BOUND_FRACTION is the genuine current bound fraction; INITIAL_BOUND_FRACTION
+    is not a fraction at all (see utils.get_eps_int).
+    """
+    return (region["STAR", "MASS"].to_value("Msun")
+            * region["STAR", "BOUND_FRACTION"].to_value("1"))
 
 
 def halo_sphere(ds, snapshot):
@@ -121,20 +135,11 @@ def compute_panel(basepath):
             # Mass-weighted median position of the star particles inside Rvir:
             # a robust centre that ignores outliers, unlike the densest cell.
             d = halo_sphere(ds, snapshot)
-            m = d['STAR', 'MASS'].to_value('Msun')
-            name = get_label(basepath) or basepath
-            if len(m) == 0:
-                print("star median %s: no star particles within Rvir, using halo center" % name)
-            else:
-                xs = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
-                ys = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
-                zs = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
-                kpc = (1.0 * ds.units.code_length).to_value('kpc')
-                offset = kpc * np.sqrt((xs - x0)**2 + (ys - y0)**2 + (zs - z0)**2)
-                print("star median %s: N=%d  Mstar=%.3e Msun (within Rvir)  "
-                      "center=(%.3f, %.3f, %.3f) kpc  offset from halo center=%.3f kpc"
-                      % (name, len(m), m.sum(), xs * kpc, ys * kpc, zs * kpc, offset))
-                x0, y0, z0 = xs, ys, zs
+            m = star_mass(d)
+            if len(m) > 0:   # otherwise fall back to the halo center
+                x0 = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
+                y0 = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
+                z0 = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
         elif CENTER_MAX_DENSITY:
             # Densest gas cell anywhere inside Rvir -- note this can land in a
             # satellite rather than the central galaxy.
@@ -164,11 +169,15 @@ def compute_panel(basepath):
         stars = None
         if SHOW_STARS:
             d = ds.box(region[:3], region[3:])
-            stars = dict(
-                x=d["STAR", "POSITION_X"].to_value('kpc'),
-                y=d["STAR", "POSITION_Y"].to_value('kpc'),
-                s=d["STAR", "MASS"].to_value("Msun") / 1e7,
-            )
+            sx = d["STAR", "POSITION_X"].to_value('kpc')
+            sy = d["STAR", "POSITION_Y"].to_value('kpc')
+            sm = star_mass(d)
+            if YMC_ONLY:
+                age = (ds.current_time.to_value("Myr")
+                       - d["STAR", "creation_time"].to_value("Myr"))
+                keep = (age < YMC_AGE_MAX) & (sm > YMC_MASS_MIN)
+                sx, sy, sm = sx[keep], sy[keep], sm[keep]
+            stars = dict(x=sx, y=sy, s=sm / 1e7)
 
         print("Done: %s" % basepath)
         return dict(mesh=mesh, extent=extent, redshift=1/ds.scale_factor - 1,
@@ -230,6 +239,9 @@ if __name__ == '__main__':
                               help='center on the densest gas cell within Rvir (default: halo center)')
     center_group.add_argument('--center-star-median', action='store_true',
                               help='center on the mass-weighted median position of all star particles')
+    parser.add_argument('--ymc-only', action='store_true',
+                        help='plot only young massive clusters (age < %g Myr and M > %g Msun)'
+                             % (YMC_AGE_MAX, YMC_MASS_MIN))
     parser.add_argument('--star-size', type=float, default=1.0,
                         help='scale factor for star marker size (default: 1.0)')
     parser.add_argument('--vmin', type=float, default=None,
@@ -249,6 +261,7 @@ if __name__ == '__main__':
     CENTER_MAX_DENSITY = args.center_max_density
     CENTER_STAR_MEDIAN = args.center_star_median
     STAR_SIZE = args.star_size
+    YMC_ONLY = args.ymc_only
     BOX_SIZE = BOX_SIZE_KPC[sim_group]
     RULER    = RULER_KPC[sim_group]
     print("Projection box: %g kpc (%s), z=%g" % (BOX_SIZE, sim_group, TARGET_Z))
@@ -310,8 +323,10 @@ if __name__ == '__main__':
         center_tag = "_starmed"
     else:
         center_tag = ""
+    ymc_tag = "_ymc" if YMC_ONLY else ""
     output_path = os.path.join(
-        ANALYSIS_PATH, "grid_prj_%s_%s_z%s%s.pdf" % (sim_group, MODE, z_str, center_tag))
+        ANALYSIS_PATH,
+        "grid_prj_%s_%s_z%s%s%s.pdf" % (sim_group, MODE, z_str, center_tag, ymc_tag))
 
     # --- layout (inches) ---
     FIG_W    = 10.0  # figure width, inches
