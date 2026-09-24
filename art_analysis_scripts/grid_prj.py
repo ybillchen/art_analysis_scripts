@@ -190,7 +190,8 @@ def render_panel(ax, data, label):
 
     if data['stars'] is not None:
         s = data['stars']
-        ax.scatter(s['x'], s['y'], color='white', alpha=0.5, ec='none', s=s['s'], rasterized=True)
+        ax.scatter(s['x'], s['y'], color='white', alpha=0.5, ec='none',
+                   s=s['s'] * STAR_SIZE, rasterized=True)
 
     stroke_ruler = [pe.withStroke(linewidth=5, foreground='white')] if TEXT_COLOR != 'w' else []
     stroke = [pe.withStroke(linewidth=3, foreground='white')] if TEXT_COLOR != 'w' else []
@@ -229,6 +230,8 @@ if __name__ == '__main__':
                               help='center on the densest gas cell within Rvir (default: halo center)')
     center_group.add_argument('--center-star-median', action='store_true',
                               help='center on the mass-weighted median position of all star particles')
+    parser.add_argument('--star-size', type=float, default=1.0,
+                        help='scale factor for star marker size (default: 1.0)')
     parser.add_argument('--vmin', type=float, default=None,
                         help='colorbar minimum (default: per-mode value)')
     parser.add_argument('--vmax', type=float, default=None,
@@ -245,6 +248,7 @@ if __name__ == '__main__':
     TARGET_A = 1.0 / (1.0 + TARGET_Z)
     CENTER_MAX_DENSITY = args.center_max_density
     CENTER_STAR_MEDIAN = args.center_star_median
+    STAR_SIZE = args.star_size
     BOX_SIZE = BOX_SIZE_KPC[sim_group]
     RULER    = RULER_KPC[sim_group]
     print("Projection box: %g kpc (%s), z=%g" % (BOX_SIZE, sim_group, TARGET_Z))
