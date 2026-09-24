@@ -59,6 +59,14 @@ def weighted_median(values, weights):
     return float(values[order][np.searchsorted(cw, 0.5 * cw[-1])])
 
 
+def halo_sphere(ds, snapshot):
+    """Sphere of radius Rvir around the halo center from the merger tree."""
+    return ds.sphere(
+        ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h'),
+        ds.arr(snapshot['Rvir'], 'kpccm/h')
+    )
+
+
 def ruler_label(ruler_kpc):
     """Scale-bar text: sub-kpc rulers read better in pc (0.5 -> '500 pc')."""
     if ruler_kpc < 1.0:
@@ -110,30 +118,27 @@ def compute_panel(basepath):
         z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
 
         if CENTER_STAR_MEDIAN:
-            # Mass-weighted median position of every star particle: a robust
-            # centre that ignores outliers, unlike the densest-cell option.
-            d = ds.all_data()
+            # Mass-weighted median position of the star particles inside Rvir:
+            # a robust centre that ignores outliers, unlike the densest cell.
+            d = halo_sphere(ds, snapshot)
             m = d['STAR', 'MASS'].to_value('Msun')
             name = get_label(basepath) or basepath
             if len(m) == 0:
-                print("star median %s: no star particles, using halo center" % name)
+                print("star median %s: no star particles within Rvir, using halo center" % name)
             else:
                 xs = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
                 ys = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
                 zs = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
                 kpc = (1.0 * ds.units.code_length).to_value('kpc')
                 offset = kpc * np.sqrt((xs - x0)**2 + (ys - y0)**2 + (zs - z0)**2)
-                print("star median %s: N=%d  Mstar=%.3e Msun  "
+                print("star median %s: N=%d  Mstar=%.3e Msun (within Rvir)  "
                       "center=(%.3f, %.3f, %.3f) kpc  offset from halo center=%.3f kpc"
                       % (name, len(m), m.sum(), xs * kpc, ys * kpc, zs * kpc, offset))
                 x0, y0, z0 = xs, ys, zs
         elif CENTER_MAX_DENSITY:
             # Densest gas cell anywhere inside Rvir -- note this can land in a
             # satellite rather than the central galaxy.
-            sp = ds.sphere(
-                ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h'),
-                ds.arr(snapshot['Rvir'], 'kpccm/h')
-            )
+            sp = halo_sphere(ds, snapshot)
             imax = int(np.argmax(sp['gas', 'density']))
             x0 = sp['gas', 'x'][imax].to_value('code_length')
             y0 = sp['gas', 'y'][imax].to_value('code_length')
