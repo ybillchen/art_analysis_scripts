@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 plt.style.use(os.path.join(os.path.dirname(__file__), "sans.mplstyle"))
 print("Font: %s" % fm.findfont(fm.FontProperties(family=matplotlib.rcParams['font.family'])))
-from matplotlib.colors import LogNorm
+from matplotlib.colors import LogNorm, to_rgb
 from matplotlib.cm import ScalarMappable
 import matplotlib.patheffects as pe
 import cmcrameri.cm as cmc
@@ -82,6 +82,13 @@ def ymc_mask(ds, region, masses):
     """Young massive clusters: age < YMC_AGE_MAX and bound mass > YMC_MASS_MIN."""
     age = ds.current_time.to_value("Myr") - region["STAR", "creation_time"].to_value("Myr")
     return (age < YMC_AGE_MAX) & (masses > YMC_MASS_MIN)
+
+
+def star_selection(ds, region, masses):
+    """Mask of the stars this run plots: the YMCs under --ymc-only, else all."""
+    if YMC_ONLY:
+        return ymc_mask(ds, region, masses)
+    return np.ones(len(masses), dtype=bool)
 
 
 def median_position(region, weights, mask=None):
@@ -189,27 +196,21 @@ def panel_center(ds, snapshot):
     y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
     z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
 
-    if CENTER_STAR_MEDIAN:
-        # Mass-weighted median position of the star particles in the centring
-        # aperture: robust to outliers, unlike the densest cell.
-        d = halo_sphere(ds, snapshot)
-        m = star_mass(d)
-        if len(m) > 0:   # otherwise fall back to the halo center
-            x0, y0, z0 = median_position(d, m)
-    elif CENTER_MAX_DENSITY:
+    if CENTER_MAX_DENSITY:
         # Densest gas cell in the centring aperture.
         sp = halo_sphere(ds, snapshot)
         imax = int(np.argmax(sp['gas', 'density']))
         x0 = sp['gas', 'x'][imax].to_value('code_length')
         y0 = sp['gas', 'y'][imax].to_value('code_length')
         z0 = sp['gas', 'z'][imax].to_value('code_length')
-    elif YMC_ONLY:
-        # With no centring flag given, --ymc-only centres on the clusters it
-        # draws: the mass-weighted median of the YMCs in the centring aperture.
+    elif CENTER_STAR_MEDIAN or YMC_ONLY:
+        # Mass-weighted median of the stars this run actually shows, so under
+        # --ymc-only it is the median of the clusters being drawn. Robust to
+        # outliers, unlike the densest cell.
         d = halo_sphere(ds, snapshot)
         m = star_mass(d)
         if len(m) > 0:
-            keep = ymc_mask(ds, d, m)
+            keep = star_selection(ds, d, m)
             if keep.any():   # otherwise fall back to the halo center
                 x0, y0, z0 = median_position(d, m, keep)
 
@@ -286,9 +287,8 @@ def compute_panel(basepath):
             sx = d["STAR", "POSITION_X"].to_value('kpc')
             sy = d["STAR", "POSITION_Y"].to_value('kpc')
             sm = star_mass(d)
-            if YMC_ONLY:
-                keep = ymc_mask(ds, d, sm)
-                sx, sy, sm = sx[keep], sy[keep], sm[keep]
+            keep = star_selection(ds, d, sm)
+            sx, sy, sm = sx[keep], sy[keep], sm[keep]
             stars = dict(x=sx, y=sy, s=sm / 1e7)
 
         print("Done: %s" % basepath)
@@ -314,8 +314,9 @@ def render_panel(ax, data, label):
         ax.scatter(s['x'], s['y'], color=STAR_COLOR, alpha=0.5, ec='none',
                    s=s['s'] * STAR_SIZE, rasterized=True)
 
-    stroke_ruler = [pe.withStroke(linewidth=5, foreground='white')] if TEXT_COLOR != 'w' else []
-    stroke = [pe.withStroke(linewidth=3, foreground='white')] if TEXT_COLOR != 'w' else []
+    light_text = to_rgb(TEXT_COLOR) == (1.0, 1.0, 1.0)
+    stroke_ruler = [] if light_text else [pe.withStroke(linewidth=5, foreground='white')]
+    stroke = [] if light_text else [pe.withStroke(linewidth=3, foreground='white')]
 
     ruler_x = cx + 0.4 * size
     ruler_y = cy - 0.43 * size
@@ -350,7 +351,8 @@ if __name__ == '__main__':
     center_group.add_argument('--center-max-density', action='store_true',
                               help='center on the densest gas cell within Rvir (default: halo center)')
     center_group.add_argument('--center-star-median', action='store_true',
-                              help='center on the mass-weighted median position of all star particles')
+                              help='center on the mass-weighted median of the selected stars '
+                                   '(the YMCs when --ymc-only is set)')
     parser.add_argument('--box-size', type=float, default=BOX_SIZE_DEFAULT,
                         help='projection box side length in kpc (default: %g)' % BOX_SIZE_DEFAULT)
     parser.add_argument('--ruler', type=float, default=None,
@@ -369,6 +371,8 @@ if __name__ == '__main__':
                         help='color of the star markers (default: white)')
     parser.add_argument('--cmap', default=None,
                         help='colormap name (default: per-mode value)')
+    parser.add_argument('--font-color', default=None,
+                        help='color of the panel labels and scale bar (default: per-mode value)')
     parser.add_argument('--center-aperture', type=float, default=CENTER_APERTURE_DEFAULT,
                         help='centring searches this fraction of Rvir (default: %g)'
                              % CENTER_APERTURE_DEFAULT)
@@ -438,6 +442,9 @@ if __name__ == '__main__':
     # CLI overrides the per-mode defaults above
     if args.cmap is not None:
         CMAP = plt.get_cmap(args.cmap)   # raises now rather than after the projections
+    if args.font_color is not None:
+        to_rgb(args.font_color)          # validate before doing any work
+        TEXT_COLOR = args.font_color
     if args.vmin is not None:
         VMIN = args.vmin
     if args.vmax is not None:
