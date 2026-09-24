@@ -110,11 +110,16 @@ def median_position(region, weights, mask=None):
     return tuple(float(p[best]) for p in pos)
 
 
-def halo_sphere(ds, snapshot):
-    """Sphere of radius CENTER_APERTURE * Rvir around the halo center."""
+def halo_sphere(ds, snapshot, aperture=None):
+    """Sphere of radius aperture * Rvir around the halo center.
+
+    aperture defaults to CENTER_APERTURE, the region the centring searches.
+    """
+    if aperture is None:
+        aperture = CENTER_APERTURE
     return ds.sphere(
         ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h'),
-        ds.arr(CENTER_APERTURE * snapshot['Rvir'], 'kpccm/h')
+        ds.arr(aperture * snapshot['Rvir'], 'kpccm/h')
     )
 
 
@@ -217,11 +222,9 @@ def panel_center(ds, snapshot):
     return x0, y0, z0
 
 
-def count_ymc(ds, center):
-    """Young massive clusters inside the projection box around center."""
-    half = 0.5 * (BOX_SIZE * ds.units.kpc).to_value('code_length')
-    d = ds.box(ds.arr([c - half for c in center], 'code_length'),
-               ds.arr([c + half for c in center], 'code_length'))
+def count_ymc(ds, snapshot):
+    """Young massive clusters within Rvir of the halo center."""
+    d = halo_sphere(ds, snapshot, aperture=1.0)
     m = star_mass(d)
     if len(m) == 0:
         return 0
@@ -230,7 +233,8 @@ def count_ymc(ds, center):
 
 def pick_sfr_peak(basepath, ds, snapshot):
     """Of the snapshots bracketing the target redshift, the one hosting the most
-    young massive clusters. Each candidate is centred on its own snapshot.
+    young massive clusters within Rvir. The winner is then centred on its own
+    snapshot.
 
     Returns (ds, snapshot, center) for the winner.
     """
@@ -242,14 +246,14 @@ def pick_sfr_peak(basepath, ds, snapshot):
     best = None
     for snap_c, file_c in snapshots_around(basepath, TARGET_A, cosmo, SFR_PEAK_OFFSETS):
         ds_c = load_art(file_c)
-        center_c = panel_center(ds_c, snap_c)
-        n = count_ymc(ds_c, center_c)
+        n = count_ymc(ds_c, snap_c)
         if best is None or n > best[0]:
-            best = (n, ds_c, snap_c, center_c)
-    n_best, ds_best, snap_best, center_best = best
-    print("sfr peak %s: %d clusters at z=%.3f"
+            best = (n, ds_c, snap_c)
+    n_best, ds_best, snap_best = best
+    print("sfr peak %s: %d clusters within Rvir at z=%.3f"
           % (get_label(basepath) or basepath, n_best, 1.0 / ds_best.scale_factor - 1))
-    return ds_best, snap_best, center_best
+    # The count no longer depends on the centre, so only the winner needs one.
+    return ds_best, snap_best, panel_center(ds_best, snap_best)
 
 
 def compute_panel(basepath):
@@ -360,7 +364,7 @@ if __name__ == '__main__':
                              'rounded to 1, 2 or 5 x 10^n)' % (1.0 / RULER_FRACTION))
     parser.add_argument('--sfr-peak', action='store_true',
                         help='of the snapshots %g to %g Myr around the target redshift, '
-                             'show the one with the most young massive clusters in the box'
+                             'show the one with the most young massive clusters within Rvir'
                              % (SFR_PEAK_OFFSETS[0], SFR_PEAK_OFFSETS[-1]))
     parser.add_argument('--ymc-only', action='store_true',
                         help='plot only young massive clusters (age < %g Myr and M > %g Msun)'
