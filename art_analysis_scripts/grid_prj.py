@@ -41,9 +41,9 @@ SIM_FOLDERS = {
 TARGET_Z = 5.0
 TARGET_A = 1.0 / (1.0 + TARGET_Z)
 
-# TEMPORARY: zoom the KM runs into the inner 4 kpc. Revert both dicts to 10.0 /
+# TEMPORARY: zoom the KM runs into the inner 2 kpc. Revert both dicts to 10.0 /
 # 1.0 to restore the standard 10 kpc panels.
-BOX_SIZE_KPC = {"km": 4.0, "p12": 10.0}   # projection box, kpc
+BOX_SIZE_KPC = {"km": 2.0, "p12": 10.0}   # projection box, kpc
 RULER_KPC    = {"km": 0.5, "p12": 1.0}    # scale bar drawn on each panel, kpc
 
 def weighted_median(values, weights):
@@ -114,12 +114,19 @@ def compute_panel(basepath):
             # centre that ignores outliers, unlike the densest-cell option.
             d = ds.all_data()
             m = d['STAR', 'MASS'].to_value('Msun')
+            name = get_label(basepath) or basepath
             if len(m) == 0:
-                print("No star particles, using halo center: %s" % basepath)
+                print("star median %s: no star particles, using halo center" % name)
             else:
-                x0 = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
-                y0 = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
-                z0 = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
+                xs = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
+                ys = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
+                zs = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
+                kpc = (1.0 * ds.units.code_length).to_value('kpc')
+                offset = kpc * np.sqrt((xs - x0)**2 + (ys - y0)**2 + (zs - z0)**2)
+                print("star median %s: N=%d  Mstar=%.3e Msun  "
+                      "center=(%.3f, %.3f, %.3f) kpc  offset from halo center=%.3f kpc"
+                      % (name, len(m), m.sum(), xs * kpc, ys * kpc, zs * kpc, offset))
+                x0, y0, z0 = xs, ys, zs
         elif CENTER_MAX_DENSITY:
             # Densest gas cell anywhere inside Rvir -- note this can land in a
             # satellite rather than the central galaxy.
