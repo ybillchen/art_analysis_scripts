@@ -44,6 +44,10 @@ TARGET_A = 1.0 / (1.0 + TARGET_Z)
 BOX_SIZE_DEFAULT = 10.0   # projection box side length, kpc
 RULER_FRACTION   = 0.2    # default scale bar, as a fraction of the box
 
+# Centring searches this fraction of Rvir. Rvir itself reaches far beyond the
+# galaxy, so satellites and outskirts would otherwise vote on the centre.
+CENTER_APERTURE_DEFAULT = 0.1
+
 # Snapshots probed by --sfr-peak, as offsets in Myr from the target redshift
 SFR_PEAK_OFFSETS = np.arange(-40.0, 50.1, 10.0)
 
@@ -100,10 +104,10 @@ def median_position(region, weights, mask=None):
 
 
 def halo_sphere(ds, snapshot):
-    """Sphere of radius Rvir around the halo center from the merger tree."""
+    """Sphere of radius CENTER_APERTURE * Rvir around the halo center."""
     return ds.sphere(
         ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h'),
-        ds.arr(snapshot['Rvir'], 'kpccm/h')
+        ds.arr(CENTER_APERTURE * snapshot['Rvir'], 'kpccm/h')
     )
 
 
@@ -186,15 +190,14 @@ def panel_center(ds, snapshot):
     z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
 
     if CENTER_STAR_MEDIAN:
-        # Mass-weighted median position of the star particles inside Rvir:
-        # a robust centre that ignores outliers, unlike the densest cell.
+        # Mass-weighted median position of the star particles in the centring
+        # aperture: robust to outliers, unlike the densest cell.
         d = halo_sphere(ds, snapshot)
         m = star_mass(d)
         if len(m) > 0:   # otherwise fall back to the halo center
             x0, y0, z0 = median_position(d, m)
     elif CENTER_MAX_DENSITY:
-        # Densest gas cell anywhere inside Rvir -- note this can land in a
-        # satellite rather than the central galaxy.
+        # Densest gas cell in the centring aperture.
         sp = halo_sphere(ds, snapshot)
         imax = int(np.argmax(sp['gas', 'density']))
         x0 = sp['gas', 'x'][imax].to_value('code_length')
@@ -202,7 +205,7 @@ def panel_center(ds, snapshot):
         z0 = sp['gas', 'z'][imax].to_value('code_length')
     elif YMC_ONLY:
         # With no centring flag given, --ymc-only centres on the clusters it
-        # draws: the mass-weighted median of the YMCs inside Rvir.
+        # draws: the mass-weighted median of the YMCs in the centring aperture.
         d = halo_sphere(ds, snapshot)
         m = star_mass(d)
         if len(m) > 0:
@@ -366,6 +369,9 @@ if __name__ == '__main__':
                         help='color of the star markers (default: white)')
     parser.add_argument('--cmap', default=None,
                         help='colormap name (default: per-mode value)')
+    parser.add_argument('--center-aperture', type=float, default=CENTER_APERTURE_DEFAULT,
+                        help='centring searches this fraction of Rvir (default: %g)'
+                             % CENTER_APERTURE_DEFAULT)
     parser.add_argument('--vmin', type=float, default=None,
                         help='colorbar minimum (default: per-mode value)')
     parser.add_argument('--vmax', type=float, default=None,
@@ -382,14 +388,15 @@ if __name__ == '__main__':
     TARGET_A = 1.0 / (1.0 + TARGET_Z)
     CENTER_MAX_DENSITY = args.center_max_density
     CENTER_STAR_MEDIAN = args.center_star_median
+    CENTER_APERTURE = args.center_aperture
     STAR_SIZE = args.star_size
     STAR_COLOR = args.star_color
     YMC_ONLY = args.ymc_only
     SFR_PEAK = args.sfr_peak
     BOX_SIZE = args.box_size
     RULER    = args.ruler if args.ruler is not None else pick_ruler(BOX_SIZE)
-    print("Projection box: %g kpc (%s), z=%g, ruler %s"
-          % (BOX_SIZE, sim_group, TARGET_Z, ruler_label(RULER)))
+    print("Projection box: %g kpc (%s), z=%g, ruler %s, centring aperture %g Rvir"
+          % (BOX_SIZE, sim_group, TARGET_Z, ruler_label(RULER), CENTER_APERTURE))
 
     if MODE == "density":
         CMAP       = 'magma'
