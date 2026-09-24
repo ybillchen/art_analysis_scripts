@@ -41,10 +41,7 @@ SIM_FOLDERS = {
 TARGET_Z = 5.0
 TARGET_A = 1.0 / (1.0 + TARGET_Z)
 
-# TEMPORARY: zoom the KM runs into the inner 2 kpc. Revert both dicts to 10.0 /
-# 1.0 to restore the standard 10 kpc panels.
-BOX_SIZE_KPC = {"km": 2.0, "p12": 10.0}   # projection box, kpc
-RULER_KPC    = {"km": 0.5, "p12": 1.0}    # scale bar drawn on each panel, kpc
+BOX_SIZE_DEFAULT = 10.0   # projection box side length, kpc
 
 # Young massive clusters, selected by --ymc-only
 YMC_AGE_MAX  = 10.0   # Myr
@@ -79,6 +76,14 @@ def halo_sphere(ds, snapshot):
         ds.arr([snapshot['x'], snapshot['y'], snapshot['z']], 'Mpccm/h'),
         ds.arr(snapshot['Rvir'], 'kpccm/h')
     )
+
+
+def pick_ruler(box_kpc):
+    """Round scale bar (1, 2 or 5 x 10^n kpc) nearest a tenth of the box width."""
+    target = 0.1 * box_kpc
+    exp = np.floor(np.log10(target))
+    candidates = [m * 10.0**exp for m in (1.0, 2.0, 5.0)] + [10.0**(exp + 1)]
+    return min(candidates, key=lambda c: abs(np.log10(c / target)))
 
 
 def ruler_label(ruler_kpc):
@@ -239,6 +244,10 @@ if __name__ == '__main__':
                               help='center on the densest gas cell within Rvir (default: halo center)')
     center_group.add_argument('--center-star-median', action='store_true',
                               help='center on the mass-weighted median position of all star particles')
+    parser.add_argument('--box-size', type=float, default=BOX_SIZE_DEFAULT,
+                        help='projection box side length in kpc (default: %g)' % BOX_SIZE_DEFAULT)
+    parser.add_argument('--ruler', type=float, default=None,
+                        help='scale bar length in kpc (default: ~1/10 of the box, rounded)')
     parser.add_argument('--ymc-only', action='store_true',
                         help='plot only young massive clusters (age < %g Myr and M > %g Msun)'
                              % (YMC_AGE_MAX, YMC_MASS_MIN))
@@ -262,9 +271,10 @@ if __name__ == '__main__':
     CENTER_STAR_MEDIAN = args.center_star_median
     STAR_SIZE = args.star_size
     YMC_ONLY = args.ymc_only
-    BOX_SIZE = BOX_SIZE_KPC[sim_group]
-    RULER    = RULER_KPC[sim_group]
-    print("Projection box: %g kpc (%s), z=%g" % (BOX_SIZE, sim_group, TARGET_Z))
+    BOX_SIZE = args.box_size
+    RULER    = args.ruler if args.ruler is not None else pick_ruler(BOX_SIZE)
+    print("Projection box: %g kpc (%s), z=%g, ruler %s"
+          % (BOX_SIZE, sim_group, TARGET_Z, ruler_label(RULER)))
 
     if MODE == "density":
         CMAP       = 'magma'
