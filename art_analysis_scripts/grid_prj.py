@@ -46,6 +46,19 @@ TARGET_A = 1.0 / (1.0 + TARGET_Z)
 BOX_SIZE_KPC = {"km": 2.0, "p12": 10.0}   # projection box, kpc
 RULER_KPC    = {"km": 0.5, "p12": 1.0}    # scale bar drawn on each panel, kpc
 
+def weighted_median(values, weights):
+    """Coordinate at which the cumulative weight first reaches half the total.
+
+    Applied per axis, this is the marginal weighted median: unlike a mean it is
+    not dragged off the galaxy by a handful of distant particles.
+    """
+    order = np.argsort(values)
+    cw = np.cumsum(weights[order])
+    if cw[-1] <= 0:
+        raise ValueError("total weight is zero")
+    return float(values[order][np.searchsorted(cw, 0.5 * cw[-1])])
+
+
 def ruler_label(ruler_kpc):
     """Scale-bar text: sub-kpc rulers read better in pc (0.5 -> '500 pc')."""
     if ruler_kpc < 1.0:
@@ -96,7 +109,18 @@ def compute_panel(basepath):
         y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
         z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
 
-        if CENTER_MAX_DENSITY:
+        if CENTER_STAR_MEDIAN:
+            # Mass-weighted median position of every star particle: a robust
+            # centre that ignores outliers, unlike the densest-cell option.
+            d = ds.all_data()
+            m = d['STAR', 'MASS'].to_value('Msun')
+            if len(m) == 0:
+                print("No star particles, using halo center: %s" % basepath)
+            else:
+                x0 = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
+                y0 = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
+                z0 = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
+        elif CENTER_MAX_DENSITY:
             # Densest gas cell anywhere inside Rvir -- note this can land in a
             # satellite rather than the central galaxy.
             sp = ds.sphere(
@@ -188,8 +212,11 @@ if __name__ == '__main__':
     parser.add_argument('--sim-group', default='km', choices=['km', 'p12'])
     parser.add_argument('-z', '--redshift', type=float, default=TARGET_Z,
                         help='target redshift (default: %.1f)' % TARGET_Z)
-    parser.add_argument('--center-max-density', action='store_true',
-                        help='center on the densest gas cell within Rvir (default: halo center)')
+    center_group = parser.add_mutually_exclusive_group()
+    center_group.add_argument('--center-max-density', action='store_true',
+                              help='center on the densest gas cell within Rvir (default: halo center)')
+    center_group.add_argument('--center-star-median', action='store_true',
+                              help='center on the mass-weighted median position of all star particles')
     parser.add_argument('--vmin', type=float, default=None,
                         help='colorbar minimum (default: per-mode value)')
     parser.add_argument('--vmax', type=float, default=None,
@@ -205,6 +232,7 @@ if __name__ == '__main__':
     TARGET_Z = args.redshift
     TARGET_A = 1.0 / (1.0 + TARGET_Z)
     CENTER_MAX_DENSITY = args.center_max_density
+    CENTER_STAR_MEDIAN = args.center_star_median
     BOX_SIZE = BOX_SIZE_KPC[sim_group]
     RULER    = RULER_KPC[sim_group]
     print("Projection box: %g kpc (%s), z=%g" % (BOX_SIZE, sim_group, TARGET_Z))
@@ -260,7 +288,12 @@ if __name__ == '__main__':
         "Expected 10 simulations, found %d: %s" % (len(basepaths), basepaths)
     z_str = "%g" % TARGET_Z
     os.makedirs(ANALYSIS_PATH, exist_ok=True)
-    center_tag = "_maxdens" if CENTER_MAX_DENSITY else ""
+    if CENTER_MAX_DENSITY:
+        center_tag = "_maxdens"
+    elif CENTER_STAR_MEDIAN:
+        center_tag = "_starmed"
+    else:
+        center_tag = ""
     output_path = os.path.join(
         ANALYSIS_PATH, "grid_prj_%s_%s_z%s%s.pdf" % (sim_group, MODE, z_str, center_tag))
 
