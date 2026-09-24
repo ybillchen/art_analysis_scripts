@@ -43,9 +43,12 @@ TARGET_A = 1.0 / (1.0 + TARGET_Z)
 
 BOX_SIZE_DEFAULT = 10.0   # projection box side length, kpc
 
+# Snapshots probed by --sfr-peak, as offsets in Myr from the target redshift
+SFR_PEAK_OFFSETS = np.arange(-40.0, 50.1, 10.0)
+
 # Young massive clusters, selected by --ymc-only
 YMC_AGE_MAX  = 10.0   # Myr
-YMC_MASS_MIN = 1e5    # Msun
+YMC_MASS_MIN = 1e6    # Msun
 
 def weighted_median(values, weights):
     """Coordinate at which the cumulative weight first reaches half the total.
@@ -106,7 +109,8 @@ def collect_basepaths(root_path, km_folders):
     return basepaths
 
 
-def get_snapshot_at_scalefactor(basepath, target_a):
+def get_mpb_and_files(basepath):
+    """Main progenitor branch and the snapshot filename list aligned to it."""
     treepath = os.path.join(basepath, 'rockstar_halos/trees/tree_0_0_0.dat')
     snap_list = np.loadtxt(
         os.path.join(basepath, 'rockstar_halos/datasets.txt'),
@@ -119,11 +123,97 @@ def get_snapshot_at_scalefactor(basepath, target_a):
     lastsnap_tree = mpb['Snap_idx'][-1]
     dsnap = int(lastsnap_original - lastsnap_tree)
     filename_list = snap_list['filename'][dsnap:]
+    return mpb, filename_list
 
+
+def get_snapshot_at_scalefactor(basepath, target_a):
+    mpb, filename_list = get_mpb_and_files(basepath)
     idx = np.argmin(np.abs(mpb['scale'] - target_a))
     snapshot = mpb[idx]
     filename = os.path.join(basepath, filename_list[snapshot['Snap_idx']])
     return snapshot, filename
+
+
+def snapshots_around(basepath, target_a, cosmo, offsets_myr):
+    """MPB snapshots nearest the target time shifted by each offset (Myr).
+
+    Duplicates are dropped: the snapshot cadence can be coarser than the
+    offsets, so several offsets may land on the same snapshot.
+    """
+    mpb, filename_list = get_mpb_and_files(basepath)
+    t = np.array([cosmo.t_from_z(1.0 / a - 1).to_value('Myr') for a in mpb['scale']])
+    t0 = t[int(np.argmin(np.abs(mpb['scale'] - target_a)))]
+
+    idxs = []
+    for off in offsets_myr:
+        j = int(np.argmin(np.abs(t - (t0 + off))))
+        if j not in idxs:
+            idxs.append(j)
+    return [(mpb[j], os.path.join(basepath, filename_list[mpb[j]['Snap_idx']]))
+            for j in idxs]
+
+
+def panel_center(ds, snapshot):
+    """Projection centre for one snapshot, in code_length."""
+    x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
+    y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
+    z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
+
+    if CENTER_STAR_MEDIAN:
+        # Mass-weighted median position of the star particles inside Rvir:
+        # a robust centre that ignores outliers, unlike the densest cell.
+        d = halo_sphere(ds, snapshot)
+        m = star_mass(d)
+        if len(m) > 0:   # otherwise fall back to the halo center
+            x0 = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
+            y0 = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
+            z0 = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
+    elif CENTER_MAX_DENSITY:
+        # Densest gas cell anywhere inside Rvir -- note this can land in a
+        # satellite rather than the central galaxy.
+        sp = halo_sphere(ds, snapshot)
+        imax = int(np.argmax(sp['gas', 'density']))
+        x0 = sp['gas', 'x'][imax].to_value('code_length')
+        y0 = sp['gas', 'y'][imax].to_value('code_length')
+        z0 = sp['gas', 'z'][imax].to_value('code_length')
+
+    return x0, y0, z0
+
+
+def count_ymc(ds, center):
+    """Young massive clusters inside the projection box around center."""
+    half = 0.5 * (BOX_SIZE * ds.units.kpc).to_value('code_length')
+    d = ds.box(ds.arr([c - half for c in center], 'code_length'),
+               ds.arr([c + half for c in center], 'code_length'))
+    m = star_mass(d)
+    if len(m) == 0:
+        return 0
+    age = ds.current_time.to_value("Myr") - d["STAR", "creation_time"].to_value("Myr")
+    return int(np.count_nonzero((age < YMC_AGE_MAX) & (m > YMC_MASS_MIN)))
+
+
+def pick_sfr_peak(basepath, ds, snapshot):
+    """Of the snapshots bracketing the target redshift, the one hosting the most
+    young massive clusters. Each candidate is centred on its own snapshot.
+
+    Returns (ds, snapshot, center) for the winner.
+    """
+    cosmo = yt.utilities.cosmology.Cosmology(
+        hubble_constant=ds.hubble_constant,
+        omega_matter=ds.omega_matter,
+        omega_lambda=ds.omega_lambda,
+    )
+    best = None
+    for snap_c, file_c in snapshots_around(basepath, TARGET_A, cosmo, SFR_PEAK_OFFSETS):
+        ds_c = load_art(file_c)
+        center_c = panel_center(ds_c, snap_c)
+        n = count_ymc(ds_c, center_c)
+        if best is None or n > best[0]:
+            best = (n, ds_c, snap_c, center_c)
+    n_best, ds_best, snap_best, center_best = best
+    print("sfr peak %s: %d clusters at z=%.3f"
+          % (get_label(basepath) or basepath, n_best, 1.0 / ds_best.scale_factor - 1))
+    return ds_best, snap_best, center_best
 
 
 def compute_panel(basepath):
@@ -132,27 +222,11 @@ def compute_panel(basepath):
         snapshot, filename = get_snapshot_at_scalefactor(basepath, TARGET_A)
         ds = load_art(filename)
 
-        x0 = (snapshot['x'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
-        y0 = (snapshot['y'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
-        z0 = (snapshot['z'] * ds.units.Mpccm / ds.units.h).to_value('code_length')
-
-        if CENTER_STAR_MEDIAN:
-            # Mass-weighted median position of the star particles inside Rvir:
-            # a robust centre that ignores outliers, unlike the densest cell.
-            d = halo_sphere(ds, snapshot)
-            m = star_mass(d)
-            if len(m) > 0:   # otherwise fall back to the halo center
-                x0 = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
-                y0 = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
-                z0 = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
-        elif CENTER_MAX_DENSITY:
-            # Densest gas cell anywhere inside Rvir -- note this can land in a
-            # satellite rather than the central galaxy.
-            sp = halo_sphere(ds, snapshot)
-            imax = int(np.argmax(sp['gas', 'density']))
-            x0 = sp['gas', 'x'][imax].to_value('code_length')
-            y0 = sp['gas', 'y'][imax].to_value('code_length')
-            z0 = sp['gas', 'z'][imax].to_value('code_length')
+        if SFR_PEAK:
+            ds, snapshot, center = pick_sfr_peak(basepath, ds, snapshot)
+        else:
+            center = panel_center(ds, snapshot)
+        x0, y0, z0 = center
 
         size_cl = (BOX_SIZE * ds.units.kpc).to_value('code_length')
         unit_convert = (1.0 * ds.units.code_length).to_value('kpc')
@@ -248,6 +322,10 @@ if __name__ == '__main__':
                         help='projection box side length in kpc (default: %g)' % BOX_SIZE_DEFAULT)
     parser.add_argument('--ruler', type=float, default=None,
                         help='scale bar length in kpc (default: ~1/10 of the box, rounded)')
+    parser.add_argument('--sfr-peak', action='store_true',
+                        help='of the snapshots %g to %g Myr around the target redshift, '
+                             'show the one with the most young massive clusters in the box'
+                             % (SFR_PEAK_OFFSETS[0], SFR_PEAK_OFFSETS[-1]))
     parser.add_argument('--ymc-only', action='store_true',
                         help='plot only young massive clusters (age < %g Myr and M > %g Msun)'
                              % (YMC_AGE_MAX, YMC_MASS_MIN))
@@ -271,6 +349,7 @@ if __name__ == '__main__':
     CENTER_STAR_MEDIAN = args.center_star_median
     STAR_SIZE = args.star_size
     YMC_ONLY = args.ymc_only
+    SFR_PEAK = args.sfr_peak
     BOX_SIZE = args.box_size
     RULER    = args.ruler if args.ruler is not None else pick_ruler(BOX_SIZE)
     print("Projection box: %g kpc (%s), z=%g, ruler %s"
@@ -334,9 +413,11 @@ if __name__ == '__main__':
     else:
         center_tag = ""
     ymc_tag = "_ymc" if YMC_ONLY else ""
+    peak_tag = "_sfrpeak" if SFR_PEAK else ""
     output_path = os.path.join(
         ANALYSIS_PATH,
-        "grid_prj_%s_%s_z%s%s%s.pdf" % (sim_group, MODE, z_str, center_tag, ymc_tag))
+        "grid_prj_%s_%s_z%s%s%s%s.pdf"
+        % (sim_group, MODE, z_str, center_tag, ymc_tag, peak_tag))
 
     # --- layout (inches) ---
     FIG_W    = 10.0  # figure width, inches
