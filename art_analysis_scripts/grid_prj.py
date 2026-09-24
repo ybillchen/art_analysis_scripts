@@ -190,6 +190,10 @@ if __name__ == '__main__':
                         help='target redshift (default: %.1f)' % TARGET_Z)
     parser.add_argument('--center-max-density', action='store_true',
                         help='center on the densest gas cell within Rvir (default: halo center)')
+    parser.add_argument('--vmin', type=float, default=None,
+                        help='colorbar minimum (default: per-mode value)')
+    parser.add_argument('--vmax', type=float, default=None,
+                        help='colorbar maximum (default: per-mode value)')
     parser.add_argument('--no-stars', action='store_true',
                         help='hide star particles (only applicable in density mode)')
     parser.add_argument('--parallel', type=int, default=1, metavar='N',
@@ -241,6 +245,13 @@ if __name__ == '__main__':
         VMAX       = 1e-1
         CBAR_LABEL = r"Metallicity ($Z/Z_\odot$)"
         TEXT_COLOR = 'k'
+
+    # CLI overrides the per-mode defaults above
+    if args.vmin is not None:
+        VMIN = args.vmin
+    if args.vmax is not None:
+        VMAX = args.vmax
+    print("Color range: %g to %g (%s)" % (VMIN, VMAX, MODE))
 
     yt.funcs.mylog.setLevel(50)
 
