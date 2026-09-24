@@ -81,12 +81,22 @@ def ymc_mask(ds, region, masses):
 
 
 def median_position(region, weights, mask=None):
-    """Mass-weighted median star position, per axis, in code_length."""
+    """Mass-weighted median star position, snapped onto an actual cluster.
+
+    The per-axis medians are independent, so they can come from different
+    particles and leave the centre in empty space between clusters. Snap to the
+    particle nearest that point, with the more massive one winning ties.
+    """
     pos = [region["STAR", "POSITION_%s" % ax].to_value('code_length') for ax in 'XYZ']
     if mask is not None:
         pos = [p[mask] for p in pos]
         weights = weights[mask]
-    return tuple(weighted_median(p, weights) for p in pos)
+
+    med = [weighted_median(p, weights) for p in pos]
+    d2 = sum((p - c) ** 2 for p, c in zip(pos, med))
+    # lexsort: primary key d2 ascending, ties broken by descending weight
+    best = np.lexsort((-weights, d2))[0]
+    return tuple(float(p[best]) for p in pos)
 
 
 def halo_sphere(ds, snapshot):
@@ -298,7 +308,7 @@ def render_panel(ax, data, label):
 
     if data['stars'] is not None:
         s = data['stars']
-        ax.scatter(s['x'], s['y'], color='white', alpha=0.5, ec='none',
+        ax.scatter(s['x'], s['y'], color=STAR_COLOR, alpha=0.5, ec='none',
                    s=s['s'] * STAR_SIZE, rasterized=True)
 
     stroke_ruler = [pe.withStroke(linewidth=5, foreground='white')] if TEXT_COLOR != 'w' else []
@@ -352,6 +362,10 @@ if __name__ == '__main__':
                              % (YMC_AGE_MAX, YMC_MASS_MIN))
     parser.add_argument('--star-size', type=float, default=1.0,
                         help='scale factor for star marker size (default: 1.0)')
+    parser.add_argument('--star-color', default='white',
+                        help='color of the star markers (default: white)')
+    parser.add_argument('--cmap', default=None,
+                        help='colormap name (default: per-mode value)')
     parser.add_argument('--vmin', type=float, default=None,
                         help='colorbar minimum (default: per-mode value)')
     parser.add_argument('--vmax', type=float, default=None,
@@ -369,6 +383,7 @@ if __name__ == '__main__':
     CENTER_MAX_DENSITY = args.center_max_density
     CENTER_STAR_MEDIAN = args.center_star_median
     STAR_SIZE = args.star_size
+    STAR_COLOR = args.star_color
     YMC_ONLY = args.ymc_only
     SFR_PEAK = args.sfr_peak
     BOX_SIZE = args.box_size
@@ -414,6 +429,8 @@ if __name__ == '__main__':
         TEXT_COLOR = 'k'
 
     # CLI overrides the per-mode defaults above
+    if args.cmap is not None:
+        CMAP = plt.get_cmap(args.cmap)   # raises now rather than after the projections
     if args.vmin is not None:
         VMIN = args.vmin
     if args.vmax is not None:
