@@ -41,9 +41,9 @@ SIM_FOLDERS = {
 TARGET_Z = 5.0
 TARGET_A = 1.0 / (1.0 + TARGET_Z)
 
-# TEMPORARY: zoom the KM runs into the inner 2 kpc. Revert both dicts to 10.0 /
+# TEMPORARY: zoom the KM runs into the inner 4 kpc. Revert both dicts to 10.0 /
 # 1.0 to restore the standard 10 kpc panels.
-BOX_SIZE_KPC = {"km": 2.0, "p12": 10.0}   # projection box, kpc
+BOX_SIZE_KPC = {"km": 4.0, "p12": 10.0}   # projection box, kpc
 RULER_KPC    = {"km": 0.5, "p12": 1.0}    # scale bar drawn on each panel, kpc
 
 def weighted_median(values, weights):
