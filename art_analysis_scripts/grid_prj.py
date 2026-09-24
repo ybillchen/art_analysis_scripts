@@ -42,6 +42,7 @@ TARGET_Z = 5.0
 TARGET_A = 1.0 / (1.0 + TARGET_Z)
 
 BOX_SIZE_DEFAULT = 10.0   # projection box side length, kpc
+RULER_FRACTION   = 0.2    # default scale bar, as a fraction of the box
 
 # Snapshots probed by --sfr-peak, as offsets in Myr from the target redshift
 SFR_PEAK_OFFSETS = np.arange(-40.0, 50.1, 10.0)
@@ -73,6 +74,21 @@ def star_mass(region):
             * region["STAR", "BOUND_FRACTION"].to_value("1"))
 
 
+def ymc_mask(ds, region, masses):
+    """Young massive clusters: age < YMC_AGE_MAX and bound mass > YMC_MASS_MIN."""
+    age = ds.current_time.to_value("Myr") - region["STAR", "creation_time"].to_value("Myr")
+    return (age < YMC_AGE_MAX) & (masses > YMC_MASS_MIN)
+
+
+def median_position(region, weights, mask=None):
+    """Mass-weighted median star position, per axis, in code_length."""
+    pos = [region["STAR", "POSITION_%s" % ax].to_value('code_length') for ax in 'XYZ']
+    if mask is not None:
+        pos = [p[mask] for p in pos]
+        weights = weights[mask]
+    return tuple(weighted_median(p, weights) for p in pos)
+
+
 def halo_sphere(ds, snapshot):
     """Sphere of radius Rvir around the halo center from the merger tree."""
     return ds.sphere(
@@ -82,8 +98,8 @@ def halo_sphere(ds, snapshot):
 
 
 def pick_ruler(box_kpc):
-    """Round scale bar (1, 2 or 5 x 10^n kpc) nearest a tenth of the box width."""
-    target = 0.1 * box_kpc
+    """Scale bar nearest RULER_FRACTION of the box, rounded to 1, 2 or 5 x 10^n."""
+    target = RULER_FRACTION * box_kpc
     exp = np.floor(np.log10(target))
     candidates = [m * 10.0**exp for m in (1.0, 2.0, 5.0)] + [10.0**(exp + 1)]
     return min(candidates, key=lambda c: abs(np.log10(c / target)))
@@ -165,9 +181,7 @@ def panel_center(ds, snapshot):
         d = halo_sphere(ds, snapshot)
         m = star_mass(d)
         if len(m) > 0:   # otherwise fall back to the halo center
-            x0 = weighted_median(d['STAR', 'POSITION_X'].to_value('code_length'), m)
-            y0 = weighted_median(d['STAR', 'POSITION_Y'].to_value('code_length'), m)
-            z0 = weighted_median(d['STAR', 'POSITION_Z'].to_value('code_length'), m)
+            x0, y0, z0 = median_position(d, m)
     elif CENTER_MAX_DENSITY:
         # Densest gas cell anywhere inside Rvir -- note this can land in a
         # satellite rather than the central galaxy.
@@ -176,6 +190,15 @@ def panel_center(ds, snapshot):
         x0 = sp['gas', 'x'][imax].to_value('code_length')
         y0 = sp['gas', 'y'][imax].to_value('code_length')
         z0 = sp['gas', 'z'][imax].to_value('code_length')
+    elif YMC_ONLY:
+        # With no centring flag given, --ymc-only centres on the clusters it
+        # draws: the mass-weighted median of the YMCs inside Rvir.
+        d = halo_sphere(ds, snapshot)
+        m = star_mass(d)
+        if len(m) > 0:
+            keep = ymc_mask(ds, d, m)
+            if keep.any():   # otherwise fall back to the halo center
+                x0, y0, z0 = median_position(d, m, keep)
 
     return x0, y0, z0
 
@@ -188,8 +211,7 @@ def count_ymc(ds, center):
     m = star_mass(d)
     if len(m) == 0:
         return 0
-    age = ds.current_time.to_value("Myr") - d["STAR", "creation_time"].to_value("Myr")
-    return int(np.count_nonzero((age < YMC_AGE_MAX) & (m > YMC_MASS_MIN)))
+    return int(np.count_nonzero(ymc_mask(ds, d, m)))
 
 
 def pick_sfr_peak(basepath, ds, snapshot):
@@ -252,9 +274,7 @@ def compute_panel(basepath):
             sy = d["STAR", "POSITION_Y"].to_value('kpc')
             sm = star_mass(d)
             if YMC_ONLY:
-                age = (ds.current_time.to_value("Myr")
-                       - d["STAR", "creation_time"].to_value("Myr"))
-                keep = (age < YMC_AGE_MAX) & (sm > YMC_MASS_MIN)
+                keep = ymc_mask(ds, d, sm)
                 sx, sy, sm = sx[keep], sy[keep], sm[keep]
             stars = dict(x=sx, y=sy, s=sm / 1e7)
 
@@ -321,7 +341,8 @@ if __name__ == '__main__':
     parser.add_argument('--box-size', type=float, default=BOX_SIZE_DEFAULT,
                         help='projection box side length in kpc (default: %g)' % BOX_SIZE_DEFAULT)
     parser.add_argument('--ruler', type=float, default=None,
-                        help='scale bar length in kpc (default: ~1/10 of the box, rounded)')
+                        help='scale bar length in kpc (default: ~1/%g of the box, '
+                             'rounded to 1, 2 or 5 x 10^n)' % (1.0 / RULER_FRACTION))
     parser.add_argument('--sfr-peak', action='store_true',
                         help='of the snapshots %g to %g Myr around the target redshift, '
                              'show the one with the most young massive clusters in the box'
