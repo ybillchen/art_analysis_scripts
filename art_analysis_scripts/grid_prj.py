@@ -312,7 +312,7 @@ def render_panel(ax, data, label):
 
     if data['stars'] is not None:
         s = data['stars']
-        ax.scatter(s['x'], s['y'], color=STAR_COLOR, alpha=0.5, ec='none',
+        ax.scatter(s['x'], s['y'], color=STAR_COLOR, alpha=STAR_ALPHA, ec='none',
                    s=s['s'] * STAR_SIZE, rasterized=True)
 
     light_text = to_rgb(TEXT_COLOR) == (1.0, 1.0, 1.0)
@@ -368,6 +368,8 @@ if __name__ == '__main__':
                              % (YMC_AGE_MAX, YMC_MASS_MIN))
     parser.add_argument('--star-size', type=float, default=1.0,
                         help='scale factor for star marker size (default: 1.0)')
+    parser.add_argument('--star-alpha', type=float, default=0.5,
+                        help='opacity of the star markers (default: 0.5)')
     parser.add_argument('--star-color', default='white',
                         help='color of the star markers (default: white)')
     parser.add_argument('--cmap', default=None,
@@ -396,6 +398,7 @@ if __name__ == '__main__':
     CENTER_APERTURE = args.center_aperture
     STAR_SIZE = args.star_size
     STAR_COLOR = args.star_color
+    STAR_ALPHA = args.star_alpha
     YMC_ONLY = args.ymc_only
     SFR_PEAK = args.sfr_peak
     BOX_SIZE = args.box_size
