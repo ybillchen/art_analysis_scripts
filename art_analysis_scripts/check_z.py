@@ -70,6 +70,10 @@ def scan_subfolders(root_folder):
                 dt.append(float(x[2]))
                 a.append(float(x[3]))
 
+            if len(total_run_time) - 1 != len(dt):
+                results[entry] = "timing.000.log and times.log have different lengths, skipped"
+                continue
+
             total_run_time = np.array(total_run_time)
             dt = np.array(dt)
 
